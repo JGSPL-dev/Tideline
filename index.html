@@ -245,10 +245,11 @@ const DEFAULT_FEEDS = [
   {id:"veritasium", title:"Veritasium", url:"https://www.youtube.com/feeds/videos.xml?channel_id=UCHnyfMqiRRG1u-2MsSQLbXA", color:COLORS[2]}
 ];
 const PAGE = 30;
+const KEEP_DAYS = 7, MAX_PER_FEED = 300;   // story history kept per feed
 
 const state = {
   feeds: store.get("tl.feeds", null) || DEFAULT_FEEDS.map(f => ({...f})),
-  items: store.get("tl.items", []),
+  items: mergeHistory(store.get("tl.items", []), []),
   read: new Set(store.get("tl.read", [])),
   filter: "all",
   shown: PAGE,
@@ -270,10 +271,10 @@ const PROXIES = [
   {build: u => "https://corsproxy.io/?url=" + encodeURIComponent(u)},
   {build: u => "https://api.cors.lol/?url=" + encodeURIComponent(u)}
 ];
-async function fetchWithTimeout(url, ms){
+async function fetchWithTimeout(url, ms, headers){
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
-  try{ return await fetch(url, {signal: ctrl.signal}); } finally { clearTimeout(t); }
+  try{ return await fetch(url, headers ? {signal: ctrl.signal, headers} : {signal: ctrl.signal}); } finally { clearTimeout(t); }
 }
 // Ask every relay at once and use whichever answers first; cancel the rest.
 async function fetchText(url, ms = 10000){
@@ -317,15 +318,36 @@ async function fetchViaRss2json(url, feed){
 }
 // Get a feed by any route that works
 async function loadFeed(url, feed){
-  // Run the feed service and the relays side by side; take the first good answer.
-  const viaRelay = fetchText(url).then(t => parseFeed(t, feed));
-  try{
-    return await Promise.any([fetchViaRss2json(url, feed), viaRelay]);
-  }catch(agg){
+  // Ask the feed service and the relays together. Use the first answer, but give the other
+  // a few seconds to arrive too, and combine both (the feed service only returns 10 items).
+  const got = [];
+  const svc = fetchViaRss2json(url, feed).then(r => (got.push(r), r));
+  const rel = fetchText(url).then(t => parseFeed(t, feed)).then(r => (got.push(r), r));
+  let first;
+  try{ first = await Promise.any([svc, rel]); }
+  catch(agg){
     const errs = agg.errors || [];
     const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service/.test(e.message));
     throw real || new Error("Couldn't reach that feed");
   }
+  await Promise.race([Promise.allSettled([svc, rel]), new Promise(r => setTimeout(r, 4000))]);
+  const byId = new Map();
+  got.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
+  const title = (got.find(g => g.title) || first).title;
+  return {title, items: [...byId.values()].sort((x, y) => y.date - x.date)};
+}
+// Keep a rolling history: everything seen in the last KEEP_DAYS, per feed
+function mergeHistory(oldItems, newItems){
+  const now = Date.now(), cutoff = now - KEEP_DAYS * 86400000;
+  const byId = new Map();
+  oldItems.forEach(i => byId.set(i.id, i));
+  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now}); });
+  const counts = {};
+  return [...byId.values()]
+    .map(i => i.seen ? i : {...i, seen: now})
+    .filter(i => (i.date || i.seen) >= cutoff)
+    .sort((x, y) => (y.date || y.seen) - (x.date || x.seen))
+    .filter(i => (counts[i.feedId] = (counts[i.feedId] || 0) + 1) <= MAX_PER_FEED);
 }
 async function pool(arr, n, fn){
   const out = new Array(arr.length); let i = 0;
@@ -721,10 +743,38 @@ function renderBody(it, body){
 async function readerViaRelay(link){
   const html = await fetchText(link, 15000);
   if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
+  return extractArticle(html, link);
+}
+// Strip the parts of a page that are never the article, while class and id names are still there to go on
+const NOT_ARTICLE = [
+  "script","style","noscript","iframe","form","nav","header","footer","aside","dialog","button","svg","template",
+  "[role=navigation]","[role=banner]","[role=contentinfo]","[role=complementary]","[role=dialog]","[role=search]","[aria-hidden=true]",
+  "[class*=comment i]","[id*=comment i]","[class*=related i]","[id*=related i]","[class*=share i]","[class*=social i]",
+  "[class*=newsletter i]","[class*=subscribe i]","[class*=promo i]","[class*=advert i]","[class*=ad-slot i]","[class*=sponsor i]",
+  "[class*=sidebar i]","[id*=sidebar i]","[class*=cookie i]","[id*=cookie i]","[class*=consent i]","[class*=paywall i]",
+  "[class*=recommend i]","[class*=most-read i]","[class*=mostread i]","[class*=trending i]","[class*=breadcrumb i]",
+  "[class*=byline-share i]","[class*=author-bio i]","[class*=popup i]","[class*=modal i]","[class*=signup i]","[data-component*=links i]"
+].join(",");
+function pruneDoc(doc){
+  const total = (doc.body && doc.body.textContent.length) || 1;
+  doc.querySelectorAll(NOT_ARTICLE).forEach(n => {
+    if (!doc.body.contains(n)) return;
+    // never remove the article itself, or anything holding a large share of the page's text
+    if (n === doc.body || n.matches("article, main") || n.querySelector("article, main")) return;
+    if (!/^(SCRIPT|STYLE|NOSCRIPT|IFRAME|SVG|TEMPLATE)$/i.test(n.tagName) && n.textContent.length > total * 0.4) return;
+    n.remove();
+  });
+}
+function extractArticle(html, link){
+  if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
   const doc = new DOMParser().parseFromString(html, "text/html");
   const base = doc.createElement("base"); base.href = link; doc.head.prepend(base);
-  const parsed = new Readability(doc, {charThreshold: 300}).parse();
-  if (!parsed || !parsed.content || (parsed.textContent || "").trim().length < 200) throw new Error("This page doesn't have a readable article");
+  const backup = doc.cloneNode(true);
+  pruneDoc(doc);
+  let parsed = new Readability(doc, {charThreshold: 300}).parse();
+  const ok = x => x && x.content && (x.textContent || "").trim().length >= 200;
+  if (!ok(parsed)) parsed = new Readability(backup, {charThreshold: 300}).parse();   // pruning went too far: try the full page
+  if (!ok(parsed)) throw new Error("This page doesn't have a readable article");
   return parsed;
 }
 // Small Markdown converter, used if the Markdown library fails to load
@@ -750,23 +800,31 @@ function miniMarkdown(md){
     return "<p>" + inline(lines.join(" ")) + "</p>";
   }).join("\n");
 }
+// Jina's reader service. First ask for the page's HTML with menus, comments and similar already removed,
+// so the same article extraction can run on real page structure. Fall back to its Markdown version.
+const JINA_REMOVE = "nav, header, footer, aside, form, [role=navigation], [role=complementary], [class*=comment], [id*=comment], [class*=related], [class*=share], [class*=newsletter], [class*=promo], [class*=sidebar]";
 async function readerViaJina(link){
-  const r = await fetchWithTimeout("https://r.jina.ai/" + link, 20000);
+  try{
+    const r = await fetchWithTimeout("https://r.jina.ai/" + link, 20000, {"X-Return-Format": "html", "X-Remove-Selector": JINA_REMOVE});
+    if (!r.ok) throw new Error("Reader service answered with error " + r.status);
+    const html = await r.text();
+    if (/<(p|article|div)[\s>]/i.test(html)) return extractArticle(html, link);
+    throw new Error("not html");
+  }catch(e){
+    if (/readable article|reader tool/.test(e.message)) throw e;
+  }
+  const r = await fetchWithTimeout("https://r.jina.ai/" + link, 20000, {"X-Remove-Selector": JINA_REMOVE});
   if (!r.ok) throw new Error("Reader service answered with error " + r.status);
   let md = await r.text();
   const i = md.indexOf("Markdown Content:");
-  let byline = null;
-  if (i >= 0){ md = md.slice(i + 17); }
+  if (i >= 0) md = md.slice(i + 17);
   md = md.trim().replace(/^#{1,2} [^\n]*\n+/, "").replace(/^=+\n+/, "");
   if (md.length < 200) throw new Error("This page doesn't have a readable article");
   const html = window.marked ? marked.parse(md) : miniMarkdown(md);
-  // Jina returns the whole page (menus, comments...). Run the same article extraction over it.
   if (typeof Readability === "function"){
-    const doc = new DOMParser().parseFromString("<!doctype html><html><head><base href=\"" + link.replace(/"/g, "") + "\"><title></title></head><body><article>" + html + "</article></body></html>", "text/html");
-    const parsed = new Readability(doc, {charThreshold: 300}).parse();
-    if (parsed && (parsed.textContent || "").trim().length >= 200) return parsed;
+    try{ return extractArticle("<!doctype html><html><head><title></title></head><body>" + html + "</body></html>", link); }catch{}
   }
-  return {content: html, textContent: md.replace(/[#*_>\[\]()!`-]/g, " "), byline};
+  return {content: html, textContent: md.replace(/[#*_>\[\]()!`-]/g, " "), byline: null};
 }
 // Prefer extraction from the original page; if Jina answers first, give the relays 3 more seconds.
 async function getArticle(link){
@@ -896,10 +954,9 @@ async function refreshAll(){
   });
   const ids = new Set(state.feeds.map(f => f.id));
   const fresh = new Map(state.feeds.map((f, i) => [f.id, results[i]]));
-  let merged = state.items.filter(i => ids.has(i.feedId) && !fresh.get(i.feedId));
-  fresh.forEach(v => { if (v) merged = merged.concat(v); });
-  const seen = new Set();
-  state.items = merged.filter(i => !seen.has(i.id) && seen.add(i.id)).sort((a, b) => b.date - a.date);
+  let incoming = [];
+  fresh.forEach(v => { if (v) incoming = incoming.concat(v); });
+  state.items = mergeHistory(state.items.filter(i => ids.has(i.feedId)), incoming);
   state.lastUpdated = Date.now();
   state.busy = false;
   btn.disabled = false; btn.classList.remove("spin");
@@ -985,7 +1042,7 @@ function editForm(f, idx){
         if (state.feeds.some(x => x !== f && x.url === res.url)) throw new Error("You already follow that feed");
         const p = res.text ? parseFeed(res.text, f) : await loadFeed(res.url, f);
         f.url = res.url; f.error = null;
-        state.items = state.items.filter(i => i.feedId !== f.id).concat(p.items).sort((a, b) => b.date - a.date);
+        state.items = mergeHistory(state.items.filter(i => i.feedId !== f.id), p.items);
         if (!name.value.trim()) name.value = p.title || "";
       }
       f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
@@ -1018,8 +1075,7 @@ $("#addForm").addEventListener("submit", async e => {
     const p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
     feed.title = p.title || new URL(res.url).hostname.replace(/^www\./, "");
     state.feeds.push(feed);
-    const seen = new Set(state.items.map(i => i.id));
-    state.items = state.items.concat(p.items.filter(i => !seen.has(i.id))).sort((a, b) => b.date - a.date);
+    state.items = mergeHistory(state.items, p.items);
     save(); renderFeedList(); renderChips(); renderStatus(); renderList();
     input.value = "";
     setMsg(`Added ${feed.title} with ${p.items.length} stor${p.items.length === 1 ? "y" : "ies"}.`);
