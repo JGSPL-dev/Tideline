@@ -11,9 +11,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
+<!-- Reader view is switched off (READER_ENABLED in the script). Restore these three libraries when turning it back on:
 <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+-->
 <style>
 /* Layout: desktop = feed column + reading pane; phone = one feed with the viewer opening inline under the tapped story */
 :root{
@@ -101,6 +103,7 @@ button,input{font:inherit;color:inherit}
 .seg button{border:0;background:none;padding:5px 11px;border-radius:6px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .vbody{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
+.livenote a{color:var(--accent)}
 .livenote{font-size:12.5px;color:var(--muted);padding:7px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
 iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#fff}
 .video{width:100%;aspect-ratio:16/9;background:#000;max-width:100%}
@@ -256,6 +259,7 @@ const DEFAULT_FEEDS = [
   {id:"veritasium", title:"Veritasium", url:"https://www.youtube.com/feeds/videos.xml?channel_id=UCHnyfMqiRRG1u-2MsSQLbXA", color:COLORS[2]}
 ];
 const PAGE = 30;
+const READER_ENABLED = false;   // Reader view is off for now: stories show the live website instead
 const KEEP_DAYS = 7, MAX_PER_FEED = 300;   // story history kept per feed
 
 const state = {
@@ -701,7 +705,7 @@ function renderPaneEmpty(){
   const p = el("div", "pane-empty");
   p.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="color:var(--accent)"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>';
   p.append(el("h2", null, "Pick a story from the feed"));
-  const t = el("p"); t.innerHTML = 'Articles open in Reader view. Switch to <b>Live</b> to load the site itself, or tap <b>Open</b> on any story for a new tab. Use <kbd>J</kbd> and <kbd>K</kbd> to move through stories.';
+  const t = el("p"); t.innerHTML = 'Stories load here, right beside your feed. Tap <b>Open</b> on any story to view it in a new tab instead. Use <kbd>J</kbd> and <kbd>K</kbd> to move through stories.';
   p.append(t);
   $("#pane").replaceChildren(p);
 }
@@ -710,7 +714,7 @@ function buildViewer(it){
   const bar = el("div", "vbar");
   bar.append(metaRow(it));
   const body = el("div", "vbody");
-  if (!it.videoId){
+  if (!it.videoId && READER_ENABLED){
     const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "View mode");
     const mode = state.modes[it.id] || "reader";
     [["reader", "Reader"], ["live", "Live"]].forEach(([m, label]) => {
@@ -750,9 +754,12 @@ function renderBody(it, body){
     r.append(o); body.append(r);
     return;
   }
-  const mode = state.modes[it.id] || "reader";
+  const mode = READER_ENABLED ? (state.modes[it.id] || "reader") : "live";
   if (mode === "live"){
-    body.append(el("div", "livenote", "Some sites refuse to load inside other apps. If this stays blank, use Reader or the Open link on the story."));
+    const note = el("div", "livenote", "Some sites refuse to load inside other apps. If this stays blank, ");
+    const a = el("a", null, "open it on the website"); a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer";
+    note.append(a, document.createTextNode(", or tick “Always open stories on the website” for this feed under Feeds → Edit."));
+    body.append(note);
     const f = el("iframe", "live");
     f.src = it.link; f.title = it.title; f.referrerPolicy = "strict-origin-when-cross-origin";
     f.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms");
