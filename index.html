@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Tideline">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Tideline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
+<script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+/* Layout: desktop = feed column + reading pane; phone = one feed with the viewer opening inline under the tapped story */
+:root{
+  --bg:#edf0f3; --surface:#ffffff; --sunk:#e2e7ec; --ink:#141a22; --muted:#5a6473;
+  --line:#d4dbe3; --accent:#0d6b63; --accent-ink:#ffffff; --accent-soft:#d3e9e6; --danger:#b42318;
+  --ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --read:"Newsreader",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
+    --line:#29313b; --accent:#55bdb1; --accent-ink:#04201d; --accent-soft:#16332f; --danger:#f97066;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--ui);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+.app{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);height:100dvh}
+.feedcol{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:1px solid var(--line)}
+
+/* Header */
+.top{display:flex;flex-direction:column;gap:10px;
+  padding-top:calc(14px + env(safe-area-inset-top,0px));padding-bottom:10px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:16px;
+  background:var(--bg);border-bottom:1px solid var(--line)}
+.toprow{display:flex;align-items:center;gap:8px}
+.brand{font:600 25px/1 var(--read);letter-spacing:-.01em;margin:0;flex:1;display:flex;align-items:center;gap:9px}
+.brand svg{color:var(--accent)}
+.status{font-size:12.5px;color:var(--muted);min-height:1em}
+.status b{font-weight:600;color:var(--danger)}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 11px;font-size:13.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.btn:hover{background:var(--sunk)}
+.btn.icon{padding:6px;width:34px;height:34px;justify-content:center}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn:disabled{opacity:.55;cursor:default}
+.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Feed list */
+.list{flex:1;min-height:0;overflow:auto;padding:8px 10px 40px;padding-left:max(10px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:2px}
+.card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:13px 10px;border-radius:10px;border:1px solid transparent;cursor:pointer;scroll-margin-top:12px}
+.card:hover{background:var(--sunk)}
+.card.active{background:var(--surface);border-color:var(--line)}
+.meta{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);min-width:0}
+.meta .src{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;flex:none}
+.tag{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--muted)}
+.title{font:600 18px/1.24 var(--read);margin:5px 0 4px;text-wrap:pretty}
+.sum{margin:0;color:var(--muted);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card.read .title{color:var(--muted);font-weight:400}
+.thumb{width:92px;aspect-ratio:1;border-radius:7px;overflow:hidden;background:var(--sunk);position:relative;max-width:100%}
+.thumb.vid{width:128px;aspect-ratio:16/9}
+.side{display:flex;flex-direction:column;align-items:stretch;gap:6px;width:92px}
+.side.vid{width:128px}
+.side .thumb{width:100%}
+.open{display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--surface)}
+.open:hover{background:var(--accent-soft)}
+.thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.thumb.vid::after{content:"";position:absolute;inset:auto auto 6px 6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M9 7v10l8-5z'/%3E%3C/svg%3E") center/16px no-repeat}
+.more{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+.empty{padding:40px 16px;text-align:center;color:var(--muted)}
+.empty h3{font:600 20px var(--read);color:var(--ink);margin:0 0 6px}
+
+/* Viewer (shared by desktop pane and phone inline) */
+.pane{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--surface)}
+.pane-empty{margin:auto;max-width:34ch;text-align:center;color:var(--muted);padding:24px}
+.pane-empty h2{font:600 26px/1.15 var(--read);color:var(--ink);margin:12px 0 8px;text-wrap:balance}
+.pane-empty kbd{font:600 12px var(--ui);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px;background:var(--bg)}
+.viewer{display:flex;flex-direction:column;min-height:0;height:100%}
+.vbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--surface)}
+.vbar .meta{flex:1;min-width:120px}
+.seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:2px}
+.seg button{border:0;background:none;padding:5px 11px;border-radius:6px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.vbody{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
+.livenote{font-size:12.5px;color:var(--muted);padding:7px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
+iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#fff}
+.video{width:100%;aspect-ratio:16/9;background:#000;max-width:100%}
+.video iframe{width:100%;height:100%;border:0;display:block}
+
+.reader{width:100%;max-width:68ch;margin:0 auto;padding:26px 22px 70px;font:400 19px/1.62 var(--read);overflow-wrap:break-word}
+.reader .kicker{font:500 13px var(--ui);color:var(--muted);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.reader h1{font:600 clamp(26px,3.2vw,38px)/1.12 var(--read);letter-spacing:-.01em;margin:10px 0 18px;text-wrap:balance}
+.reader h2,.reader h3{font-family:var(--read);line-height:1.2;margin:1.6em 0 .5em}
+.reader img,.reader video,.reader figure,.reader picture{max-width:100%;height:auto}
+.reader figure{margin:1.2em 0}
+.reader figcaption{font:13px/1.4 var(--ui);color:var(--muted);margin-top:6px}
+.reader a{color:var(--accent)}
+.reader blockquote{margin:1.2em 0;padding-left:16px;border-left:3px solid var(--line);color:var(--muted)}
+.reader pre{overflow:auto;font-size:14px;background:var(--bg);padding:12px;border-radius:6px}
+.reader table{display:block;overflow-x:auto;font:14px var(--ui)}
+.reader .orig{margin-top:2.4em;padding-top:16px;border-top:1px solid var(--line);font:500 14px var(--ui)}
+.skel{display:flex;flex-direction:column;gap:12px}
+.skel i{display:block;height:14px;border-radius:4px;background:var(--sunk);animation:pulse 1.2s ease-in-out infinite}
+.skel i.h{height:32px;width:80%}
+@keyframes pulse{50%{opacity:.5}}
+.fail{font:15px/1.5 var(--ui);color:var(--muted);border:1px dashed var(--line);border-radius:10px;padding:16px;margin-top:16px}
+.fail .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* Feeds dialog */
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 40px)}
+dialog::backdrop{background:rgba(10,14,20,.45)}
+.dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 42px)}
+.dlg header{display:flex;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
+.dlg header h2{font:600 22px var(--read);margin:0;flex:1}
+.dlg .inner{padding:16px 18px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.addrow{display:flex;gap:8px}
+.addrow input,.field input{flex:1;min-width:0;border:1px solid var(--line);background:var(--bg);border-radius:8px;padding:9px 11px;font-size:15px}
+.hint{font-size:13px;color:var(--muted);margin:0}
+.msg{font-size:13.5px;min-height:1.2em;margin:0}
+.msg.err{color:var(--danger)}
+.flist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.flist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.flist li:first-child{border-top:0}
+.flist .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flist .url{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.flist .er{font-size:12px;color:var(--danger)}
+.btn.danger{color:var(--danger)}
+.flist li.editing{display:block;background:var(--bg)}
+.flist .acts{display:flex;gap:6px}
+.editform{display:flex;flex-direction:column;gap:12px}
+.editform .field{margin:0}
+.editform .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.editform input{background:var(--surface)}
+.editform .row{display:flex;gap:8px;flex-wrap:wrap}
+.swatches{display:flex;gap:8px;flex-wrap:wrap}
+.sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 2px var(--bg)}
+.sw[aria-checked="true"]{border-color:var(--ink)}
+
+details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+
+/* Phone */
+@media (max-width:899px){
+  html,body{height:auto}
+  .app{display:block;height:auto}
+  .feedcol{border:0}
+  .top{position:sticky;top:0;z-index:5;padding-right:max(16px,env(safe-area-inset-right,0px))}
+  .list{overflow:visible;padding-right:max(10px,env(safe-area-inset-right,0px));padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+  .pane{display:none}
+  .card{scroll-margin-top:150px}
+  .inline{border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden;margin:2px 0 12px;display:flex;flex-direction:column;max-height:82vh}
+  .inline .viewer{height:auto;max-height:82vh}
+  .inline .vbar{padding-top:10px;justify-content:flex-end}
+  .inline .vbar .meta{display:none}
+  .inline iframe.live{flex:none;height:68vh}
+  .reader{padding:20px 16px 40px;font-size:18px}
+  .side{width:80px}.side.vid{width:112px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="feedcol">
+    <div class="top">
+      <div class="toprow">
+        <h1 class="brand">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>
+          Tideline
+        </h1>
+        <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+        </button>
+        <button class="btn" id="manage">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          Feeds
+        </button>
+      </div>
+      <div class="chips" id="chips" role="toolbar" aria-label="Filter by source"></div>
+      <div class="status" id="status" aria-live="polite"></div>
+    </div>
+    <div class="list" id="list"><div class="empty"><h3>Tideline isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
+  </section>
+  <section class="pane" id="pane" aria-label="Reading pane"></section>
+</div>
+
+<dialog id="dlg">
+  <div class="dlg">
+    <header>
+      <h2>Your feeds</h2>
+      <button class="btn icon" id="dlgClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="inner">
+      <form id="addForm" class="addrow" autocomplete="off">
+        <input id="addInput" type="text" inputmode="url" placeholder="Website, RSS link or YouTube channel" aria-label="Feed address">
+        <button class="btn primary" id="addBtn" type="submit">Add</button>
+      </form>
+      <p class="hint">Paste a site like <b>theguardian.com</b>, a feed link, or a YouTube channel as <b>@name</b>, a channel link, or any video from that channel. Tideline finds the feed for you.</p>
+      <p class="msg" id="addMsg" aria-live="polite"></p>
+      <ul class="flist" id="flist"></ul>
+      <details>
+        <summary>Advanced: use your own fetch proxy</summary>
+        <div class="field">
+          <p class="hint">Tideline reads feeds through free public proxies, which can be slow or go down. If you run your own, paste its prefix here. The feed address is added to the end.</p>
+          <input id="proxyInput" type="text" placeholder="https://my-proxy.example.com/?url=" aria-label="Custom proxy prefix">
+        </div>
+      </details>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+};
+const COLORS = ["#d9480f","#1c7ed6","#2b8a3e","#ae3ec9","#e67700","#c2255c","#0c8599","#5f3dc4","#5c940d","#1864ab"];
+const DEFAULT_FEEDS = [
+  {id:"bbc", title:"BBC News", url:"https://feeds.bbci.co.uk/news/rss.xml", color:COLORS[0]},
+  {id:"verge", title:"The Verge", url:"https://www.theverge.com/rss/index.xml", color:COLORS[1]},
+  {id:"veritasium", title:"Veritasium", url:"https://www.youtube.com/feeds/videos.xml?channel_id=UCHnyfMqiRRG1u-2MsSQLbXA", color:COLORS[2]}
+];
+const PAGE = 30;
+
+const state = {
+  feeds: store.get("tl.feeds", null) || DEFAULT_FEEDS.map(f => ({...f})),
+  items: store.get("tl.items", []),
+  read: new Set(store.get("tl.read", [])),
+  filter: "all",
+  shown: PAGE,
+  activeId: null,
+  modes: {},
+  lastUpdated: store.get("tl.updated", 0),
+  busy: false,
+  proxy: store.get("tl.proxy", "")
+};
+const readerCache = new Map();
+
+/* ---------- fetching ---------- */
+// Each relay: build(url) -> request URL; json:true means the page text is wrapped in {contents}
+const PROXIES = [
+  {build: u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)},
+  {build: u => "https://api.allorigins.win/get?url=" + encodeURIComponent(u), json: true},
+  {build: u => "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u)},
+  {build: u => "https://whateverorigin.org/get?url=" + encodeURIComponent(u), json: true},
+  {build: u => "https://corsproxy.io/?url=" + encodeURIComponent(u)},
+  {build: u => "https://api.cors.lol/?url=" + encodeURIComponent(u)}
+];
+async function fetchWithTimeout(url, ms){
+  const ctrl = new AbortController();
+  const t = setTimeout(() => ctrl.abort(), ms);
+  try{ return await fetch(url, {signal: ctrl.signal}); } finally { clearTimeout(t); }
+}
+// Ask every relay at once and use whichever answers first; cancel the rest.
+async function fetchText(url, ms = 10000){
+  const tries = [];
+  if (state.proxy) tries.push({build: u => state.proxy + encodeURIComponent(u)});
+  PROXIES.forEach(p => tries.push(p));
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try{
+    return await Promise.any(tries.map(async p => {
+      const r = await fetch(p.build(url), {signal: ctrl.signal});
+      if (!r.ok) throw new Error("The site answered with error " + r.status);
+      let t = await r.text();
+      if (p.json){ const j = JSON.parse(t); t = j.contents || ""; if (j.status && j.status.http_code >= 400) throw new Error("The site answered with error " + j.status.http_code); }
+      if (t.trim().length < 40) throw new Error("The site sent back an empty page");
+      return t;
+    }));
+  }catch(agg){
+    const errs = (agg.errors || []);
+    if (errs.some(e => e.name === "AbortError")) throw new Error("The site took too long to answer");
+    const http = errs.find(e => /error \d/.test(e.message));
+    throw new Error(http ? http.message : "Couldn't reach that address");
+  }finally{
+    clearTimeout(timer);
+    ctrl.abort();
+  }
+}
+// Dedicated feed service: returns parsed JSON with CORS. Used first for feeds.
+async function fetchViaRss2json(url, feed){
+  const r = await fetchWithTimeout("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url), 12000);
+  const j = await r.json();
+  if (j.status !== "ok" || !Array.isArray(j.items)) throw new Error(j.message || "Feed service couldn't read it");
+  const items = j.items.map(it => makeItem(feed, {
+    title: htmlToText(it.title),
+    link: it.link || it.guid,
+    date: Date.parse((it.pubDate || "").replace(" ", "T") + "Z") || 0,
+    summary: htmlToText(it.description || it.content),
+    image: it.thumbnail || (it.enclosure && /image/.test(it.enclosure.type || "") && it.enclosure.link) || firstImg(it.content) || firstImg(it.description)
+  })).sort((a, b) => b.date - a.date);
+  return {title: htmlToText((j.feed && j.feed.title) || ""), items};
+}
+// Get a feed by any route that works
+async function loadFeed(url, feed){
+  // Run the feed service and the relays side by side; take the first good answer.
+  const viaRelay = fetchText(url).then(t => parseFeed(t, feed));
+  try{
+    return await Promise.any([fetchViaRss2json(url, feed), viaRelay]);
+  }catch(agg){
+    const errs = agg.errors || [];
+    const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service/.test(e.message));
+    throw real || new Error("Couldn't reach that feed");
+  }
+}
+async function pool(arr, n, fn){
+  const out = new Array(arr.length); let i = 0;
+  await Promise.all(Array.from({length: Math.min(n, arr.length)}, async () => {
+    while (i < arr.length){ const k = i++; out[k] = await fn(arr[k], k); }
+  }));
+  return out;
+}
+
+/* ---------- parsing ---------- */
+const txt = n => n ? n.textContent.trim() : "";
+const lc = n => n.nodeName.toLowerCase();
+const kids = (el, name) => el ? [...el.children].filter(c => lc(c) === name) : [];
+const kid = (el, name) => kids(el, name)[0];
+const deep = (el, name) => el ? [...el.getElementsByTagName("*")].filter(c => lc(c) === name) : [];
+const attr = (el, a) => el ? el.getAttribute(a) : null;
+const safeUrl = u => { try{ const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : null; }catch{ return null; } };
+function htmlToText(h){
+  if (!h) return "";
+  if (!/[<&]/.test(h)) return h.replace(/\s+/g, " ").trim();
+  const d = new DOMParser().parseFromString(h, "text/html");
+  return (d.body ? d.body.textContent : "").replace(/\s+/g, " ").trim();
+}
+function firstImg(h){
+  if (!h) return null;
+  const m = h.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m ? m[1].replace(/&amp;/g, "&") : null;
+}
+function ytId(u){
+  try{
+    const x = new URL(u);
+    if (x.hostname.endsWith("youtube.com")){
+      if (x.searchParams.get("v")) return x.searchParams.get("v");
+      const m = x.pathname.match(/^\/(?:shorts|live)\/([\w-]{11})/); if (m) return m[1];
+    }
+    if (x.hostname === "youtu.be") return x.pathname.slice(1, 12) || null;
+  }catch{}
+  return null;
+}
+function makeItem(feed, o){
+  const link = safeUrl(o.link) || "";
+  const videoId = o.videoId || ytId(link);
+  return {
+    id: feed.id + "|" + (link || o.title),
+    feedId: feed.id,
+    title: o.title || "Untitled",
+    link,
+    date: o.date || 0,
+    summary: (o.summary || "").slice(0, 320),
+    image: videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : safeUrl(o.image),
+    videoId: videoId || null
+  };
+}
+function rssItem(e, feed){
+  const desc = txt(kid(e, "description")), content = txt(kid(e, "content:encoded"));
+  const guid = kid(e, "guid");
+  const link = txt(kid(e, "link")) || (guid && attr(guid, "ispermalink") !== "false" ? txt(guid) : "");
+  const media = deep(e, "media:content").find(m => /image/.test(attr(m,"medium") || attr(m,"type") || "") || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(attr(m,"url") || ""));
+  const encl = kids(e, "enclosure").find(x => /^image/.test(attr(x, "type") || ""));
+  const image = attr(deep(e, "media:thumbnail")[0], "url") || attr(media, "url") || attr(encl, "url") || attr(kid(e, "itunes:image"), "href") || firstImg(content) || firstImg(desc);
+  return makeItem(feed, {
+    title: htmlToText(txt(kid(e, "title"))),
+    link,
+    date: Date.parse(txt(kid(e, "pubdate")) || txt(kid(e, "dc:date"))) || 0,
+    summary: htmlToText(desc || content),
+    image
+  });
+}
+function atomItem(e, feed){
+  const links = kids(e, "link");
+  const l = links.find(x => (attr(x, "rel") || "alternate") === "alternate") || links[0];
+  const vid = txt(kid(e, "yt:videoid"));
+  const group = kid(e, "media:group");
+  const content = txt(kid(e, "content")), summary = txt(kid(e, "summary"));
+  return makeItem(feed, {
+    title: htmlToText(txt(kid(e, "title"))),
+    link: attr(l, "href"),
+    date: Date.parse(txt(kid(e, "published")) || txt(kid(e, "updated"))) || 0,
+    summary: group ? txt(kid(group, "media:description")) : htmlToText(summary || content),
+    image: attr(deep(e, "media:thumbnail")[0], "url") || firstImg(content) || firstImg(summary),
+    videoId: vid || null
+  });
+}
+function parseFeed(xml, feed){
+  const doc = new DOMParser().parseFromString(xml.replace(/^﻿/, "").trim(), "application/xml");
+  const root = doc.documentElement;
+  if (!root || doc.getElementsByTagName("parsererror").length) throw new Error("That address isn't an RSS or Atom feed");
+  const rn = lc(root);
+  let title = "", items = [];
+  if (rn === "feed"){
+    title = txt(kid(root, "title"));
+    items = kids(root, "entry").map(e => atomItem(e, feed));
+  } else if (rn === "rss" || rn.endsWith("rdf")){
+    const ch = deep(root, "channel")[0];
+    title = txt(kid(ch, "title"));
+    items = deep(root, "item").map(e => rssItem(e, feed));
+  } else throw new Error("That address isn't an RSS or Atom feed");
+  items = items.filter(i => i.link || i.title).sort((a, b) => b.date - a.date).slice(0, 40);
+  return {title: htmlToText(title), items};
+}
+const looksLikeFeed = t => /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000));
+
+// Find a YouTube channel ID from a channel or video page. Tries several routes at once.
+function channelIdIn(text, isVideo){
+  const pats = isVideo
+    ? [/"channelId":"(UC[\w-]{22})"/, /itemprop="channelId" content="(UC[\w-]{22})"/, /\/channel\/(UC[\w-]{22})/]
+    : [/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/, /"externalId":"(UC[\w-]{22})"/,
+       /channel_id=(UC[\w-]{22})/, /"browseId":"(UC[\w-]{22})"/, /youtube\.com\/channel\/(UC[\w-]{22})/];
+  for (const p of pats){ const m = text.match(p); if (m) return m[1]; }
+  return null;
+}
+async function findChannelId(page, original){
+  const isVideo = /watch\?v=/.test(page);
+  const need = t => { const id = channelIdIn(t, isVideo); if (!id) throw new Error("no id"); return id; };
+  const routes = [
+    fetchText(page, 12000).then(need),
+    fetchWithTimeout("https://r.jina.ai/" + page, 15000).then(r => { if (!r.ok) throw new Error("jina " + r.status); return r.text(); }).then(need)
+  ];
+  try{ return await Promise.any(routes); }catch{ return null; }
+}
+async function resolveInput(raw){
+  let s = raw.trim();
+  if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
+  if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  let u;
+  try{ u = new URL(s); }catch{ throw new Error("That doesn't look like a web address"); }
+  const host = u.hostname.replace(/^(www|m|music)\./, "");
+  if ((host === "youtube.com" && !u.pathname.startsWith("/feeds/")) || host === "youtu.be"){
+    let id = u.searchParams.get("channel_id") || (u.pathname.match(/\/channel\/(UC[\w-]{22})/) || [])[1];
+    if (!id){
+      let page;
+      if (host === "youtu.be" || u.searchParams.get("v") || /^\/(shorts|live)\//.test(u.pathname)){
+        const vid = ytId(u.href); if (!vid) throw new Error("Couldn't read that YouTube link");
+        page = "https://www.youtube.com/watch?v=" + vid;                                       // a video: find its channel
+      } else {
+        const seg = u.pathname.split("/").filter(Boolean);
+        page = "https://www.youtube.com/" + (seg[0] && seg[0].startsWith("@") ? seg[0] : seg.slice(0, 2).join("/"));
+      }
+      id = await findChannelId(page, u);
+    }
+    if (!id) throw new Error("Couldn't find that YouTube channel. On the channel page, tap Share, then Copy channel ID, and paste the ID here");
+    return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + id};
+  }
+  const GUESSES = ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"];
+  const candidates = [u.href, ...GUESSES.map(p => new URL(p, u.origin).href)];
+  // Route A: read the page and look for its feed link. Route B: ask the feed service about likely feed addresses.
+  // All run at once; the first one that finds a feed wins.
+  const routeA = fetchText(u.href).then(t => {
+    if (looksLikeFeed(t)) return {url: u.href, text: t};
+    const d = new DOMParser().parseFromString(t, "text/html");
+    const l = d.querySelector('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]');
+    if (l && l.getAttribute("href")) return {url: new URL(l.getAttribute("href"), u.href).href};
+    throw new Error("no feed link");
+  });
+  const routeB = candidates.map(g => fetchViaRss2json(g, {id: "probe"}).then(() => ({url: g})));
+  try{ return await Promise.any([routeA, ...routeB]); }
+  catch{ throw new Error("Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead"); }
+}
+
+/* ---------- helpers ---------- */
+const feedById = id => state.feeds.find(f => f.id === id);
+const itemById = id => state.items.find(i => i.id === id);
+const isWide = () => matchMedia("(min-width:900px)").matches;
+function ago(ms){
+  if (!ms) return "";
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 60) return "just now";
+  if (s < 3600) return Math.floor(s / 60) + " min ago";
+  if (s < 86400) return Math.floor(s / 3600) + " h ago";
+  if (s < 86400 * 7) return Math.floor(s / 86400) + " d ago";
+  return new Date(ms).toLocaleDateString(undefined, {day:"numeric", month:"short", year: s > 86400 * 300 ? "numeric" : undefined});
+}
+function el(tag, cls, text){
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function metaRow(it){
+  const f = feedById(it.feedId) || {title:"", color:"#888"};
+  const m = el("div", "meta");
+  const d = el("span", "dot"); d.style.background = f.color; m.append(d);
+  m.append(el("span", "src", f.title || "Feed"));
+  if (it.date){ m.append(el("span", null, "·")); const t = el("time", null, ago(it.date)); t.dateTime = new Date(it.date).toISOString(); m.append(t); }
+  if (it.videoId) m.append(el("span", "tag", "Video"));
+  return m;
+}
+function save(){
+  store.set("tl.feeds", state.feeds);
+  store.set("tl.items", state.items);
+  store.set("tl.read", [...state.read].slice(-3000));
+  store.set("tl.updated", state.lastUpdated);
+}
+function nextColor(){
+  const used = new Set(state.feeds.map(f => f.color));
+  return COLORS.find(c => !used.has(c)) || COLORS[state.feeds.length % COLORS.length];
+}
+const uid = () => Math.random().toString(36).slice(2, 9);
+
+/* ---------- rendering: chips + status ---------- */
+function renderChips(){
+  const c = $("#chips"); c.textContent = "";
+  const mk = (id, label, color) => {
+    const b = el("button", "chip");
+    b.type = "button";
+    b.setAttribute("aria-pressed", String(state.filter === id));
+    if (color){ const d = el("span", "dot"); d.style.background = color; b.append(d); }
+    b.append(document.createTextNode(label));
+    b.onclick = () => { state.filter = id; state.shown = PAGE; renderChips(); renderList(); $("#list").scrollTop = 0; };
+    c.append(b);
+  };
+  mk("all", "All");
+  state.feeds.forEach(f => mk(f.id, f.title || "Feed", f.color));
+}
+function renderStatus(){
+  const s = $("#status"); s.textContent = "";
+  if (state.busy){ s.textContent = "Checking for new stories…"; return; }
+  const bad = state.feeds.filter(f => f.error).length;
+  const n = state.feeds.length;
+  s.append(document.createTextNode(state.lastUpdated ? `Updated ${ago(state.lastUpdated)} · ${n} feed${n === 1 ? "" : "s"}` : `${n} feed${n === 1 ? "" : "s"}`));
+  if (bad && bad === n){ s.textContent = ""; s.append(el("b", null, "Couldn't reach any feeds. ")); s.append(document.createTextNode("Check you're online and that Tideline is open in a web browser, then tap refresh.")); }
+  else if (bad){ s.append(document.createTextNode(" · ")); s.append(el("b", null, `${bad} couldn't update`)); }
+}
+
+/* ---------- rendering: list ---------- */
+let io;
+const visibleItems = () => state.filter === "all" ? state.items : state.items.filter(i => i.feedId === state.filter);
+function cardEl(it){
+  const a = el("article", "card");
+  if (state.read.has(it.id)) a.classList.add("read");
+  if (it.id === state.activeId) a.classList.add("active");
+  a.tabIndex = 0; a.setAttribute("role", "button"); a.dataset.id = it.id;
+  const body = el("div");
+  body.style.minWidth = "0";
+  body.append(metaRow(it), el("h2", "title", it.title));
+  if (it.summary) body.append(el("p", "sum", it.summary));
+  a.append(body);
+  const side = el("div", "side" + (it.videoId ? " vid" : ""));
+  if (it.image){
+    const th = el("div", "thumb" + (it.videoId ? " vid" : ""));
+    const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.src = it.image;
+    img.onerror = () => th.remove();
+    th.append(img); side.append(th);
+  }
+  if (it.link){
+    const o = el("a", "open"); o.href = it.link; o.target = "_blank"; o.rel = "noopener noreferrer";
+    o.setAttribute("aria-label", "Open " + it.title + " on the website");
+    o.innerHTML = ICON_EXT; o.append(document.createTextNode(" Open"));
+    o.addEventListener("click", e => { e.stopPropagation(); state.read.add(it.id); save(); a.classList.add("read"); });
+    o.addEventListener("keydown", e => e.stopPropagation());
+    side.append(o);
+  }
+  if (side.children.length) a.append(side);
+  a.onclick = () => openItem(it.id);
+  a.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openItem(it.id); } };
+  return a;
+}
+function renderList(){
+  const list = $("#list");
+  if (io) io.disconnect();
+  list.textContent = "";
+  const all = visibleItems();
+  if (!all.length){
+    const e = el("div", "empty");
+    if (state.busy){ e.append(el("h3", null, "Loading your feeds…"), el("p", null, "This takes a few seconds the first time.")); }
+    else if (!state.feeds.length){ e.append(el("h3", null, "No feeds yet"), el("p", null, "Tap Feeds to add a website or YouTube channel.")); }
+    else { e.append(el("h3", null, "Nothing here yet"), el("p", null, "Try refreshing, or check the Feeds list for any that couldn't load.")); }
+    list.append(e); return;
+  }
+  all.slice(0, state.shown).forEach(it => list.append(cardEl(it)));
+  if (!isWide() && state.activeId) placeInline();
+  addSentinel(all.length);
+}
+function addSentinel(total){
+  const list = $("#list");
+  if (state.shown >= total){ list.append(el("div", "more", "You're all caught up")); return; }
+  const s = el("div", "more", "Loading more…"); list.append(s);
+  io = new IntersectionObserver(es => {
+    if (!es.some(e => e.isIntersecting)) return;
+    io.disconnect(); s.remove();
+    const all = visibleItems();
+    all.slice(state.shown, state.shown + PAGE).forEach(it => list.append(cardEl(it)));
+    state.shown += PAGE;
+    addSentinel(all.length);
+  }, {rootMargin: "600px"});
+  io.observe(s);
+}
+function markActive(){
+  document.querySelectorAll(".card").forEach(c => {
+    c.classList.toggle("active", c.dataset.id === state.activeId);
+    if (state.read.has(c.dataset.id)) c.classList.add("read");
+  });
+}
+
+/* ---------- viewer ---------- */
+const ICON_EXT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
+const ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+let viewerEl = null;
+
+function openItem(id){
+  const it = itemById(id); if (!it) return;
+  if (!isWide() && state.activeId === id){ closeViewer(); return; }
+  state.activeId = id;
+  state.read.add(id); save();
+  markActive();
+  viewerEl = buildViewer(it);
+  if (isWide()){
+    $("#pane").replaceChildren(viewerEl);
+  } else {
+    placeInline();
+    const card = cardFor(id);
+    if (card) requestAnimationFrame(() => card.scrollIntoView({block: "start", behavior: matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth"}));
+  }
+}
+const cardFor = id => [...document.querySelectorAll(".card")].find(c => c.dataset.id === id);
+function placeInline(){
+  document.querySelectorAll(".inline").forEach(n => n.remove());
+  const card = cardFor(state.activeId);
+  if (!card || !viewerEl) return;
+  const wrap = el("div", "inline"); wrap.append(viewerEl);
+  card.after(wrap);
+}
+function closeViewer(){
+  state.activeId = null; viewerEl = null;
+  document.querySelectorAll(".inline").forEach(n => n.remove());
+  renderPaneEmpty(); markActive();
+}
+function renderPaneEmpty(){
+  const p = el("div", "pane-empty");
+  p.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="color:var(--accent)"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>';
+  p.append(el("h2", null, "Pick a story from the feed"));
+  const t = el("p"); t.innerHTML = 'Articles open in Reader view. Switch to <b>Live</b> to load the site itself, or tap <b>Open</b> on any story for a new tab. Use <kbd>J</kbd> and <kbd>K</kbd> to move through stories.';
+  p.append(t);
+  $("#pane").replaceChildren(p);
+}
+function buildViewer(it){
+  const v = el("div", "viewer");
+  const bar = el("div", "vbar");
+  bar.append(metaRow(it));
+  const body = el("div", "vbody");
+  if (!it.videoId){
+    const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "View mode");
+    const mode = state.modes[it.id] || "reader";
+    [["reader", "Reader"], ["live", "Live"]].forEach(([m, label]) => {
+      const b = el("button", null, label); b.type = "button";
+      b.setAttribute("aria-pressed", String(mode === m));
+      b.onclick = () => {
+        state.modes[it.id] = m;
+        seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+        renderBody(it, body);
+      };
+      seg.append(b);
+    });
+    bar.append(seg);
+  }
+  const x = el("button", "btn icon"); x.type = "button"; x.setAttribute("aria-label", "Close"); x.innerHTML = ICON_X;
+  x.onclick = closeViewer;
+  bar.append(x);
+  v.append(bar, body);
+  renderBody(it, body);
+  return v;
+}
+function renderBody(it, body){
+  body.textContent = "";
+  body.scrollTop = 0;
+  if (it.videoId){
+    const box = el("div", "video");
+    const f = el("iframe");
+    f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1`;
+    f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
+    box.append(f); body.append(box);
+    const r = el("div", "reader");
+    r.append(el("h1", null, it.title));
+    const desc = (it.summary || "").trim();
+    if (desc) r.append(el("p", null, desc + (desc.length >= 320 ? "…" : "")));
+    const o = el("p", "orig"); const a = el("a", null, "Watch on YouTube"); a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer"; o.append(a);
+    r.append(o); body.append(r);
+    return;
+  }
+  const mode = state.modes[it.id] || "reader";
+  if (mode === "live"){
+    body.append(el("div", "livenote", "Some sites refuse to load inside other apps. If this stays blank, use Reader or the Open link on the story."));
+    const f = el("iframe", "live");
+    f.src = it.link; f.title = it.title; f.referrerPolicy = "strict-origin-when-cross-origin";
+    f.setAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-forms");
+    body.append(f);
+    return;
+  }
+  loadReader(it, body);
+}
+async function readerViaRelay(link){
+  const html = await fetchText(link, 15000);
+  if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const base = doc.createElement("base"); base.href = link; doc.head.prepend(base);
+  const parsed = new Readability(doc, {charThreshold: 300}).parse();
+  if (!parsed || !parsed.content || (parsed.textContent || "").trim().length < 200) throw new Error("This page doesn't have a readable article");
+  return parsed;
+}
+// Small Markdown converter, used if the Markdown library fails to load
+function miniMarkdown(md){
+  const esc = t => t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+  const inline = t => esc(t)
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (m, a, u) => /^https?:/.test(u) ? `<img alt="${a}" src="${u}">` : "")
+    .replace(/\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (m, a, u) => /^https?:/.test(u) ? `<a href="${u}">${a}</a>` : a)
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])[*_]([^*_]+)[*_]/g, "$1<em>$2</em>")
+    .replace(/`([^`]+)`/g, "<code>$1</code>");
+  return md.replace(/\r/g, "").split(/\n\s*\n/).map(block => {
+    const b = block.trim(); if (!b) return "";
+    const h = b.match(/^(#{1,6})\s+(.*)$/s);
+    if (h && !b.includes("\n")) return `<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`;
+    const lines = b.split("\n");
+    if (lines.every(l => /^\s*([*+-]|\d+\.)\s+/.test(l) || /^\s{2,}\S/.test(l))){
+      const tag = /^\s*\d+\./.test(lines[0]) ? "ol" : "ul";
+      return `<${tag}>` + lines.filter(l => /^\s*([*+-]|\d+\.)\s+/.test(l)).map(l => "<li>" + inline(l.replace(/^\s*([*+-]|\d+\.)\s+/, "")) + "</li>").join("") + `</${tag}>`;
+    }
+    if (lines.every(l => /^>/.test(l))) return "<blockquote><p>" + inline(lines.map(l => l.replace(/^>\s?/, "")).join(" ")) + "</p></blockquote>";
+    if (/^[-*_]{3,}$/.test(b)) return "<hr>";
+    return "<p>" + inline(lines.join(" ")) + "</p>";
+  }).join("\n");
+}
+async function readerViaJina(link){
+  const r = await fetchWithTimeout("https://r.jina.ai/" + link, 20000);
+  if (!r.ok) throw new Error("Reader service answered with error " + r.status);
+  let md = await r.text();
+  const i = md.indexOf("Markdown Content:");
+  let byline = null;
+  if (i >= 0){ md = md.slice(i + 17); }
+  md = md.trim().replace(/^#{1,2} [^\n]*\n+/, "").replace(/^=+\n+/, "");
+  if (md.length < 200) throw new Error("This page doesn't have a readable article");
+  const html = window.marked ? marked.parse(md) : miniMarkdown(md);
+  // Jina returns the whole page (menus, comments...). Run the same article extraction over it.
+  if (typeof Readability === "function"){
+    const doc = new DOMParser().parseFromString("<!doctype html><html><head><base href=\"" + link.replace(/"/g, "") + "\"><title></title></head><body><article>" + html + "</article></body></html>", "text/html");
+    const parsed = new Readability(doc, {charThreshold: 300}).parse();
+    if (parsed && (parsed.textContent || "").trim().length >= 200) return parsed;
+  }
+  return {content: html, textContent: md.replace(/[#*_>\[\]()!`-]/g, " "), byline};
+}
+// Prefer extraction from the original page; if Jina answers first, give the relays 3 more seconds.
+async function getArticle(link){
+  const relayP = readerViaRelay(link), jinaP = readerViaJina(link);
+  relayP.catch(() => {}); jinaP.catch(() => {});
+  const first = await Promise.any([relayP.then(a => ({a, own: true})), jinaP.then(a => ({a, own: false}))]);
+  if (first.own) return first.a;
+  try{ return await Promise.race([relayP, new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 3000))]); }
+  catch{ return first.a; }
+}
+// Remove leftovers that aren't the article: menus, share bars, comments, "related" blocks.
+const JUNK_HEAD = /^\s*(\d+\s+)?(comments?|responses?|replies|discussion|join the conversation|leave a (reply|comment)|related( stories| articles| content| reading| topics)?|more (from|on|stories|like this|to explore)|read more|read next|you (may|might) (also )?like|recommended|top stories|most (read|popular|viewed)|trending|latest (news|stories)|sign up|newsletter|subscribe|share this|follow us|about the author|tags?|topics?)\b/i;
+const JUNK_TEXT = /^(share|tweet|email|copy link|print|advertisement|skip to (main )?content|sign in|log in|subscribe|menu|close|search)$/i;
+function cleanArticle(root){
+  const total = root.textContent.length || 1;
+  [...root.querySelectorAll("h1,h2,h3,h4")].forEach(h => {
+    if (!root.contains(h) || !JUNK_HEAD.test(h.textContent)) return;
+    let n = h;
+    while (n.parentNode && n.parentNode !== root) n = n.parentNode;
+    if (!n.parentNode) return;
+    const before = root.textContent.indexOf(h.textContent.trim());
+    if (before > total * 0.4){ while (n.nextSibling) n.nextSibling.remove(); n.remove(); }   // late in the page: cut everything from here on
+    else { const nx = h.nextElementSibling; if (nx && /^(UL|OL|DIV|NAV)$/.test(nx.tagName) && nx.textContent.length < 600) nx.remove(); h.remove(); }
+  });
+  const linkRatio = e => { const t = e.textContent.replace(/\s+/g, " ").trim().length || 1; let l = 0; e.querySelectorAll("a").forEach(a => l += a.textContent.replace(/\s+/g, " ").trim().length); return l / t; };
+  root.querySelectorAll("ul,ol").forEach(list => {
+    const items = list.querySelectorAll("li"); if (!items.length) return;
+    const avg = list.textContent.trim().length / items.length;
+    if (linkRatio(list) > 0.7 && avg < 60) list.remove();
+  });
+  root.querySelectorAll("p,div").forEach(p => {
+    const t = p.textContent.replace(/\s+/g, " ").trim();
+    if (p.querySelector("img,figure,picture")) return;
+    if (!t || JUNK_TEXT.test(t) || (t.length < 80 && linkRatio(p) > 0.8)) p.remove();
+  });
+  root.querySelectorAll("img").forEach(i => {
+    const hint = ((i.getAttribute("alt") || "") + " " + (i.getAttribute("src") || "")).toLowerCase();
+    if (/logo|avatar|icon|sprite|badge|pixel|tracking|gravatar|emoji/.test(hint)) i.remove();
+  });
+}
+// Fallback cleaner if DOMPurify fails to load: keep only safe article tags and attributes
+function basicSanitize(html){
+  const OK = new Set(["P","H1","H2","H3","H4","H5","H6","UL","OL","LI","A","IMG","FIGURE","FIGCAPTION","BLOCKQUOTE","EM","STRONG","B","I","U","CODE","PRE","BR","HR","TABLE","THEAD","TBODY","TR","TD","TH","SPAN","DIV","SECTION","ARTICLE","PICTURE","SUP","SUB","SMALL"]);
+  const DROP = new Set(["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","FORM","INPUT","BUTTON","SVG","MATH","NOSCRIPT","TEMPLATE","LINK","META","BASE","SELECT","TEXTAREA","VIDEO","AUDIO","SOURCE"]);
+  const d = new DOMParser().parseFromString("<body>" + html + "</body>", "text/html");
+  const walk = node => {
+    [...node.children].forEach(c => {
+      if (DROP.has(c.tagName)) { c.remove(); return; }
+      walk(c);
+      if (!OK.has(c.tagName)) { c.replaceWith(...c.childNodes); return; }
+      [...c.attributes].forEach(a => {
+        const keep = (c.tagName === "A" && a.name === "href") || (c.tagName === "IMG" && (a.name === "src" || a.name === "alt"));
+        if (!keep || ((a.name === "href" || a.name === "src") && !/^https?:/i.test(a.value))) c.removeAttribute(a.name);
+      });
+    });
+  };
+  walk(d.body);
+  const frag = document.createDocumentFragment();
+  [...d.body.childNodes].forEach(n => frag.append(document.importNode(n, true)));
+  return frag;
+}
+async function loadReader(it, body){
+  const r = el("div", "reader");
+  const kick = el("div", "kicker");
+  const f = feedById(it.feedId);
+  kick.append(el("span", null, (f && f.title) || ""));
+  if (it.date) kick.append(el("span", null, "· " + new Date(it.date).toLocaleString(undefined, {weekday:"short", day:"numeric", month:"short", hour:"2-digit", minute:"2-digit"})));
+  r.append(kick, el("h1", null, it.title));
+  const slot = el("div");
+  slot.innerHTML = '<div class="skel"><i></i><i></i><i style="width:92%"></i><i></i><i style="width:70%"></i><i></i><i style="width:85%"></i></div>';
+  r.append(slot); body.append(r);
+  try{
+    let art = readerCache.get(it.id);
+    if (!art){
+      if (!it.link) throw new Error("This story has no link");
+      // Two routes at once: our own extraction via the relays, and Jina's reader service. First good one wins.
+      try{ art = await getArticle(it.link); }
+      catch(agg){ const e = (agg.errors || []).find(x => /readable|reader tool/.test(x.message)); throw e || new Error("The page couldn't be fetched"); }
+      readerCache.set(it.id, art);
+    }
+    if (!slot.isConnected) return;
+    const words = (art.textContent || "").trim().split(/\s+/).length;
+    const extra = [art.byline, Math.max(1, Math.round(words / 230)) + " min read"].filter(Boolean).join(" · ");
+    kick.append(el("span", null, "· " + extra));
+    const holder = el("div");
+    if (window.DOMPurify){
+      holder.innerHTML = DOMPurify.sanitize(art.content, {FORBID_TAGS:["style","form","input","button","iframe","svg"], FORBID_ATTR:["style","class","id"]});
+    } else {
+      holder.append(basicSanitize(art.content));
+    }
+    cleanArticle(holder);
+    holder.querySelectorAll("a").forEach(a => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
+    holder.querySelectorAll("img").forEach(i => { i.loading = "lazy"; i.referrerPolicy = "no-referrer"; i.removeAttribute("height"); i.onerror = () => i.remove(); });
+    // drop a leading duplicate headline
+    const h = holder.querySelector("h1, h2");
+    if (h && h.textContent.trim() === it.title.trim()) h.remove();
+    slot.replaceChildren(holder);
+    const o = el("p", "orig"); const a = el("a", null, "Read the original on " + new URL(it.link).hostname.replace(/^www\./, "")); a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer"; o.append(a);
+    r.append(o);
+  }catch(err){
+    if (!slot.isConnected) return;
+    const box = el("div", "fail");
+    if (it.summary) { const p = el("p", null, it.summary); p.style.cssText = "margin:0 0 10px;font:17px/1.55 var(--read);color:var(--ink)"; box.append(p); }
+    box.append(el("div", null, "Reader view couldn't load this page. " + err.message.replace(/\.$/, "") + "."));
+    const row = el("div", "row");
+    const live = el("button", "btn", "Try Live view"); live.type = "button";
+    live.onclick = () => { state.modes[it.id] = "live"; const seg = body.parentElement.querySelector(".seg"); if (seg) seg.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-pressed", String(i === 1))); renderBody(it, body); };
+    const open = el("a", "btn primary"); open.href = it.link; open.target = "_blank"; open.rel = "noopener noreferrer"; open.innerHTML = ICON_EXT; open.append(document.createTextNode(" Open on site"));
+    row.append(live, open); box.append(row);
+    slot.replaceChildren(box);
+  }
+}
+
+/* ---------- refresh ---------- */
+async function refreshAll(){
+  if (state.busy || !state.feeds.length) return;
+  state.busy = true; renderStatus();
+  const btn = $("#refresh"); btn.disabled = true; btn.classList.add("spin");
+  if (!state.items.length) renderList();
+  const results = await pool(state.feeds, 4, async f => {
+    try{
+      const p = await loadFeed(f.url, f);
+      if (!f.title && p.title) f.title = p.title;
+      f.error = null;
+      return p.items;
+    }catch(e){ f.error = e.message; return null; }
+  });
+  const ids = new Set(state.feeds.map(f => f.id));
+  const fresh = new Map(state.feeds.map((f, i) => [f.id, results[i]]));
+  let merged = state.items.filter(i => ids.has(i.feedId) && !fresh.get(i.feedId));
+  fresh.forEach(v => { if (v) merged = merged.concat(v); });
+  const seen = new Set();
+  state.items = merged.filter(i => !seen.has(i.id) && seen.add(i.id)).sort((a, b) => b.date - a.date);
+  state.lastUpdated = Date.now();
+  state.busy = false;
+  btn.disabled = false; btn.classList.remove("spin");
+  save(); renderChips(); renderStatus(); renderFeedList();
+  const keepScroll = $("#list").scrollTop;
+  renderList();
+  $("#list").scrollTop = keepScroll;
+}
+
+/* ---------- feeds dialog ---------- */
+const dlg = $("#dlg");
+let editingId = null;
+function renderFeedList(){
+  const ul = $("#flist"); ul.textContent = "";
+  if (!state.feeds.length){ const li = el("li"); li.append(el("span"), el("span", "url", "No feeds yet. Add one above.")); ul.append(li); return; }
+  state.feeds.forEach((f, idx) => {
+    const li = el("li");
+    if (f.id === editingId){ li.className = "editing"; li.append(editForm(f, idx)); ul.append(li); return; }
+    const d = el("span", "dot"); d.style.background = f.color;
+    const info = el("div"); info.style.minWidth = "0";
+    info.append(el("div", "nm", f.title || "Untitled feed"), el("div", "url", f.url));
+    if (f.error) info.append(el("div", "er", "Couldn't update: " + f.error));
+    const acts = el("div", "acts");
+    const ed = el("button", "btn", "Edit"); ed.type = "button";
+    ed.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n) n.focus(); };
+    const rm = el("button", "btn", "Remove"); rm.type = "button";
+    let armed = false, timer;
+    rm.onclick = () => {
+      if (!armed){ armed = true; rm.textContent = "Confirm"; rm.classList.add("danger"); timer = setTimeout(() => { armed = false; rm.textContent = "Remove"; rm.classList.remove("danger"); }, 3000); return; }
+      clearTimeout(timer);
+      state.feeds = state.feeds.filter(x => x.id !== f.id);
+      state.items = state.items.filter(i => i.feedId !== f.id);
+      if (state.filter === f.id) state.filter = "all";
+      if (state.activeId && !itemById(state.activeId)) closeViewer();
+      save(); renderFeedList(); renderChips(); renderStatus(); renderList();
+      setMsg(`Removed ${f.title || "feed"}.`);
+    };
+    acts.append(ed, rm);
+    li.append(d, info, acts); ul.append(li);
+  });
+}
+function editForm(f, idx){
+  const form = el("form", "editform"); form.autocomplete = "off";
+  const nameF = el("label", "field"); nameF.append(el("span", "lbl", "Name"));
+  const name = el("input"); name.id = "ef-name"; name.type = "text"; name.value = f.title || ""; name.placeholder = "Feed name";
+  nameF.append(name);
+  const urlF = el("label", "field"); urlF.append(el("span", "lbl", "Link"));
+  const url = el("input"); url.id = "ef-url"; url.type = "text"; url.inputMode = "url"; url.value = f.url;
+  urlF.append(url, el("span", "hint", "A feed link, website or YouTube channel. Changing it reloads this feed's stories."));
+  const colF = el("div", "field"); colF.append(el("span", "lbl", "Colour"));
+  const sw = el("div", "swatches"); sw.setAttribute("role", "radiogroup"); sw.setAttribute("aria-label", "Colour");
+  let color = f.color;
+  COLORS.forEach(c => {
+    const b = el("button", "sw"); b.type = "button"; b.style.background = c;
+    b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(c === color)); b.setAttribute("aria-label", "Colour " + c);
+    b.onclick = () => { color = c; sw.querySelectorAll(".sw").forEach(x => x.setAttribute("aria-checked", String(x === b))); };
+    sw.append(b);
+  });
+  colF.append(sw);
+  const order = el("div", "field"); order.append(el("span", "lbl", "Position"));
+  const orow = el("div", "row");
+  const up = el("button", "btn", "Move up"); up.type = "button"; up.disabled = idx === 0;
+  const down = el("button", "btn", "Move down"); down.type = "button"; down.disabled = idx === state.feeds.length - 1;
+  const move = dir => { const i = state.feeds.indexOf(f); const j = i + dir; [state.feeds[i], state.feeds[j]] = [state.feeds[j], state.feeds[i]]; save(); renderChips(); renderFeedList(); };
+  up.onclick = () => move(-1); down.onclick = () => move(1);
+  orow.append(up, down); order.append(orow);
+  const msg = el("p", "msg");
+  const row = el("div", "row");
+  const saveB = el("button", "btn primary", "Save"); saveB.type = "submit";
+  const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
+  cancel.onclick = () => { editingId = null; renderFeedList(); };
+  row.append(saveB, cancel);
+  form.append(nameF, urlF, colF, order, msg, row);
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const newUrl = url.value.trim();
+    if (!newUrl){ msg.textContent = "Add a link for this feed."; msg.className = "msg err"; return; }
+    saveB.disabled = true;
+    try{
+      if (newUrl !== f.url){
+        msg.className = "msg"; msg.textContent = "Checking the new link…";
+        const res = await resolveInput(newUrl);
+        if (state.feeds.some(x => x !== f && x.url === res.url)) throw new Error("You already follow that feed");
+        const p = res.text ? parseFeed(res.text, f) : await loadFeed(res.url, f);
+        f.url = res.url; f.error = null;
+        state.items = state.items.filter(i => i.feedId !== f.id).concat(p.items).sort((a, b) => b.date - a.date);
+        if (!name.value.trim()) name.value = p.title || "";
+      }
+      f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
+      f.color = color;
+      editingId = null;
+      save(); renderFeedList(); renderChips(); renderStatus(); renderList();
+      if (viewerEl && state.activeId){ const it = itemById(state.activeId); if (it) viewerEl.querySelector(".vbar .meta")?.replaceWith(metaRow(it)); }
+      setMsg(`Saved ${f.title}.`);
+    }catch(err){
+      msg.className = "msg err"; msg.textContent = err.message.replace(/\.$/, "") + ".";
+      saveB.disabled = false;
+    }
+  });
+  return form;
+}
+function setMsg(t, err){ const m = $("#addMsg"); m.textContent = t; m.classList.toggle("err", !!err); }
+$("#manage").onclick = () => { renderFeedList(); setMsg(""); $("#proxyInput").value = state.proxy; dlg.showModal(); };
+$("#dlgClose").onclick = () => dlg.close();
+dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+$("#proxyInput").addEventListener("change", e => { state.proxy = e.target.value.trim(); store.set("tl.proxy", state.proxy); });
+$("#addForm").addEventListener("submit", async e => {
+  e.preventDefault();
+  const input = $("#addInput"), btn = $("#addBtn");
+  const raw = input.value.trim(); if (!raw) return;
+  btn.disabled = true; setMsg("Looking for the feed…");
+  try{
+    const res = await resolveInput(raw);
+    if (state.feeds.some(f => f.url === res.url)) throw new Error("You already follow that feed");
+    const feed = {id: uid(), url: res.url, title: "", color: nextColor()};
+    const p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
+    feed.title = p.title || new URL(res.url).hostname.replace(/^www\./, "");
+    state.feeds.push(feed);
+    const seen = new Set(state.items.map(i => i.id));
+    state.items = state.items.concat(p.items.filter(i => !seen.has(i.id))).sort((a, b) => b.date - a.date);
+    save(); renderFeedList(); renderChips(); renderStatus(); renderList();
+    input.value = "";
+    setMsg(`Added ${feed.title} with ${p.items.length} stor${p.items.length === 1 ? "y" : "ies"}.`);
+  }catch(err){
+    setMsg(err.message + ".", true);
+  }finally{ btn.disabled = false; }
+});
+
+/* ---------- keyboard + layout ---------- */
+document.addEventListener("keydown", e => {
+  if (dlg.open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k !== "j" && k !== "k") return;
+  const all = visibleItems(); if (!all.length) return;
+  let i = all.findIndex(x => x.id === state.activeId);
+  i = i < 0 ? 0 : Math.min(all.length - 1, Math.max(0, i + (k === "j" ? 1 : -1)));
+  if (i >= state.shown){ state.shown = i + PAGE; renderList(); }
+  if (all[i].id === state.activeId && !isWide()) return;
+  openItem(all[i].id);
+  const c = cardFor(all[i].id); if (c && isWide()) c.scrollIntoView({block: "nearest"});
+});
+let wasWide = isWide();
+matchMedia("(min-width:900px)").addEventListener("change", () => {
+  const now = isWide(); if (now === wasWide) return; wasWide = now;
+  const id = state.activeId;
+  document.querySelectorAll(".inline").forEach(n => n.remove());
+  if (now){ if (viewerEl) $("#pane").replaceChildren(viewerEl); else renderPaneEmpty(); }
+  else if (id) placeInline();
+});
+$("#refresh").onclick = refreshAll;
+setInterval(renderStatus, 60000);
+setInterval(() => { if (document.visibilityState === "visible") refreshAll(); }, 15 * 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && Date.now() - state.lastUpdated > 10 * 60000) refreshAll(); });
+
+/* ---------- start ---------- */
+renderChips(); renderStatus(); renderPaneEmpty(); renderList();
+refreshAll();
+})();
+</script>
+</body>
+</html>
