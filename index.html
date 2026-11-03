@@ -151,6 +151,9 @@ dialog::backdrop{background:rgba(10,14,20,.45)}
 .editform .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .editform input{background:var(--surface)}
 .editform .row{display:flex;gap:8px;flex-wrap:wrap}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
+.check input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+.flist .tagline{font-size:12px;color:var(--muted)}
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 2px var(--bg)}
 .sw[aria-checked="true"]{border-color:var(--ink)}
@@ -612,7 +615,15 @@ function cardEl(it){
     side.append(o);
   }
   if (side.children.length) a.append(side);
-  a.onclick = () => openItem(it.id);
+  a.onclick = () => {
+    const fd = feedById(it.feedId);
+    if (fd && fd.direct && !it.videoId && it.link){
+      window.open(it.link, "_blank", "noopener");
+      state.read.add(it.id); save(); a.classList.add("read");
+      return;
+    }
+    openItem(it.id);
+  };
   a.onkeydown = e => { if (e.key === "Enter" || e.key === " "){ e.preventDefault(); openItem(it.id); } };
   return a;
 }
@@ -775,7 +786,13 @@ function pruneDoc(doc){
     n.remove();
   });
 }
+// Pages that are a security check, block or paywall rather than the article
+const BLOCK_PAGE = /banned your ip|has banned|you have been blocked|sorry, you have been blocked|cloudflare ray id|ray id:|error 10(0[0-9]|1[0-9]|20)\b|used cloudflare to restrict|security service to protect itself|just a moment|attention required|checking (your|if the site connection is secure|your browser)|verify (you are|you're) (a )?human|are you a robot|enable javascript and cookies|access denied|request blocked|unusual traffic|captcha|cf-chl|subscribe to (continue|read)|to continue reading|already a subscriber|log in to continue|sign in to continue/i;
+const blocked = msg => Object.assign(new Error(msg || "This site has extra security that stops Reader from loading it"), {blocked: true});
+const isBlockStatus = e => e && (e.blocked || /error (401|402|403|429|451|503)\b/.test(e.message || ""));
 function extractArticle(html, link){
+  const head = (html.match(/<title[^>]*>([^<]*)/i) || [])[1] || "";
+  if (BLOCK_PAGE.test(head) || (html.length < 60000 && BLOCK_PAGE.test(html.replace(/<script[\s\S]*?<\/script>/gi, "").slice(0, 20000)) && !/<article/i.test(html))) throw blocked();
   if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
   const doc = new DOMParser().parseFromString(html, "text/html");
   const base = doc.createElement("base"); base.href = link; doc.head.prepend(base);
@@ -785,6 +802,8 @@ function extractArticle(html, link){
   const ok = x => x && x.content && (x.textContent || "").trim().length >= 200;
   if (!ok(parsed)) parsed = new Readability(backup, {charThreshold: 300}).parse();   // pruning went too far: try the full page
   if (!ok(parsed)) throw new Error("This page doesn't have a readable article");
+  const t = (parsed.textContent || "").trim();
+  if (t.length < 1500 && BLOCK_PAGE.test(t.slice(0, 1200))) throw blocked();
   return parsed;
 }
 // Small Markdown converter, used if the Markdown library fails to load
@@ -827,6 +846,7 @@ async function readerViaJina(link){
   if (!r.ok) throw new Error("Reader service answered with error " + r.status);
   let md = await r.text();
   const i = md.indexOf("Markdown Content:");
+  if (BLOCK_PAGE.test(md.slice(0, i > 0 ? i : 300))) throw blocked();
   if (i >= 0) md = md.slice(i + 17);
   md = md.trim().replace(/^#{1,2} [^\n]*\n+/, "").replace(/^=+\n+/, "");
   if (md.length < 200) throw new Error("This page doesn't have a readable article");
@@ -912,7 +932,11 @@ async function loadReader(it, body){
       if (!it.link) throw new Error("This story has no link");
       // Two routes at once: our own extraction via the relays, and Jina's reader service. First good one wins.
       try{ art = await getArticle(it.link); }
-      catch(agg){ const e = (agg.errors || []).find(x => /readable|reader tool/.test(x.message)); throw e || new Error("The page couldn't be fetched"); }
+      catch(agg){
+        const errs = agg.errors || [];
+        if (errs.length && errs.every(isBlockStatus) || errs.some(x => x && x.blocked)) throw blocked();
+        const e = errs.find(x => /readable|reader tool/.test(x.message)); throw e || new Error("The page couldn't be fetched");
+      }
       readerCache.set(it.id, art);
     }
     if (!slot.isConnected) return;
@@ -938,7 +962,13 @@ async function loadReader(it, body){
     if (!slot.isConnected) return;
     const box = el("div", "fail");
     if (it.summary) { const p = el("p", null, it.summary); p.style.cssText = "margin:0 0 10px;font:17px/1.55 var(--read);color:var(--ink)"; box.append(p); }
-    box.append(el("div", null, "Reader view couldn't load this page. " + err.message.replace(/\.$/, "") + "."));
+    const fd = feedById(it.feedId);
+    if (err.blocked && fd){
+      fd.direct = true; save(); renderFeedList();
+      box.append(el("div", null, "This site has extra security that stops Reader from loading it. From now on, stories from " + (fd.title || "this feed") + " will open straight on the website. You can change this under Feeds → Edit."));
+    } else {
+      box.append(el("div", null, "Reader view couldn't load this page. " + err.message.replace(/\.$/, "") + "."));
+    }
     const row = el("div", "row");
     const live = el("button", "btn", "Try Live view"); live.type = "button";
     live.onclick = () => { state.modes[it.id] = "live"; const seg = body.parentElement.querySelector(".seg"); if (seg) seg.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-pressed", String(i === 1))); renderBody(it, body); };
@@ -988,6 +1018,7 @@ function renderFeedList(){
     const d = el("span", "dot"); d.style.background = f.color;
     const info = el("div"); info.style.minWidth = "0";
     info.append(el("div", "nm", f.title || "Untitled feed"), el("div", "url", f.url));
+    if (f.direct) info.append(el("div", "tagline", "Opens stories on the website"));
     if (f.error) info.append(el("div", "er", "Couldn't update: " + f.error));
     const acts = el("div", "acts");
     const ed = el("button", "btn", "Edit"); ed.type = "button";
@@ -1033,13 +1064,16 @@ function editForm(f, idx){
   const move = dir => { const i = state.feeds.indexOf(f); const j = i + dir; [state.feeds[i], state.feeds[j]] = [state.feeds[j], state.feeds[i]]; save(); renderChips(); renderFeedList(); };
   up.onclick = () => move(-1); down.onclick = () => move(1);
   orow.append(up, down); order.append(orow);
+  const dirF = el("label", "check");
+  const dir = el("input"); dir.type = "checkbox"; dir.id = "ef-direct"; dir.checked = !!f.direct;
+  dirF.append(dir, el("span", null, "Always open stories on the website (for sites Reader can't load)"));
   const msg = el("p", "msg");
   const row = el("div", "row");
   const saveB = el("button", "btn primary", "Save"); saveB.type = "submit";
   const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
   cancel.onclick = () => { editingId = null; renderFeedList(); };
   row.append(saveB, cancel);
-  form.append(nameF, urlF, colF, order, msg, row);
+  form.append(nameF, urlF, colF, dirF, order, msg, row);
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const newUrl = url.value.trim();
@@ -1057,6 +1091,7 @@ function editForm(f, idx){
       }
       f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
       f.color = color;
+      f.direct = dir.checked;
       editingId = null;
       save(); renderFeedList(); renderChips(); renderStatus(); renderList();
       if (viewerEl && state.activeId){ const it = itemById(state.activeId); if (it) viewerEl.querySelector(".vbar .meta")?.replaceWith(metaRow(it)); }
