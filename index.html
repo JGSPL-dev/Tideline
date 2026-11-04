@@ -2075,7 +2075,7 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
   let addr = ""; try{ addr = decodeURIComponent(m[1]); }catch{}
   history.replaceState(null, "", location.pathname + location.search);
   if (!/^https:\/\//.test(addr)) return;
-  state.proxy = addr; store.set("tl.proxy", addr);
+  state.proxy = addr; store.set("tl.proxy", addr); state.forceRefresh = true;
   const s = $("#status");
   setTimeout(async () => {
     try{
@@ -2088,7 +2088,9 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 /* ---------- start ---------- */
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();
-refreshAll();
+// Opening the app only fetches if the last update is over 10 minutes old (or there's nothing to show yet)
+const FRESH_MS = 10 * 60000;
+if (state.forceRefresh || !state.items.length || Date.now() - state.lastUpdated > FRESH_MS) refreshAll();
 })();
 </script>
 </body>
