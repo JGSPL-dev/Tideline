@@ -1,4 +1,4 @@
-# Tideline
+# TickRSS (formerly Tideline)
 
 Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ (the path is case-sensitive). Every push to `main` goes live.
 
@@ -7,7 +7,8 @@ Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is
 - Finding a feed from a site or YouTube channel also runs several routes at once, including Feedly's feed search (`feedlyLookup`). Search results add their feed address directly (`addFeed(url, true)`).
 - Stories are kept for 7 days per feed (`KEEP_DAYS`, `mergeHistory`), stored in the browser's localStorage.
 - Tapping a story opens it on the website. The in-app viewer and Reader view are switched off (`READER_ENABLED = false`); their code is kept for later.
-- Settings (cog) hold the look options, "Keep links in the browser" (Android intent trick), the rss2json key and a custom proxy.
+- The hamburger button (top left) opens a left-hand drawer with two tabs: Your feeds (search/add, edit, remove) and Settings (look options, "Keep links in the browser" (Android intent trick), the rss2json key and a custom proxy).
+- Browser storage keys still use the old `tl.` prefix so existing feeds and settings carry over; keep them.
 
 ## When checking or adding a publisher
 The user wants every publisher checked for the same issues that came up with BBC, the Guardian and Time Extension:

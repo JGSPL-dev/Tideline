@@ -1,4 +1,4 @@
-# Tideline
+# TickRSS
 
 A simple feed reader for RSS and YouTube channels. One combined feed, with a reading pane on desktop and inline reading on mobile.
 

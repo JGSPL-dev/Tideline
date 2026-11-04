@@ -5,10 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Tideline">
+<meta name="apple-mobile-web-app-title" content="TickRSS">
 <meta name="theme-color" content="#edf0f3">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>Tideline</title>
+<title>TickRSS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
@@ -100,8 +103,11 @@ a.card:focus-visible{outline:2px solid var(--accent);outline-offset:0}
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:16px;
   background:var(--bg);border-bottom:1px solid var(--line)}
 .toprow{display:flex;align-items:center;gap:8px}
-.brand{font:600 25px/1 var(--read);letter-spacing:-.01em;margin:0;flex:1;display:flex;align-items:center;gap:9px}
-.brand svg{color:var(--accent)}
+.toprow{display:grid;grid-template-columns:44px 1fr 44px;align-items:center}
+.toprow > .btn:last-child{justify-self:end}
+.brand{font:600 24px/1 var(--ui);letter-spacing:-.02em;margin:0;display:flex;align-items:center;justify-content:center;gap:9px}
+.brand b{font-weight:700;color:var(--accent)}
+.logo{flex:none;display:block}
 .status{font-size:12.5px;color:var(--muted);min-height:1em}
 .status b{font-weight:600;color:var(--danger)}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
@@ -183,6 +189,20 @@ iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#ff
 /* Feeds dialog */
 dialog{overflow:hidden;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 40px)}
 dialog::backdrop{background:rgba(10,14,20,.45)}
+dialog.drawer{margin:0;inset:0 auto 0 0;height:100dvh;max-height:100dvh;width:min(420px,88vw);max-width:none;border:0;border-right:1px solid var(--line);border-radius:0 16px 16px 0;
+  padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px)}
+dialog.drawer .dlg{height:100%;max-height:none}
+dialog.drawer[open]{animation:drawerIn .22s ease-out}
+dialog.drawer[open]::backdrop{animation:fadeIn .22s ease-out}
+dialog.drawer.closing{animation:drawerOut .18s ease-in forwards}
+dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
+@keyframes drawerIn{from{transform:translateX(-100%)}to{transform:none}}
+@keyframes drawerOut{to{transform:translateX(-100%)}}
+@keyframes fadeIn{from{opacity:0}}
+@keyframes fadeOut{to{opacity:0}}
+.dlg header h2.brand{justify-content:flex-start;font:600 21px/1 var(--ui);letter-spacing:-.02em;flex:1}
+.tabs{margin:12px 18px 0;display:grid;grid-template-columns:1fr 1fr}
+.tabs button{padding:8px 10px}
 .dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 42px)}
 .dlg header{display:flex;align-items:center;padding:16px 18px;border-bottom:1px solid var(--line)}
 .dlg header h2{font:600 22px var(--read);margin:0;flex:1}
@@ -255,38 +275,35 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
   <section class="feedcol">
     <div class="top">
       <div class="toprow">
-        <h1 class="brand">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>
-          Tideline
-        </h1>
+        <button class="btn icon" id="manage" aria-label="Open menu" aria-controls="dlg" aria-expanded="false" title="Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <h1 class="brand"><svg class="logo" width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><circle cx="9" cy="23" r="2.6" fill="var(--accent-ink)"/><path d="M7 15a10 10 0 0 1 10 10" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M7 8.5a16.5 16.5 0 0 1 9.4 2.9" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M18 12.5l3.6 3.6 7-8" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tick<b>RSS</b></span></h1>
         <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-        </button>
-        <button class="btn icon" id="settingsBtn" aria-label="Settings" title="Settings">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-        </button>
-        <button class="btn" id="manage">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
-          Feeds
         </button>
       </div>
       <div class="chips" id="chips" role="toolbar" aria-label="Filter by source"></div>
       <div class="status" id="status" aria-live="polite"></div>
     </div>
-    <div class="list" id="list"><div class="empty"><h3>Tideline isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
+    <div class="list" id="list"><div class="empty"><h3>TickRSS isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
   </section>
   <section class="pane" id="pane" aria-label="Reading pane"></section>
 </div>
 
-<dialog id="dlg">
+<dialog id="dlg" class="drawer" aria-label="Menu">
   <div class="dlg">
     <header>
-      <h2>Your feeds</h2>
-      <button class="btn icon" id="dlgClose" aria-label="Close">
+      <h2 class="brand"><svg class="logo" width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><circle cx="9" cy="23" r="2.6" fill="var(--accent-ink)"/><path d="M7 15a10 10 0 0 1 10 10" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M7 8.5a16.5 16.5 0 0 1 9.4 2.9" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M18 12.5l3.6 3.6 7-8" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tick<b>RSS</b></span></h2>
+      <button class="btn icon" id="dlgClose" aria-label="Close menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </header>
-    <div class="inner">
+    <div class="tabs seg" role="tablist" aria-label="Menu sections">
+      <button type="button" role="tab" id="tab-feeds" aria-controls="panelFeeds" aria-selected="true" aria-pressed="true">Your feeds</button>
+      <button type="button" role="tab" id="tab-settings" aria-controls="panelSettings" aria-selected="false" aria-pressed="false">Settings</button>
+    </div>
+    <div class="inner" id="panelFeeds" role="tabpanel" aria-labelledby="tab-feeds">
       <form id="addForm" class="addrow" autocomplete="off">
         <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
@@ -297,18 +314,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <h3 class="listhead">Following</h3>
       <ul class="flist" id="flist"></ul>
     </div>
-  </div>
-</dialog>
-
-<dialog id="setDlg">
-  <div class="dlg">
-    <header>
-      <h2>Settings</h2>
-      <button class="btn icon" id="setClose" aria-label="Close">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
-      </button>
-    </header>
-    <div class="inner">
+    <div class="inner" id="panelSettings" role="tabpanel" aria-labelledby="tab-settings" hidden>
       <section class="set-sec" aria-labelledby="sh-look">
         <h3 id="sh-look">Look</h3>
         <div class="preview" id="preview" aria-hidden="true"></div>
@@ -328,7 +334,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <details id="moreBox">
         <summary>Get more than 10 stories per feed</summary>
         <div class="field">
-          <p class="hint">The free feed service returns 10 stories per feed unless you give it a key. Make a free account at <b>rss2json.com</b>, copy your API key from its dashboard, and paste it here. Tideline will then ask for up to 100 stories per feed.</p>
+          <p class="hint">The free feed service returns 10 stories per feed unless you give it a key. Make a free account at <b>rss2json.com</b>, copy your API key from its dashboard, and paste it here. TickRSS will then ask for up to 100 stories per feed.</p>
           <input id="rssKeyInput" type="text" placeholder="rss2json API key" aria-label="rss2json API key" autocomplete="off" spellcheck="false">
           <p class="msg" id="rssKeyMsg"></p>
         </div>
@@ -336,7 +342,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <details>
         <summary>Advanced: use your own fetch proxy</summary>
         <div class="field">
-          <p class="hint">Tideline reads feeds through free public proxies, which can be slow or go down. If you run your own, paste its prefix here. The feed address is added to the end.</p>
+          <p class="hint">TickRSS reads feeds through free public proxies, which can be slow or go down. If you run your own, paste its prefix here. The feed address is added to the end.</p>
           <input id="proxyInput" type="text" placeholder="https://my-proxy.example.com/?url=" aria-label="Custom proxy prefix">
         </div>
       </details>
@@ -344,6 +350,8 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
     </div>
   </div>
 </dialog>
+
+
 
 <script>
 (() => {
@@ -721,7 +729,7 @@ function renderStatus(){
   const bad = state.feeds.filter(f => f.error).length;
   const n = state.feeds.length;
   s.append(document.createTextNode(state.lastUpdated ? `Updated ${ago(state.lastUpdated)} · ${n} feed${n === 1 ? "" : "s"}` : `${n} feed${n === 1 ? "" : "s"}`));
-  if (bad && bad === n){ s.textContent = ""; s.append(el("b", null, "Couldn't reach any feeds. ")); s.append(document.createTextNode("Check you're online and that Tideline is open in a web browser, then tap refresh.")); }
+  if (bad && bad === n){ s.textContent = ""; s.append(el("b", null, "Couldn't reach any feeds. ")); s.append(document.createTextNode("Check you're online and that TickRSS is open in a web browser, then tap refresh.")); }
   else if (bad){ s.append(document.createTextNode(" · ")); s.append(el("b", null, `${bad} couldn't update`)); }
 }
 
@@ -1298,9 +1306,31 @@ function editForm(f, idx){
   return form;
 }
 function setMsg(t, err){ const m = $("#addMsg"); m.textContent = t; m.classList.toggle("err", !!err); }
-$("#manage").onclick = () => { renderFeedList(); setMsg("");  dlg.showModal(); };
-$("#dlgClose").onclick = () => dlg.close();
-dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+function showTab(which){
+  const feeds = which !== "settings";
+  $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
+  [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
+  if (feeds){ renderFeedList(); }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; }
+}
+function openMenu(tab){
+  setMsg(""); showTab(tab || "feeds");
+  dlg.classList.remove("closing"); dlg.showModal();
+  $("#manage").setAttribute("aria-expanded", "true");
+}
+function closeMenu(){
+  if (!dlg.open || dlg.classList.contains("closing")) return;
+  const done = () => { dlg.classList.remove("closing"); dlg.close(); };
+  if (matchMedia("(prefers-reduced-motion:reduce)").matches){ done(); return; }
+  dlg.classList.add("closing"); setTimeout(done, 180);
+}
+dlg.addEventListener("close", () => $("#manage").setAttribute("aria-expanded", "false"));
+dlg.addEventListener("cancel", e => { e.preventDefault(); closeMenu(); });
+$("#manage").onclick = () => openMenu("feeds");
+$("#dlgClose").onclick = closeMenu;
+$("#tab-feeds").onclick = () => showTab("feeds");
+$("#tab-settings").onclick = () => showTab("settings");
+dlg.addEventListener("click", e => { if (e.target === dlg) closeMenu(); });
 $("#keepBrowser").addEventListener("change", e => {
   state.keepInBrowser = e.target.checked; store.set("tl.keepbrowser", state.keepInBrowser);
   const h = $("#keepBrowserHint");
@@ -1558,21 +1588,13 @@ function renderDesign(){
   const sample = state.items.find(i => i.image) || state.items[0] || {id:"x", feedId:(state.feeds[0] || {}).id, title:"Example headline for a story in your feed", summary:"A short summary of the story appears here so you can judge the size and spacing.", date:Date.now() - 3600000, image:null};
   pv.append(cardEl(sample));
 }
-const setDlg = $("#setDlg");
-$("#settingsBtn").onclick = () => {
-  renderDesign();
-  $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey;
-  setDlg.showModal();
-};
-$("#setClose").onclick = () => setDlg.close();
-setDlg.addEventListener("click", e => { if (e.target === setDlg) setDlg.close(); });
 $("#resetDesign").onclick = () => { design = {...DESIGN_DEFAULT}; saveDesign(); renderDesign(); };
-matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyDesign(); if (setDlg.open) renderDesign(); });
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyDesign(); if (dlg.open && !$("#panelSettings").hidden) renderDesign(); });
 applyDesign();
 
 /* ---------- keyboard + layout ---------- */
 document.addEventListener("keydown", e => {
-  if (dlg.open || setDlg.open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (dlg.open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k !== "j" && k !== "k") return;
   const cards = [...document.querySelectorAll(".card")]; if (!cards.length) return;
