@@ -714,6 +714,18 @@ function hiRes(url){
     u = u.replace(/([?&](?:w|width)=)(\d{2,3})(?=&|$)/, (m, k, n) => +n < 600 ? k + "1200" : m);                             // width=… parameter
   return u;
 }
+// Image addresses to try, best first. The Guardian signs its resized images, so they can't be enlarged
+// by editing the address; instead use its public image store, which keeps fixed 1000px and 500px versions.
+function imageCandidates(it){
+  const list = [];
+  const g = (it.image || "").match(/i\.guim\.co\.uk\/img\/(?:media|uploads)\/([0-9a-f]{20,})\/([\d_]+)\/master\/\d+\.(jpe?g|png)/i);
+  if (g) list.push(`https://media.guim.co.uk/${g[1]}/${g[2]}/1000.jpg`, `https://media.guim.co.uk/${g[1]}/${g[2]}/500.jpg`);
+  const big = hiRes(it.image);
+  if (big && big !== it.image) list.push(big);
+  if (it.image) list.push(it.image);
+  if (it.videoId) list.push(`https://i.ytimg.com/vi/${it.videoId}/mqdefault.jpg`);
+  return [...new Set(list)];
+}
 function cardEl(it){
   // Tapping a story opens it on its website (or the YouTube app/site for videos)
   const a = el(it.link ? "a" : "article", "card");
@@ -728,16 +740,12 @@ function cardEl(it){
   if (it.image){
     const th = el("div", "thumb" + (it.videoId ? " vid" : ""));
     const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
-    const big = hiRes(it.image), yt = it.videoId ? `https://i.ytimg.com/vi/${it.videoId}/mqdefault.jpg` : null;
-    let tried = big === it.image ? 1 : 0;
-    const fallback = () => {
-      if (tried === 0){ tried = 1; img.src = yt || it.image; return; }
-      if (tried === 1 && yt && img.src !== yt){ tried = 2; img.src = yt; return; }
-      th.remove();
-    };
-    img.onerror = fallback;
-    img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120) fallback(); };   // YouTube's "no HD thumbnail" placeholder
-    img.src = big;
+    const tries = imageCandidates(it);
+    let n = 0;
+    const next = () => { n++; if (n < tries.length) img.src = tries[n]; else th.remove(); };
+    img.onerror = next;
+    img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) next(); };   // e.g. YouTube's "no HD thumbnail" placeholder
+    img.src = tries[0];
     th.append(img); a.append(th);
   }
   a.addEventListener("click", e => {
