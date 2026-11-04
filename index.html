@@ -2068,6 +2068,24 @@ setInterval(renderStatus, 60000);
 setInterval(() => { if (document.visibilityState === "visible") refreshAll(); }, 15 * 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && Date.now() - state.lastUpdated > 10 * 60000) refreshAll(); });
 
+/* ---------- set-up link: …/#relay=<address> saves your relay ---------- */
+(() => {
+  const m = location.hash.match(/^#relay=(.+)$/);
+  if (!m) return;
+  let addr = ""; try{ addr = decodeURIComponent(m[1]); }catch{}
+  history.replaceState(null, "", location.pathname + location.search);
+  if (!/^https:\/\//.test(addr)) return;
+  state.proxy = addr; store.set("tl.proxy", addr);
+  const s = $("#status");
+  setTimeout(async () => {
+    try{
+      const t = await fetchViaRelay("https://feeds.bbci.co.uk/news/rss.xml", 12000);
+      if (!looksLikeFeed(t)) throw new Error("bad");
+      s.textContent = "Your relay is set up and working.";
+    }catch{ s.textContent = ""; s.append(el("b", null, "Relay saved, but it didn't answer. ")); s.append(document.createTextNode("Check it under Menu → Settings → Your own relay.")); }
+  }, 0);
+})();
+
 /* ---------- start ---------- */
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();
 refreshAll();
