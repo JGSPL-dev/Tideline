@@ -702,17 +702,33 @@ function browserIntent(link){
       ";package=" + pkg + ";S.browser_fallback_url=" + encodeURIComponent(link) + ";end";
   }catch{ return null; }
 }
-// Ask image servers for a bigger version where the address pattern is known
+// Image upgrade rules: feeds usually send small thumbnails. Each rule rewrites a known image-server
+// address into a bigger version. Every rewrite is only a first try: the card falls back to the
+// feed's own image if the bigger one fails. Add a rule here when a publisher's images look blurry.
+const IMAGE_RULES = [
+  // [name, address test, rewrite]
+  ["BBC",        /ichef\.bbci\.co\.uk/,      u => u.replace(/(\/(?:ace|news)\/(?:standard|ws|branded_news|branded_sport)\/)\d+(\/)/, "$1800$2")],
+  ["YouTube",    /i\.ytimg\.com\/vi\//,      u => u.replace(/\/(default|mqdefault|hqdefault|sddefault)\.jpg/, "/maxresdefault.jpg")],
+  ["Sky News",   /\.365dm\.com/,             u => u.replace(/\/\d{2,4}x\d{2,4}\//, "/1600x900/")],
+  ["Medium",     /miro\.medium\.com/,        u => u.replace(/resize:(fit|fill):\d+(:\d+)?/, "resize:fit:1400")],
+  ["Substack",   /substackcdn\.com\/image/,  u => u.replace(/\bw_\d+\b/, "w_1200").replace(/\bh_\d+,?/, "")],
+  ["Cloudinary", /\/image\/upload\//,        u => u.replace(/\/upload\/([^/]*?)\bw_\d+\b/, "/upload/$1w_1200")],
+  ["Ghost",      /\/content\/images\/size\//, u => u.replace(/\/size\/w\d+(?:h\d+)?\//, "/")],
+  ["Wikimedia",  /upload\.wikimedia\.org\/.*\/thumb\//, u => u.replace(/\/\d+px-([^/]+)$/, "/1200px-$1")],
+  ["Squarespace",/squarespace-cdn\.com/,     u => u.replace(/format=\d+w/, "format=1500w")],
+  ["Shopify",    /cdn\.shopify\.com/,        u => u.replace(/_(\d{2,3})x(\d{2,3})?(\.(?:jpe?g|png|webp))/, "_1200x$3")],
+  ["Jetpack",    /i\d\.wp\.com/,             u => u.replace(/([?&])(resize|fit)=[^&]*/, "$1w=1200")],
+  ["Nintendo Life network", /\/(small|thumb|thumbnail|med|medium)\.(jpe?g|png|webp)$/i, u => u.replace(/\/(small|thumb|thumbnail|med|medium)(\.(?:jpe?g|png|webp))$/i, "/large$2")],
+  ["WordPress",  /-\d{2,4}x\d{2,4}\.(jpe?g|png|webp)/i, u => u.replace(/-\d{2,4}x\d{2,4}(\.(?:jpe?g|png|webp))(\?|$)/i, "$1$2")],
+  // width=… style parameters, only when the address isn't signed (signed addresses break if edited)
+  ["Width parameter", /[?&](w|width|imwidth)=\d/, (u, orig) => /[?&](s|sig|signature|token|hash)=/.test(orig) ? u
+      : u.replace(/([?&](?:w|width|imwidth)=)(\d{2,3})(?=&|$)/, (m, k, n) => +n < 600 ? k + "1200" : m).replace(/([?&])(?:h|height)=\d{2,3}(&|$)/, (m, a, b) => b ? a : "")]
+];
 function hiRes(url){
   if (!url) return url;
   let u = url;
-  u = u.replace(/(ichef\.bbci\.co\.uk\/(?:ace|news)\/(?:standard|ws|branded_news|branded_sport)\/)\d+(\/)/, "$1800$2");     // BBC
-  u = u.replace(/(i\.ytimg\.com\/vi\/[\w-]+\/)(default|mqdefault|hqdefault|sddefault)(\.jpg)/, "$1maxresdefault$3");      // YouTube
-  u = u.replace(/-\d{2,4}x\d{2,4}(\.(?:jpe?g|png|webp))(\?|$)/i, "$1$2");                                                   // WordPress size suffix
-  u = u.replace(/\/(small|thumb|thumbnail|med|medium)(\.(?:jpe?g|png|webp))$/i, "/large$2");                                // e.g. Nintendo Life network
-  if (!/[?&](s|sig|signature|token)=/.test(url))                                                                           // signed URLs break if changed
-    u = u.replace(/([?&](?:w|width)=)(\d{2,3})(?=&|$)/, (m, k, n) => +n < 600 ? k + "1200" : m);                             // width=… parameter
-  return u;
+  for (const [, test, rewrite] of IMAGE_RULES) if (test.test(u)) u = rewrite(u, url);
+  return u.replace(/[?&]$/, "");
 }
 // Image addresses to try, best first. The Guardian signs its resized images, so they can't be enlarged
 // by editing the address; instead use its public image store, which keeps fixed 1000px and 500px versions.
