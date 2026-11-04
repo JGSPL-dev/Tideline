@@ -206,6 +206,18 @@ dialog::backdrop{background:rgba(10,14,20,.45)}
 .editform .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .editform input{background:var(--surface)}
 .editform .row{display:flex;gap:8px;flex-wrap:wrap}
+.listhead{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -6px}
+.sresults{display:flex;flex-direction:column;gap:14px}
+.rsec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
+.rlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.ritem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.ritem:first-child,.rnote:first-child{border-top:0}
+.rnote{padding:10px 12px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
+.ricon{width:32px;height:32px;border-radius:8px;background:var(--sunk);display:grid;place-items:center;overflow:hidden;font-weight:600;color:var(--muted);text-transform:uppercase}
+.ricon img{width:100%;height:100%;object-fit:cover}
+.rtitle{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rmeta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
 .check input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent);flex:none}
 .flist .tagline{font-size:12px;color:var(--muted)}
@@ -274,11 +286,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
     </header>
     <div class="inner">
       <form id="addForm" class="addrow" autocomplete="off">
-        <input id="addInput" type="text" inputmode="url" placeholder="Website, RSS link or YouTube channel" aria-label="Feed address">
+        <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
       </form>
-      <p class="hint">Paste a site like <b>theguardian.com</b>, a feed link, or a YouTube channel as <b>@name</b>, a channel link, or any video from that channel. Tideline finds the feed for you.</p>
+      <p class="hint">Type words like <b>retro games</b> or <b>premier league</b> to search. Or paste a site like <b>theguardian.com</b>, a feed link, a subreddit as <b>r/name</b>, or a YouTube channel as <b>@name</b>, a channel link or any of its videos.</p>
       <p class="msg" id="addMsg" aria-live="polite"></p>
+      <div id="searchResults" class="sresults" hidden></div>
+      <h3 class="listhead">Following</h3>
       <ul class="flist" id="flist"></ul>
     </div>
   </div>
@@ -430,7 +444,7 @@ async function loadFeed(url, feed){
   try{ first = await Promise.any([svc, rel]); }
   catch(agg){
     const errs = agg.errors || [];
-    const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service/.test(e.message));
+    const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service|Failed to fetch|NetworkError|Load failed|aborted/i.test(e.message));
     throw real || new Error("Couldn't reach that feed");
   }
   await Promise.race([Promise.allSettled([svc, rel]), new Promise(r => setTimeout(r, 4000))]);
@@ -577,6 +591,7 @@ async function findChannelId(page, original){
 async function resolveInput(raw){
   let s = raw.trim();
   if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
+  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/.rss"};                       // r/subreddit
   if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
   if (!/^https?:\/\//i.test(s)) s = "https://" + s;
   let u;
@@ -1267,27 +1282,162 @@ $("#rssKeyInput").addEventListener("change", e => {
   if (state.rssKey) refreshAll().then(() => { $("#rssKeyMsg").textContent = "Key saved. Feeds refreshed."; });
 });
 $("#proxyInput").addEventListener("change", e => { state.proxy = e.target.value.trim(); store.set("tl.proxy", state.proxy); });
+// Add a feed from an address, @handle, channel ID or r/subreddit. Returns the new feed.
+async function addFeed(raw){
+  const res = await resolveInput(raw);
+  if (state.feeds.some(f => f.url === res.url)) throw new Error("You already follow that feed");
+  const feed = {id: uid(), url: res.url, title: "", color: nextColor()};
+  const p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
+  feed.title = p.title || new URL(res.url).hostname.replace(/^www\./, "");
+  state.feeds.push(feed);
+  state.items = mergeHistory(state.items, p.items);
+  save(); renderFeedList(); renderChips(); renderStatus(); renderList();
+  return {feed, count: p.items.length};
+}
+const storyCount = n => `${n} stor${n === 1 ? "y" : "ies"}`;
+// Is this something to add directly, rather than words to search for?
+const isAddress = t => /^https?:\/\//i.test(t) || /^@[\w.-]{2,}$/.test(t) || /^UC[\w-]{22}$/.test(t) || /^r\/\w+$/i.test(t) ||
+  (!/\s/.test(t) && /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t));
+
+/* ---------- search ---------- */
+// Hand-picked feeds that are searched instantly, before any web results arrive
+const DIRECTORY = [
+  ["BBC News","https://feeds.bbci.co.uk/news/rss.xml","news uk world"],
+  ["BBC Sport","https://feeds.bbci.co.uk/sport/rss.xml","sport uk"],
+  ["BBC Sport – Football","https://feeds.bbci.co.uk/sport/football/rss.xml","football soccer premier league sport"],
+  ["BBC News – Technology","https://feeds.bbci.co.uk/news/technology/rss.xml","tech technology"],
+  ["BBC News – Science","https://feeds.bbci.co.uk/news/science_and_environment/rss.xml","science environment"],
+  ["The Guardian – UK","https://www.theguardian.com/uk/rss","news uk"],
+  ["The Guardian – World","https://www.theguardian.com/world/rss","news world"],
+  ["The Guardian – Football","https://www.theguardian.com/football/rss","football soccer sport"],
+  ["The Guardian – Technology","https://www.theguardian.com/uk/technology/rss","tech technology"],
+  ["Sky News","https://feeds.skynews.com/feeds/rss/home.xml","news uk"],
+  ["The Independent","https://www.independent.co.uk/news/rss","news uk"],
+  ["Al Jazeera","https://www.aljazeera.com/xml/rss/all.xml","news world"],
+  ["NPR News","https://feeds.npr.org/1001/rss.xml","news us world"],
+  ["The New York Times","https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml","news us world nyt"],
+  ["The Verge","https://www.theverge.com/rss/index.xml","tech technology gadgets"],
+  ["Ars Technica","https://feeds.arstechnica.com/arstechnica/index","tech technology science"],
+  ["TechCrunch","https://techcrunch.com/feed/","tech startups"],
+  ["Engadget","https://www.engadget.com/rss.xml","tech gadgets"],
+  ["Wired","https://www.wired.com/feed/rss","tech technology culture"],
+  ["Hacker News – Front page","https://hnrss.org/frontpage","tech programming hacker news"],
+  ["9to5Mac","https://9to5mac.com/feed/","apple iphone mac tech"],
+  ["Android Authority","https://www.androidauthority.com/feed/","android phones tech"],
+  ["IGN","https://feeds.feedburner.com/ign/all","games gaming"],
+  ["Eurogamer","https://www.eurogamer.net/feed","games gaming uk"],
+  ["Polygon","https://www.polygon.com/rss/index.xml","games gaming"],
+  ["Kotaku","https://kotaku.com/rss","games gaming"],
+  ["PC Gamer","https://www.pcgamer.com/rss/","games gaming pc"],
+  ["Rock Paper Shotgun","https://www.rockpapershotgun.com/feed","games gaming pc"],
+  ["Video Games Chronicle","https://www.videogameschronicle.com/feed/","games gaming vgc"],
+  ["Nintendo Life","https://www.nintendolife.com/feeds/latest","nintendo switch games gaming"],
+  ["Time Extension","https://www.timeextension.com/feeds/latest","retro games gaming"],
+  ["Push Square","https://www.pushsquare.com/feeds/latest","playstation ps5 games gaming"],
+  ["Pure Xbox","https://www.purexbox.com/feeds/latest","xbox games gaming"],
+  ["Sky Sports – Football","https://www.skysports.com/rss/12040","football soccer sport"],
+  ["ESPN","https://www.espn.com/espn/rss/news","sport us"],
+  ["New Scientist","https://www.newscientist.com/feed/home/","science"],
+  ["ScienceDaily","https://www.sciencedaily.com/rss/all.xml","science research"],
+  ["Nature","https://www.nature.com/nature.rss","science research journal"]
+];
+function searchDirectory(q){
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+  return DIRECTORY.filter(([t, , tags]) => { const hay = (t + " " + tags).toLowerCase(); return words.every(w => hay.includes(w)); })
+    .map(([title, url]) => ({title, url, site: new URL(url).hostname.replace(/^www\./, "")}));
+}
+// Get JSON or text from a URL by whichever route works: direct, the relays, or the reader service
+async function fetchAny(url, ms = 10000){
+  return Promise.any([
+    fetchWithTimeout(url, ms).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }),
+    fetchText(url, ms),
+    fetchWithTimeout("https://r.jina.ai/" + url, ms + 4000).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+  ]);
+}
+const jsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); return JSON.parse(t.slice(a, b + 1)); };
+async function searchWeb(q){
+  const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=12&query=" + encodeURIComponent(q));
+  const j = jsonIn(t);
+  return (j.results || []).filter(r => /^feed\/https?:/.test(r.feedId || "")).map(r => ({
+    title: htmlToText(r.title || ""), url: r.feedId.slice(5), site: (r.website || r.feedId.slice(5)).replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, ""),
+    desc: htmlToText(r.description || ""), followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")
+  }));
+}
+async function searchYouTube(q){
+  const page = "https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q);   // channels only
+  const t = await fetchAny(page, 12000);
+  const seen = new Set(), out = [];
+  // Page HTML (relays) carries channel data; the reader service returns links like [Name](https://www.youtube.com/@handle)
+  for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g)){
+    if (!seen.has(m[1])){ seen.add(m[1]); out.push({title: m[2], url: m[1], site: "YouTube channel", yt: true}); }
+  }
+  if (!out.length) for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/(@[\w.-]+)\)/g)){
+    const h = m[2].toLowerCase(); if (seen.has(h)) continue; seen.add(h);
+    out.push({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], site: "youtube.com/" + m[2], yt: true});
+  }
+  return out.slice(0, 6);
+}
+let searchSeq = 0;
+async function runSearch(q){
+  const seq = ++searchSeq;
+  const box = $("#searchResults"); box.hidden = false; box.textContent = "";
+  const sec = (title) => { const s = el("div", "rsec"); s.append(el("h3", null, title)); const ul = el("ul", "rlist"); s.append(ul); box.append(s); return {s, ul}; };
+  const local = searchDirectory(q);
+  if (local.length){ const {ul} = sec("Suggestions"); local.slice(0, 6).forEach(r => ul.append(resultEl(r))); }
+  const web = sec("From the web"); web.ul.append(el("li", "rnote", "Searching…"));
+  const yt = sec("YouTube channels"); yt.ul.append(el("li", "rnote", "Searching…"));
+  setMsg("");
+  const fill = (part, p, empty) => p.then(list => {
+    if (seq !== searchSeq) return;
+    part.ul.textContent = "";
+    const seenUrls = new Set(local.map(r => r.url));
+    list = list.filter(r => !seenUrls.has(r.url));
+    if (!list.length){ part.ul.append(el("li", "rnote", empty)); return; }
+    list.forEach(r => part.ul.append(resultEl(r)));
+  }).catch(() => { if (seq === searchSeq){ part.ul.textContent = ""; part.ul.append(el("li", "rnote", "Search isn't reachable right now. Try pasting the site's address instead.")); } });
+  await Promise.allSettled([fill(web, searchWeb(q), "No feeds found."), fill(yt, searchYouTube(q), "No channels found.")]);
+}
+function resultEl(r){
+  const li = el("li", "ritem");
+  const ic = el("div", "ricon");
+  if (r.icon){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = r.icon; im.onerror = () => { im.remove(); ic.textContent = (r.title || "?")[0]; }; ic.append(im); }
+  else ic.textContent = r.yt ? "▶" : (r.title || "?")[0];
+  const info = el("div", "rinfo");
+  info.append(el("div", "rtitle", r.title || r.site));
+  const meta = [r.site, r.followers ? (r.followers >= 1000 ? Math.round(r.followers / 1000) + "k followers" : r.followers + " followers") : ""].filter(Boolean).join(" · ");
+  info.append(el("div", "rmeta", meta));
+  if (r.desc) info.append(el("div", "rdesc", r.desc));
+  const already = !r.yt && state.feeds.some(f => f.url === r.url);
+  const b = el("button", "btn" + (already ? "" : " primary"), already ? "Following" : "Add"); b.type = "button"; b.disabled = already;
+  b.onclick = async () => {
+    b.disabled = true; b.textContent = "Adding…";
+    try{ const {feed, count} = await addFeed(r.url); b.textContent = "Added"; b.classList.remove("primary"); setMsg(`Added ${feed.title} with ${storyCount(count)}.`); }
+    catch(err){ b.disabled = false; b.textContent = "Add"; setMsg(err.message.replace(/\.$/, "") + ".", true); }
+  };
+  li.append(ic, info, b);
+  return li;
+}
+
+$("#addInput").addEventListener("input", e => {
+  const t = e.target.value.trim();
+  $("#addBtn").textContent = !t || isAddress(t) ? "Add" : "Search";
+  if (!t) { $("#searchResults").hidden = true; searchSeq++; }
+});
 $("#addForm").addEventListener("submit", async e => {
   e.preventDefault();
   const input = $("#addInput"), btn = $("#addBtn");
   const raw = input.value.trim(); if (!raw) return;
+  if (!isAddress(raw)){ runSearch(raw); return; }
+  $("#searchResults").hidden = true;
   btn.disabled = true; setMsg("Looking for the feed…");
   try{
-    const res = await resolveInput(raw);
-    if (state.feeds.some(f => f.url === res.url)) throw new Error("You already follow that feed");
-    const feed = {id: uid(), url: res.url, title: "", color: nextColor()};
-    const p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
-    feed.title = p.title || new URL(res.url).hostname.replace(/^www\./, "");
-    state.feeds.push(feed);
-    state.items = mergeHistory(state.items, p.items);
-    save(); renderFeedList(); renderChips(); renderStatus(); renderList();
-    input.value = "";
-    setMsg(`Added ${feed.title} with ${p.items.length} stor${p.items.length === 1 ? "y" : "ies"}.`);
+    const {feed, count} = await addFeed(raw);
+    input.value = ""; btn.textContent = "Add";
+    setMsg(`Added ${feed.title} with ${storyCount(count)}.`);
   }catch(err){
-    setMsg(err.message + ".", true);
+    setMsg(err.message.replace(/\.$/, "") + ".", true);
   }finally{ btn.disabled = false; }
 });
-
 
 /* ---------- design settings ---------- */
 const DESIGN_DEFAULT = {theme:"system", accent:"teal", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow"};
