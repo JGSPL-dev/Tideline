@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Tideline">
+<meta name="theme-color" content="#edf0f3">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Tideline</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -20,17 +21,33 @@
 /* Layout: desktop = feed column + reading pane; phone = one feed with the viewer opening inline under the tapped story */
 :root{
   --bg:#edf0f3; --surface:#ffffff; --sunk:#e2e7ec; --ink:#141a22; --muted:#5a6473;
-  --line:#d4dbe3; --accent:#0d6b63; --accent-ink:#ffffff; --accent-soft:#d3e9e6; --danger:#b42318;
+  --line:#d4dbe3; --danger:#b42318;
+  --accent-l:#0d6b63; --accent-d:#55bdb1;              /* accent pair, changed in Settings */
+  --accent:var(--accent-l); --accent-ink:#ffffff;
+  --accent-soft:color-mix(in srgb, var(--accent) 16%, var(--surface));
   --ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --read:"Newsreader",Georgia,"Times New Roman",serif;
+  --head:var(--read);                                   /* headline face, changed in Settings */
+  --scale:1;                                            /* text size, changed in Settings */
+  --pad:13px;                                           /* card spacing, changed in Settings */
   color-scheme:light;
 }
 @media (prefers-color-scheme:dark){
-  :root{
+  :root:not([data-theme="light"]){
     --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
-    --line:#29313b; --accent:#55bdb1; --accent-ink:#04201d; --accent-soft:#16332f; --danger:#f97066;
+    --line:#29313b; --accent:var(--accent-d); --accent-ink:#04201d; --danger:#f97066;
     color-scheme:dark;
   }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
+  --line:#29313b; --accent:var(--accent-d); --accent-ink:#04201d; --danger:#f97066;
+  color-scheme:dark;
+}
+:root[data-theme="black"]{
+  --bg:#000000; --surface:#0d0f12; --sunk:#16191d; --ink:#e8eaed; --muted:#8f97a3;
+  --line:#22262c; --accent:var(--accent-d); --accent-ink:#04201d; --danger:#f97066;
+  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -46,6 +63,32 @@ button,input{font:inherit;color:inherit}
 .app.solo .list{overflow:visible}
 html:has(.app.solo),body:has(.app.solo){height:auto}
 a.card{color:inherit;text-decoration:none}
+/* Settings-driven variations */
+:root[data-sum="off"] .sum{display:none}
+:root[data-thumbs="off"] .thumb{display:none}
+:root[data-thumbs="large"] .thumb{width:132px}
+:root[data-thumbs="large"] .thumb.vid{width:176px}
+:root[data-density="compact"]{--pad:7px}
+:root[data-density="compact"] .title{margin:2px 0}
+:root[data-density="roomy"]{--pad:20px}
+:root[data-layout="magazine"] .card{grid-template-columns:minmax(0,1fr);gap:10px;padding:12px;border-color:var(--line);background:var(--surface);margin-bottom:8px}
+:root[data-layout="magazine"] .card .thumb{order:-1;width:100%;aspect-ratio:16/9;border-radius:8px}
+:root[data-layout="magazine"] .card .title{font-size:calc(21px * var(--scale))}
+:root[data-layout="magazine"] .sum{-webkit-line-clamp:3}
+:root[data-width="wide"] .app.solo{max-width:1000px}
+:root[data-width="wide"][data-layout="magazine"] .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;align-items:start}
+:root[data-width="wide"][data-layout="magazine"] .list > .more,:root[data-width="wide"][data-layout="magazine"] .list > .empty{grid-column:1/-1}
+:root[data-width="wide"][data-layout="magazine"] .card{margin:0}
+/* Settings panel */
+.set-sec{display:flex;flex-direction:column;gap:12px}
+.set-sec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.set-row{display:flex;flex-direction:column;gap:6px}
+.set-row > span{font-weight:600;font-size:14px}
+.set-row .seg{flex-wrap:wrap}
+.set-row .seg button{padding:6px 12px}
+.accents{display:flex;gap:8px;flex-wrap:wrap}
+.preview{border:1px dashed var(--line);border-radius:10px;padding:2px;background:var(--bg)}
+.preview .card{pointer-events:none}
 a.card:focus-visible{outline:2px solid var(--accent);outline-offset:0}
 .app{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);height:100dvh}
 .feedcol{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:1px solid var(--line)}
@@ -76,15 +119,15 @@ a.card:focus-visible{outline:2px solid var(--accent);outline-offset:0}
 
 /* Feed list */
 .list{flex:1;min-height:0;overflow:auto;padding:8px 10px 40px;padding-left:max(10px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:2px}
-.card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:13px 10px;border-radius:10px;border:1px solid transparent;cursor:pointer;scroll-margin-top:12px}
+.card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:start;padding:var(--pad) 10px;border-radius:10px;border:1px solid transparent;cursor:pointer;scroll-margin-top:12px}
 .card:hover{background:var(--sunk)}
 .card.active{background:var(--surface);border-color:var(--line)}
-.meta{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--muted);min-width:0}
+.meta{display:flex;align-items:center;gap:6px;font-size:calc(12.5px * var(--scale));color:var(--muted);min-width:0}
 .meta .src{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;flex:none}
 .tag{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--muted)}
-.title{font:600 18px/1.24 var(--read);margin:5px 0 4px;text-wrap:pretty}
-.sum{margin:0;color:var(--muted);font-size:13.5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.title{font:600 calc(18px * var(--scale))/1.24 var(--head);margin:5px 0 4px;text-wrap:pretty}
+.sum{margin:0;color:var(--muted);font-size:calc(13.5px * var(--scale));display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card.read .title{color:var(--muted);font-weight:400}
 .thumb{width:92px;aspect-ratio:1;border-radius:7px;overflow:hidden;background:var(--sunk);position:relative;max-width:100%}
 .thumb.vid{width:128px;aspect-ratio:16/9}
@@ -204,6 +247,9 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
         </button>
+        <button class="btn icon" id="settingsBtn" aria-label="Settings" title="Settings">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
         <button class="btn" id="manage">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           Feeds
@@ -233,10 +279,35 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <p class="hint">Paste a site like <b>theguardian.com</b>, a feed link, or a YouTube channel as <b>@name</b>, a channel link, or any video from that channel. Tideline finds the feed for you.</p>
       <p class="msg" id="addMsg" aria-live="polite"></p>
       <ul class="flist" id="flist"></ul>
+    </div>
+  </div>
+</dialog>
+
+<dialog id="setDlg">
+  <div class="dlg">
+    <header>
+      <h2>Settings</h2>
+      <button class="btn icon" id="setClose" aria-label="Close">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </header>
+    <div class="inner">
+      <section class="set-sec" aria-labelledby="sh-look">
+        <h3 id="sh-look">Look</h3>
+        <div class="preview" id="preview" aria-hidden="true"></div>
+        <div id="designRows" class="set-sec"></div>
+        <div class="set-row"><span>Accent colour</span><div class="accents swatches" id="accentRow" role="radiogroup" aria-label="Accent colour"></div></div>
+        <div><button class="btn" type="button" id="resetDesign">Reset look to default</button></div>
+      </section>
+      <section class="set-sec" aria-labelledby="sh-links">
+        <h3 id="sh-links">Opening stories</h3>
       <label class="check" for="keepBrowser">
         <input type="checkbox" id="keepBrowser">
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
       </label>
+      </section>
+      <section class="set-sec" aria-labelledby="sh-svc">
+        <h3 id="sh-svc">Feed service</h3>
       <details id="moreBox">
         <summary>Get more than 10 stories per feed</summary>
         <div class="field">
@@ -252,6 +323,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <input id="proxyInput" type="text" placeholder="https://my-proxy.example.com/?url=" aria-label="Custom proxy prefix">
         </div>
       </details>
+      </section>
     </div>
   </div>
 </dialog>
@@ -1131,7 +1203,7 @@ function editForm(f, idx){
   return form;
 }
 function setMsg(t, err){ const m = $("#addMsg"); m.textContent = t; m.classList.toggle("err", !!err); }
-$("#manage").onclick = () => { renderFeedList(); setMsg(""); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; dlg.showModal(); };
+$("#manage").onclick = () => { renderFeedList(); setMsg("");  dlg.showModal(); };
 $("#dlgClose").onclick = () => dlg.close();
 dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
 $("#keepBrowser").addEventListener("change", e => {
@@ -1167,9 +1239,78 @@ $("#addForm").addEventListener("submit", async e => {
   }finally{ btn.disabled = false; }
 });
 
+
+/* ---------- design settings ---------- */
+const DESIGN_DEFAULT = {theme:"system", accent:"teal", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow"};
+const ACCENTS = {
+  teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
+  amber:["#9a5b00","#f2b453"], green:["#2f7a1f","#8fd47a"], slate:["#3d4a5c","#a9b6c8"], red:["#c0362c","#ff8a7e"]
+};
+const DESIGN_ROWS = [
+  ["theme","Theme",[["system","Auto"],["light","Light"],["dark","Dark"],["black","Black"]]],
+  ["layout","Layout",[["list","List"],["magazine","Magazine"]]],
+  ["scale","Text size",[["s","Small"],["m","Medium"],["l","Large"],["xl","Extra large"]]],
+  ["head","Headlines",[["serif","Serif"],["sans","Sans"]]],
+  ["density","Spacing",[["compact","Compact"],["normal","Normal"],["roomy","Roomy"]]],
+  ["thumbs","Images",[["off","Off"],["small","Small"],["large","Large"]]],
+  ["sum","Summaries",[["on","Show"],["off","Hide"]]],
+  ["width","Width on desktop",[["narrow","Narrow"],["wide","Wide"]]]
+];
+let design = {...DESIGN_DEFAULT, ...store.get("tl.design", {})};
+function applyDesign(){
+  const r = document.documentElement;
+  if (design.theme === "system") r.removeAttribute("data-theme"); else r.dataset.theme = design.theme;
+  const ac = ACCENTS[design.accent] || ACCENTS.teal;
+  r.style.setProperty("--accent-l", ac[0]); r.style.setProperty("--accent-d", ac[1]);
+  r.style.setProperty("--scale", {s:.9, m:1, l:1.12, xl:1.25}[design.scale] || 1);
+  r.style.setProperty("--head", design.head === "sans" ? "var(--ui)" : "var(--read)");
+  ["layout","density","thumbs","sum","width"].forEach(k => r.dataset[k] = design[k]);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.content = getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3";
+}
+function saveDesign(){ store.set("tl.design", design); applyDesign(); }
+function renderDesign(){
+  const rows = $("#designRows"); rows.textContent = "";
+  DESIGN_ROWS.forEach(([key, label, opts]) => {
+    const row = el("div", "set-row");
+    const lab = el("span", null, label); lab.id = "lbl-" + key;
+    const seg = el("div", "seg"); seg.setAttribute("role", "radiogroup"); seg.setAttribute("aria-labelledby", lab.id);
+    opts.forEach(([v, t]) => {
+      const b = el("button", null, t); b.type = "button"; b.id = "set-" + key + "-" + v;
+      b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(design[key] === v)); b.setAttribute("aria-pressed", String(design[key] === v));
+      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); };
+      seg.append(b);
+    });
+    row.append(lab, seg); rows.append(row);
+  });
+  const ar = $("#accentRow"); ar.textContent = "";
+  const dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");
+  Object.entries(ACCENTS).forEach(([name, pair]) => {
+    const b = el("button", "sw"); b.type = "button"; b.style.background = dark ? pair[1] : pair[0];
+    b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(design.accent === name)); b.setAttribute("aria-label", name);
+    b.onclick = () => { design.accent = name; saveDesign(); renderDesign(); };
+    ar.append(b);
+  });
+  // live preview using a real story when there is one
+  const pv = $("#preview"); pv.textContent = "";
+  const sample = state.items.find(i => i.image) || state.items[0] || {id:"x", feedId:(state.feeds[0] || {}).id, title:"Example headline for a story in your feed", summary:"A short summary of the story appears here so you can judge the size and spacing.", date:Date.now() - 3600000, image:null};
+  pv.append(cardEl(sample));
+}
+const setDlg = $("#setDlg");
+$("#settingsBtn").onclick = () => {
+  renderDesign();
+  $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey;
+  setDlg.showModal();
+};
+$("#setClose").onclick = () => setDlg.close();
+setDlg.addEventListener("click", e => { if (e.target === setDlg) setDlg.close(); });
+$("#resetDesign").onclick = () => { design = {...DESIGN_DEFAULT}; saveDesign(); renderDesign(); };
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyDesign(); if (setDlg.open) renderDesign(); });
+applyDesign();
+
 /* ---------- keyboard + layout ---------- */
 document.addEventListener("keydown", e => {
-  if (dlg.open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (dlg.open || setDlg.open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k !== "j" && k !== "k") return;
   const cards = [...document.querySelectorAll(".card")]; if (!cards.length) return;
