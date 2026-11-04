@@ -263,6 +263,7 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .ricon img{width:100%;height:100%;object-fit:cover}
 .rtitle{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rmeta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rmatch{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--brand);margin-bottom:2px}
 .rerr{font-size:12.5px;color:var(--danger);margin-top:4px}
 .rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
@@ -1536,10 +1537,22 @@ async function searchYouTube(q){
         followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")});
     }
   });
-  const res = await Promise.allSettled([fromYT, fromFeedly]);
-  if (!out.length && res.every(r => r.status === "rejected")) throw new Error("unreachable");
-  // Ready-to-add (with a channel ID) first
-  return out.sort((a, b) => (b.id ? 1 : 0) - (a.id ? 1 : 0)).slice(0, 8);
+  // Exact handle: "the retro future" → youtube.com/@theretrofuture, if that channel exists
+  const handle = q.toLowerCase().replace(/^@/, "").replace(/[^a-z0-9._-]/g, "");
+  let exact = null;
+  const fromHandle = handle.length >= 3 ? findChannelId("https://www.youtube.com/@" + handle).then(async id => {
+    if (!id) return;
+    let title = "";
+    const feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + id;
+    try{ title = (await Promise.race([loadFeed(feedUrl, {id: "probe"}), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 6000))])).title; }catch{}
+    exact = {title: title || "@" + handle, url: id, id, site: "youtube.com/@" + handle, yt: true, exact: true};
+  }) : Promise.resolve();
+  const res = await Promise.allSettled([fromYT, fromFeedly, fromHandle]);
+  if (!out.length && !exact && res.every(r => r.status === "rejected")) throw new Error("unreachable");
+  // Exact handle match first, then results that are ready to add (with a channel ID)
+  const rest = out.filter(r => !exact || (r.id !== exact.id && r.url.toLowerCase() !== "@" + handle))
+    .sort((a, b) => (b.id ? 1 : 0) - (a.id ? 1 : 0));
+  return (exact ? [exact, ...rest] : rest).slice(0, 8);
 }
 let searchSeq = 0;
 async function runSearch(q){
@@ -1567,6 +1580,7 @@ function resultEl(r){
   if (r.icon){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = r.icon; im.onerror = () => { im.remove(); ic.textContent = (r.title || "?")[0]; }; ic.append(im); }
   else ic.textContent = r.yt ? "▶" : (r.title || "?")[0];
   const info = el("div", "rinfo");
+  if (r.exact) info.append(el("div", "rmatch", "Exact match"));
   info.append(el("div", "rtitle", r.title || r.site));
   const meta = [r.site, r.followers ? (r.followers >= 1000 ? Math.round(r.followers / 1000) + "k followers" : r.followers + " followers") : ""].filter(Boolean).join(" · ");
   info.append(el("div", "rmeta", meta));
