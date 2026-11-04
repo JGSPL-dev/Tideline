@@ -500,7 +500,7 @@ function makeItem(feed, o){
     link,
     date: o.date || 0,
     summary: (o.summary || "").slice(0, 1000),
-    image: videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : safeUrl(o.image),
+    image: videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : safeUrl(o.image),
     videoId: videoId || null
   };
 }
@@ -508,9 +508,12 @@ function rssItem(e, feed){
   const desc = txt(kid(e, "description")), content = txt(kid(e, "content:encoded"));
   const guid = kid(e, "guid");
   const link = txt(kid(e, "link")) || (guid && attr(guid, "ispermalink") !== "false" ? txt(guid) : "");
-  const media = deep(e, "media:content").find(m => /image/.test(attr(m,"medium") || attr(m,"type") || "") || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(attr(m,"url") || ""));
+  // Feeds often list several sizes of the same image: take the widest one
+  const isImg = m => /image/.test(attr(m,"medium") || attr(m,"type") || "") || /\.(jpe?g|png|webp|gif)(\?|$)/i.test(attr(m,"url") || "") || lc(m) === "media:thumbnail";
+  const cands = [...deep(e, "media:content"), ...deep(e, "media:thumbnail")].filter(m => attr(m, "url") && isImg(m))
+    .sort((x, y) => (+attr(y, "width") || 0) - (+attr(x, "width") || 0));
   const encl = kids(e, "enclosure").find(x => /^image/.test(attr(x, "type") || ""));
-  const image = attr(deep(e, "media:thumbnail")[0], "url") || attr(media, "url") || attr(encl, "url") || attr(kid(e, "itunes:image"), "href") || firstImg(content) || firstImg(desc);
+  const image = attr(cands[0], "url") || attr(encl, "url") || attr(kid(e, "itunes:image"), "href") || firstImg(content) || firstImg(desc);
   return makeItem(feed, {
     title: htmlToText(txt(kid(e, "title"))),
     link,
@@ -699,6 +702,18 @@ function browserIntent(link){
       ";package=" + pkg + ";S.browser_fallback_url=" + encodeURIComponent(link) + ";end";
   }catch{ return null; }
 }
+// Ask image servers for a bigger version where the address pattern is known
+function hiRes(url){
+  if (!url) return url;
+  let u = url;
+  u = u.replace(/(ichef\.bbci\.co\.uk\/(?:ace|news)\/(?:standard|ws|branded_news|branded_sport)\/)\d+(\/)/, "$1800$2");     // BBC
+  u = u.replace(/(i\.ytimg\.com\/vi\/[\w-]+\/)(default|mqdefault|hqdefault|sddefault)(\.jpg)/, "$1maxresdefault$3");      // YouTube
+  u = u.replace(/-\d{2,4}x\d{2,4}(\.(?:jpe?g|png|webp))(\?|$)/i, "$1$2");                                                   // WordPress size suffix
+  u = u.replace(/\/(small|thumb|thumbnail|med|medium)(\.(?:jpe?g|png|webp))$/i, "/large$2");                                // e.g. Nintendo Life network
+  if (!/[?&](s|sig|signature|token)=/.test(url))                                                                           // signed URLs break if changed
+    u = u.replace(/([?&](?:w|width)=)(\d{2,3})(?=&|$)/, (m, k, n) => +n < 600 ? k + "1200" : m);                             // width=… parameter
+  return u;
+}
 function cardEl(it){
   // Tapping a story opens it on its website (or the YouTube app/site for videos)
   const a = el(it.link ? "a" : "article", "card");
@@ -712,8 +727,17 @@ function cardEl(it){
   a.append(body);
   if (it.image){
     const th = el("div", "thumb" + (it.videoId ? " vid" : ""));
-    const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.src = it.image;
-    img.onerror = () => th.remove();
+    const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
+    const big = hiRes(it.image), yt = it.videoId ? `https://i.ytimg.com/vi/${it.videoId}/mqdefault.jpg` : null;
+    let tried = big === it.image ? 1 : 0;
+    const fallback = () => {
+      if (tried === 0){ tried = 1; img.src = yt || it.image; return; }
+      if (tried === 1 && yt && img.src !== yt){ tried = 2; img.src = yt; return; }
+      th.remove();
+    };
+    img.onerror = fallback;
+    img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120) fallback(); };   // YouTube's "no HD thumbnail" placeholder
+    img.src = big;
     th.append(img); a.append(th);
   }
   a.addEventListener("click", e => {
