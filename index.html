@@ -252,6 +252,26 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .editform .lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .editform input{background:var(--surface)}
 .editform .row{display:flex;gap:8px;flex-wrap:wrap}
+.sfilters{margin:-4px 0 0;padding-block:2px}
+.sfilters .chip{padding:4px 10px;font-size:12.5px}
+.sfilters .count{min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--sunk);color:var(--muted);font-size:11px;font-weight:700;display:inline-grid;place-items:center;margin-right:-4px}
+.sfilters .chip[aria-pressed="true"] .count{background:color-mix(in srgb,var(--bg) 25%,transparent);color:var(--bg)}
+.msg:empty{display:none}
+.rsec{display:flex;flex-direction:column;gap:8px}
+.rnote-line{margin:0;color:var(--muted);font-size:13.5px}
+.more-btn{align-self:stretch;justify-content:center;font-weight:600}
+.rtags{display:flex;gap:6px;align-items:center;margin-bottom:2px}
+.rtags .rmatch{margin:0}
+.rkind{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.rkind.k-youtube{color:#e03131}.rkind.k-reddit{color:#e8590c}.rkind.k-podcasts{color:#9c36b5}.rkind.k-news{color:#1c7ed6}.rkind.k-bluesky{color:#1c7ed6}.rkind.k-mastodon{color:#6741d9}
+.rsec.quiet h3{opacity:.6}
+dialog.fullpage{margin:0;inset:0;width:100vw;max-width:none;height:100dvh;max-height:100dvh;border:0;border-radius:0;
+  padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+dialog.fullpage .dlg{height:100%;max-height:none;max-width:760px;margin:0 auto}
+dialog.fullpage header{gap:10px}
+dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rkind.k-youtube{color:#ff8787}}
+:root[data-theme="dark"] .rkind.k-youtube,:root[data-theme="black"] .rkind.k-youtube{color:#ff8787}
 .listhead{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -6px}
 .sresults{display:flex;flex-direction:column;gap:14px}
 .rsec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
@@ -339,7 +359,8 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
       </form>
-      <p class="hint">Type words like <b>retro games</b> or <b>premier league</b> to search. Or paste a site like <b>theguardian.com</b>, a feed link, a subreddit as <b>r/name</b>, or a YouTube channel as <b>@name</b>, a channel link or any of its videos.</p>
+      <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>.</p>
+      <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
       <p class="msg" id="addMsg" aria-live="polite"></p>
       <div id="searchResults" class="sresults" hidden></div>
       <h3 class="listhead">Following</h3>
@@ -383,6 +404,25 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 </dialog>
 
 
+
+<dialog id="searchPage" class="fullpage" aria-labelledby="spTitle">
+  <div class="dlg">
+    <header>
+      <button class="btn icon" id="spBack" aria-label="Back to menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 id="spTitle">Add to your feed</h2>
+    </header>
+    <div class="inner">
+      <form id="spForm" class="addrow" autocomplete="off">
+        <input id="spInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for something to follow" autocapitalize="off" autocorrect="off">
+        <button class="btn primary" type="submit">Search</button>
+      </form>
+      <div class="chips sfilters" id="spFilters" role="toolbar" aria-label="Search in"></div>
+      <div id="spResults" class="sresults"></div>
+    </div>
+  </div>
+</dialog>
 
 <script>
 (() => {
@@ -1596,27 +1636,174 @@ async function searchYouTube(q){
   // Exact handle match first, then results that are ready to add (with a channel ID)
   const rest = out.filter(r => !exact || (r.id !== exact.id && r.url.toLowerCase() !== "@" + handle))
     .sort((a, b) => (b.id ? 1 : 0) - (a.id ? 1 : 0));
-  return (exact ? [exact, ...rest] : rest).slice(0, 8);
+  return (exact ? [exact, ...rest] : rest).slice(0, 20);
 }
-let searchSeq = 0;
-async function runSearch(q){
-  const seq = ++searchSeq;
-  const box = $("#searchResults"); box.hidden = false; box.textContent = "";
-  const sec = (title) => { const s = el("div", "rsec"); s.append(el("h3", null, title)); const ul = el("ul", "rlist"); s.append(ul); box.append(s); return {s, ul}; };
-  const local = searchDirectory(q);
-  if (local.length){ const {ul} = sec("Suggestions"); local.slice(0, 6).forEach(r => ul.append(resultEl(r))); }
-  const web = sec("From the web"); web.ul.append(el("li", "rnote", "Searching…"));
-  const yt = sec("YouTube channels"); yt.ul.append(el("li", "rnote", "Searching…"));
-  setMsg("");
-  const fill = (part, p, empty) => p.then(list => {
-    if (seq !== searchSeq) return;
-    part.ul.textContent = "";
-    const seenUrls = new Set(local.map(r => r.url));
-    list = list.filter(r => !seenUrls.has(r.url));
-    if (!list.length){ part.ul.append(el("li", "rnote", empty)); return; }
-    list.forEach(r => part.ul.append(resultEl(r)));
-  }).catch(() => { if (seq === searchSeq){ part.ul.textContent = ""; part.ul.append(el("li", "rnote", "Search isn't reachable right now. Try pasting the site's address instead.")); } });
-  await Promise.allSettled([fill(web, searchWeb(q), "No feeds found."), fill(yt, searchYouTube(q), "No channels found.")]);
+/* ---------- search across sources ---------- */
+const SOURCES = [
+  {key: "web",      label: "Websites"},
+  {key: "youtube",  label: "YouTube"},
+  {key: "reddit",   label: "Reddit"},
+  {key: "podcasts", label: "Podcasts"},
+  {key: "news",     label: "News topics"},
+  {key: "social",   label: "Bluesky & Mastodon"}
+];
+const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "Google News", bluesky: "Bluesky", mastodon: "Mastodon"};
+const getJSON = async (url, ms = 10000) => parseJsonIn(await fetchAny(url, ms));
+const decodeAmp = u => (u || "").replace(/&amp;/g, "&");
+
+async function searchWebAll(q){
+  const local = searchDirectory(q).map(r => ({...r, kind: "web", suggested: true}));
+  let web = [];
+  try{ web = (await searchWeb(q)).map(r => ({...r, kind: "web"})); }catch(e){ if (!local.length) throw e; }
+  const seen = new Set(local.map(r => r.url));
+  return [...local, ...web.filter(r => !seen.has(r.url))];
+}
+async function searchYouTubeAll(q){
+  return (await searchYouTube(q)).map(r => ({...r, kind: "youtube"}));
+}
+async function searchReddit(q){
+  const out = [];
+  const name = q.replace(/^r\//i, "").replace(/\s+/g, "");
+  const j = await getJSON("https://www.reddit.com/subreddits/search.json?include_over_18=0&limit=25&q=" + encodeURIComponent(q));
+  for (const c of (j.data && j.data.children) || []){
+    const d = c.data || {}; if (!d.display_name || d.over18) continue;
+    out.push({kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/.rss`,
+      website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
+      followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")),
+      exact: d.display_name.toLowerCase() === name.toLowerCase()});
+  }
+  return out.sort((a, b) => (b.exact ? 1 : 0) - (a.exact ? 1 : 0));
+}
+async function searchPodcasts(q){
+  const j = await getJSON("https://itunes.apple.com/search?media=podcast&entity=podcast&limit=25&country=GB&term=" + encodeURIComponent(q));
+  return (j.results || []).filter(r => r.feedUrl).map(r => ({
+    kind: "podcasts", title: r.collectionName || r.trackName, url: r.feedUrl, website: safeUrl(r.collectionViewUrl || ""),
+    site: r.artistName || "", desc: [r.primaryGenreName, r.trackCount ? r.trackCount + " episodes" : ""].filter(Boolean).join(" · "),
+    icon: safeUrl(r.artworkUrl600 || r.artworkUrl100 || "")
+  }));
+}
+function searchNews(q){
+  const enc = encodeURIComponent(q);
+  return Promise.resolve([
+    {kind: "news", title: `News about “${q}”`, url: `https://news.google.com/rss/search?q=${enc}&hl=en-GB&gl=GB&ceid=GB:en`,
+      website: `https://news.google.com/search?q=${enc}&hl=en-GB&gl=GB&ceid=GB:en`, site: "Google News · UK",
+      desc: "Headlines from many publishers that mention this, newest first."},
+    {kind: "news", title: `Last 24 hours: “${q}”`, url: `https://news.google.com/rss/search?q=${enc}+when:1d&hl=en-GB&gl=GB&ceid=GB:en`,
+      website: `https://news.google.com/search?q=${enc}+when:1d&hl=en-GB&gl=GB&ceid=GB:en`, site: "Google News · UK",
+      desc: "Only stories from the past day."},
+    {kind: "news", title: `Worldwide: “${q}”`, url: `https://news.google.com/rss/search?q=${enc}&hl=en-US&gl=US&ceid=US:en`,
+      website: `https://news.google.com/search?q=${enc}&hl=en-US&gl=US&ceid=US:en`, site: "Google News · US edition",
+      desc: "The same search from the US edition, for wider coverage."}
+  ]);
+}
+async function searchSocial(q){
+  const out = [];
+  const bsky = getJSON("https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?limit=15&q=" + encodeURIComponent(q)).then(j => {
+    for (const a of j.actors || []) out.push({kind: "bluesky", title: a.displayName || a.handle, url: `https://bsky.app/profile/${a.did}/rss`,
+      website: `https://bsky.app/profile/${a.handle}`, site: "@" + a.handle, desc: htmlToText(a.description || ""), icon: safeUrl(a.avatar || ""), person: true});
+  });
+  const masto = getJSON("https://mastodon.social/api/v2/search?type=accounts&limit=15&q=" + encodeURIComponent(q)).then(j => {
+    for (const a of j.accounts || []) if (a.url) out.push({kind: "mastodon", title: a.display_name || a.username, url: a.url.replace(/\/$/, "") + ".rss",
+      website: a.url, site: "@" + a.acct + (a.acct.includes("@") ? "" : "@mastodon.social"), desc: htmlToText(a.note || ""),
+      followers: a.followers_count || 0, icon: safeUrl(a.avatar_static || a.avatar || ""), person: true});
+  });
+  const res = await Promise.allSettled([bsky, masto]);
+  if (!out.length && res.every(r => r.status === "rejected")) throw new Error("unreachable");
+  return out;
+}
+const SEARCHERS = {web: searchWebAll, youtube: searchYouTubeAll, reddit: searchReddit, podcasts: searchPodcasts, news: searchNews, social: searchSocial};
+
+// One search, shared by the menu's top results and the full "Add to your feed" page
+const search = {q: "", filter: store.get("tl.searchFilter", "all"), seq: 0, results: {}, status: {}};
+function startSearch(q){
+  if (q === search.q && Object.keys(search.status).length){ renderAllResults(); return; }
+  const seq = ++search.seq;
+  search.q = q; search.results = {}; search.status = {};
+  SOURCES.forEach(({key}) => {
+    search.status[key] = "loading";
+    SEARCHERS[key](q).then(list => { if (seq !== search.seq) return; search.results[key] = list; search.status[key] = list.length ? "done" : "empty"; })
+      .catch(() => { if (seq !== search.seq) return; search.results[key] = []; search.status[key] = "error"; })
+      .finally(() => { if (seq === search.seq) renderAllResults(); });
+  });
+  renderAllResults();
+}
+// Mix sources fairly: exact matches first, then take one from each source in turn
+function mixed(keys, limit){
+  const lists = keys.map(k => (search.results[k] || []).slice());
+  const out = [];
+  lists.forEach(l => { for (let i = l.length - 1; i >= 0; i--) if (l[i].exact){ out.push(l[i]); l.splice(i, 1); } });
+  while (out.length < limit && lists.some(l => l.length)) for (const l of lists){ if (l.length && out.length < limit) out.push(l.shift()); }
+  return out.slice(0, limit);
+}
+function filterKeys(f){ return f === "all" ? SOURCES.map(s => s.key) : [f]; }
+function countFor(f){ return filterKeys(f).reduce((n, k) => n + (search.results[k] || []).length, 0); }
+function loadingNames(f){ return filterKeys(f).filter(k => search.status[k] === "loading").map(k => SOURCES.find(s => s.key === k).label); }
+
+function renderFilterChips(box, onPick){
+  box.textContent = "";
+  [{key: "all", label: "All"}, ...SOURCES].forEach(({key, label}) => {
+    const b = el("button", "chip"); b.type = "button";
+    b.setAttribute("aria-pressed", String(search.filter === key));
+    b.append(document.createTextNode(label));
+    if (search.q && search.status[key] !== "loading" && key !== "all") b.append(el("span", "count" + (countFor(key) ? "" : " zero"), String(countFor(key))));
+    b.onclick = () => { search.filter = key; store.set("tl.searchFilter", key); onPick(); };
+    box.append(b);
+  });
+}
+function renderAllResults(){
+  renderTopResults();
+  if ($("#searchPage").open) renderFullResults();
+}
+function renderTopResults(){
+  const box = $("#searchResults");
+  renderFilterChips($("#searchFilters"), renderAllResults);
+  if (!search.q){ box.hidden = true; return; }
+  box.hidden = false; box.textContent = "";
+  const list = mixed(filterKeys(search.filter), 10);
+  const waiting = loadingNames(search.filter);
+  const ul = el("ul", "rlist");
+  list.forEach(r => ul.append(resultEl(r, search.filter === "all")));
+  if (list.length) box.append(ul);
+  if (waiting.length) box.append(el("p", "rnote-line", "Searching " + waiting.join(", ") + "…"));
+  else if (!list.length) box.append(el("p", "rnote-line", "Nothing found. Try other words, another source, or paste the site's address."));
+  const total = countFor(search.filter);
+  if (total > list.length || (waiting.length && list.length)){
+    const more = el("button", "btn more-btn", total > list.length ? `See all ${total} results` : "See all results"); more.type = "button";
+    more.onclick = openSearchPage;
+    box.append(more);
+  }
+}
+function renderFullResults(){
+  renderFilterChips($("#spFilters"), renderAllResults);
+  const box = $("#spResults"); box.textContent = "";
+  const keys = filterKeys(search.filter);
+  keys.forEach(k => {
+    const label = SOURCES.find(s => s.key === k).label;
+    const list = search.results[k] || [];
+    const sec = el("section", "rsec");
+    sec.append(el("h3", null, label + (list.length ? ` · ${list.length}` : "")));
+    if (search.status[k] === "loading") sec.append(el("p", "rnote-line", "Searching…"));
+    else if (search.status[k] === "error") sec.append(el("p", "rnote-line", `${label} isn't reachable right now. Try again in a minute, or paste an address instead.`));
+    else if (!list.length) sec.append(el("p", "rnote-line", "Nothing found."));
+    else {
+      // On "All", show the first few from each source, with a button to see the rest
+      const cap = keys.length > 1 ? 5 : list.length;
+      const ul = el("ul", "rlist"); list.slice(0, cap).forEach(r => ul.append(resultEl(r, false))); sec.append(ul);
+      if (list.length > cap){
+        const m = el("button", "btn more-btn", `Show all ${list.length} ${label.toLowerCase()}`); m.type = "button";
+        m.onclick = () => { search.filter = k; store.set("tl.searchFilter", k); renderAllResults(); $("#spResults").scrollIntoView({block: "start"}); };
+        sec.append(m);
+      }
+    }
+    if (keys.length > 1 && !list.length && search.status[k] !== "loading") sec.classList.add("quiet");
+    box.append(sec);
+  });
+}
+function openSearchPage(){
+  const sp = $("#searchPage");
+  $("#spInput").value = search.q;
+  if (!sp.open) sp.showModal();
+  renderFullResults();
 }
 // Load missing channel pictures a few at a time, after the results are on screen
 const picQueue = []; let picBusy = 0;
@@ -1640,12 +1827,13 @@ function pump(){
   }
 }
 function resultLink(r){
+  if (r.website) return r.website;
   if (r.yt) return /^UC[\w-]{22}$/.test(r.url) ? "https://www.youtube.com/channel/" + r.url : "https://www.youtube.com/" + r.url.replace(/^youtube\.com\//, "");
   return r.website || (() => { try{ return new URL(r.url).origin; }catch{ return r.url; } })();
 }
-function resultEl(r){
+function resultEl(r, showKind){
   const li = el("li", "ritem");
-  const ic = el("div", "ricon" + (r.yt ? " yt" : ""));
+  const ic = el("div", "ricon" + (r.yt || r.person ? " yt" : ""));
   if (r.icon){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = r.icon; im.onerror = () => { im.remove(); ic.textContent = (r.title || "?")[0]; }; ic.append(im); }
   else {
     ic.textContent = (r.title || r.url || "?").replace(/^@/, "").trim()[0] || "?";
@@ -1654,14 +1842,20 @@ function resultEl(r){
   const info = el("a", "rinfo");
   info.href = resultLink(r); info.target = "_blank"; info.rel = "noopener noreferrer";
   info.title = "Open to check it's the right one";
-  if (r.exact) info.append(el("div", "rmatch", "Exact match"));
+  if (r.exact || (showKind && r.kind)){
+    const tags = el("div", "rtags");
+    if (r.exact) tags.append(el("span", "rmatch", "Exact match"));
+    if (showKind && r.kind) tags.append(el("span", "rkind k-" + r.kind, KIND_LABEL[r.kind] || ""));
+    info.append(tags);
+  }
   info.append(el("div", "rtitle", r.title || r.site));
-  const meta = [r.site, r.followers ? (r.followers >= 1000 ? Math.round(r.followers / 1000) + "k followers" : r.followers + " followers") : ""].filter(Boolean).join(" · ");
+  const fmt = n => n >= 1e6 ? (n / 1e6).toFixed(n >= 1e7 ? 0 : 1).replace(/\.0$/, "") + "M" : n >= 1000 ? Math.round(n / 1000) + "k" : String(n);
+  const meta = [r.site, r.followers ? fmt(r.followers) + (r.kind === "reddit" ? " members" : " followers") : ""].filter(Boolean).join(" · ");
   const metaEl = el("div", "rmeta", meta);
   metaEl.insertAdjacentHTML("beforeend", '<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>');
   info.append(metaEl);
   if (r.desc) info.append(el("div", "rdesc", r.desc));
-  const already = !r.yt && state.feeds.some(f => f.url === r.url);
+  const already = !r.yt && state.feeds.some(f => f.url === r.url) || (r.yt && r.id && state.feeds.some(f => f.url.endsWith("channel_id=" + r.id)));
   const b = el("button", "btn" + (already ? "" : " primary"), already ? "Following" : "Add"); b.type = "button"; b.disabled = already;
   b.onclick = async () => {
     b.disabled = true; b.textContent = "Adding…";
@@ -1682,14 +1876,15 @@ function resultEl(r){
 $("#addInput").addEventListener("input", e => {
   const t = e.target.value.trim();
   $("#addBtn").textContent = !t || isAddress(t) ? "Add" : "Search";
-  if (!t) { $("#searchResults").hidden = true; searchSeq++; }
+  if (!t){ search.q = ""; search.seq++; renderTopResults(); }
 });
 $("#addForm").addEventListener("submit", async e => {
   e.preventDefault();
   const input = $("#addInput"), btn = $("#addBtn");
   const raw = input.value.trim(); if (!raw) return;
-  if (!isAddress(raw)){ runSearch(raw); return; }
-  $("#searchResults").hidden = true;
+  setMsg("");
+  if (!isAddress(raw)){ startSearch(raw); return; }
+  search.q = ""; renderTopResults();
   btn.disabled = true; setMsg("Looking for the feed…");
   try{
     const {feed, count} = await addFeed(raw);
@@ -1699,6 +1894,17 @@ $("#addForm").addEventListener("submit", async e => {
     setMsg(err.message.replace(/\.$/, "") + ".", true);
   }finally{ btn.disabled = false; }
 });
+// Full "Add to your feed" page
+$("#spForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const q = $("#spInput").value.trim(); if (!q) return;
+  if (isAddress(q)){ $("#addInput").value = q; $("#searchPage").close(); $("#addForm").requestSubmit(); return; }
+  $("#addInput").value = q; $("#addBtn").textContent = "Search";
+  startSearch(q);
+});
+$("#spBack").onclick = () => $("#searchPage").close();
+$("#searchPage").addEventListener("close", () => { renderTopResults(); renderFeedList(); });
+renderFilterChips($("#searchFilters"), renderAllResults);
 
 /* ---------- design settings ---------- */
 const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow"};
