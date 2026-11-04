@@ -475,7 +475,7 @@ const state = {
   keepInBrowser: store.get("tl.keepbrowser", false)
 };
 const readerCache = new Map();
-state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/\.rss$/i); if (m) f.url = m[1] + "/new/.rss"; });
+state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
 
 /* ---------- fetching ---------- */
 // Each relay: build(url) -> request URL; json:true means the page text is wrapped in {contents}
@@ -565,21 +565,41 @@ async function fetchViaFeedly(url, feed){
   }).sort((a, b) => b.date - a.date);
   return {title: htmlToText(j.title || ""), items};
 }
+// Reddit: read both the main list (which feed services already know) and the "new" list, and combine them
+function redditVariants(url){
+  const m = (url || "").match(/^https:\/\/(?:www\.|old\.)?reddit\.com\/r\/(\w+)/i);
+  return m ? [`https://www.reddit.com/r/${m[1]}/.rss`, `https://www.reddit.com/r/${m[1]}/new/.rss`] : null;
+}
 async function loadFeed(url, feed){
-  // Ask the feed service and the relays together. Use the first answer, but give the other
-  // a few seconds to arrive too, and combine both (the feed service only returns 10 items).
-  const got = [];
-  const svc = fetchViaRss2json(url, feed).then(r => (got.push(r), r));
-  const rel = fetchText(url).then(t => parseFeed(t, feed)).then(r => (got.push(r), r));
-  const fdl = fetchViaFeedly(url, feed).then(r => (got.push(r), r));
+  const variants = redditVariants(url);
+  if (!variants) return loadOneFeed(url, feed);
+  const res = await Promise.allSettled(variants.map(v => loadOneFeed(v, feed)));
+  const ok = res.filter(r => r.status === "fulfilled").map(r => r.value);
+  if (!ok.length) throw res[0].reason;
+  const byId = new Map();
+  ok.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
+  return {title: (ok.find(g => g.title) || {}).title || "", items: [...byId.values()].sort((x, y) => y.date - x.date)};
+}
+async function loadOneFeed(url, feed){
+  // Ask every route at once. An answer with no stories never wins the race (a service that
+  // doesn't know the feed yet often answers instantly with nothing); wait for one with stories,
+  // then give the others a few seconds and combine them.
+  const got = [], empties = [];
+  const take = p => p.then(r => { if (r.items.length){ got.push(r); return r; } empties.push(r); throw new Error("empty"); });
+  const routes = [
+    take(fetchViaRss2json(url, feed)),
+    take(fetchText(url).then(t => parseFeed(t, feed))),
+    take(fetchViaFeedly(url, feed))
+  ];
   let first;
-  try{ first = await Promise.any([svc, rel, fdl]); }
+  try{ first = await Promise.any(routes); }
   catch(agg){
+    if (empties.length) return {title: (empties.find(e => e.title) || empties[0]).title, items: []};
     const errs = agg.errors || [];
-    const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service|Feedly|No data|Failed to fetch|NetworkError|Load failed|aborted|^\d+$|JSON|All promises|Unexpected token/i.test(e.message));
+    const real = errs.find(e => e && !/empty|Couldn't reach|took too long|Feed service|Feedly|No data|Failed to fetch|NetworkError|Load failed|aborted|^\d+$|JSON|All promises|Unexpected token/i.test(e.message));
     throw real || new Error("Couldn't reach that feed");
   }
-  await Promise.race([Promise.allSettled([svc, rel, fdl]), new Promise(r => setTimeout(r, 4000))]);
+  await Promise.race([Promise.allSettled(routes), new Promise(r => setTimeout(r, 4000))]);
   const byId = new Map();
   got.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
   const title = (got.find(g => g.title) || first).title;
@@ -760,7 +780,7 @@ async function findChannelId(page){ const c = await findChannel(page); return c 
 async function resolveInput(raw){
   let s = raw.trim();
   if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
-  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/new/.rss"};                       // r/subreddit
+  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/.rss"};                       // r/subreddit
   if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
   if (!/^https?:\/\//i.test(s)) s = "https://" + s;
   let u;
@@ -1739,7 +1759,7 @@ async function redditExact(q){
   if (name.length < 2) return null;
   const j = await getJSON(`https://www.reddit.com/r/${name}/about.json`, 10000);
   const d = j && j.data; if (!d || !d.display_name || d.over18) return null;
-  return {kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/new/.rss`,
+  return {kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/.rss`,
     website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
     followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")), exact: true};
 }
@@ -1755,7 +1775,7 @@ async function searchRedditList(q){
   const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=40&query=" + encodeURIComponent(q + " reddit"), 10000);
   return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).map(u => (u.match(/reddit\.com\/r\/([\w]+)/i) || [])[1]).filter(Boolean)
     .filter((n, i, a) => a.indexOf(n) === i)
-    .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/new/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
+    .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
       exact: n.toLowerCase() === q.replace(/\s+/g, "").toLowerCase()}));
 }
 async function searchRedditDirect(q){
@@ -1764,7 +1784,7 @@ async function searchRedditDirect(q){
   const j = await getJSON("https://www.reddit.com/subreddits/search.json?include_over_18=0&limit=25&q=" + encodeURIComponent(q));
   for (const c of (j.data && j.data.children) || []){
     const d = c.data || {}; if (!d.display_name || d.over18) continue;
-    out.push({kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/new/.rss`,
+    out.push({kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/.rss`,
       website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
       followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")),
       exact: d.display_name.toLowerCase() === name.toLowerCase()});
