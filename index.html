@@ -786,6 +786,13 @@ async function resolveInput(raw){
   let u;
   try{ u = new URL(s); }catch{ throw new Error("That doesn't look like a web address"); }
   const host = u.hostname.replace(/^(www|m|music)\./, "");
+  // Reddit links: subreddit or user → their own feed, never a guess
+  if (/(^|\.)reddit\.com$/.test(u.hostname)){
+    const sub = u.pathname.match(/^\/r\/(\w+)/i), usr = u.pathname.match(/^\/(?:u|user)\/([\w-]+)/i);
+    if (sub) return {url: `https://www.reddit.com/r/${sub[1]}/.rss`};
+    if (usr) return {url: `https://www.reddit.com/user/${usr[1]}/.rss`};
+    throw new Error("Paste a subreddit link (reddit.com/r/name) or type r/name");
+  }
   if ((host === "youtube.com" && !u.pathname.startsWith("/feeds/")) || host === "youtu.be"){
     let id = u.searchParams.get("channel_id") || (u.pathname.match(/\/channel\/(UC[\w-]{22})/) || [])[1];
     if (!id){
@@ -816,7 +823,13 @@ async function resolveInput(raw){
   const routeB = candidates.map(g => fetchViaRss2json(g, {id: "probe"}).then(() => ({url: g})));
   const site = u.hostname.replace(/^www\./, "");
   const routeC = feedlyLookup(u.href).then(list => {
-    const hit = list.find(f => { try{ return new URL(f).hostname.replace(/^www\./, "").endsWith(site.split(".").slice(-2).join(".")); }catch{ return false; } });
+    const seg = u.pathname.split("/").filter(Boolean)[0] || "";
+    const hit = list.find(f => { try{
+      const fu = new URL(f);
+      if (!fu.hostname.replace(/^www\./, "").endsWith(site.split(".").slice(-2).join("."))) return false;
+      // A link to a section of a site must match a feed for that section
+      return !seg || fu.pathname.toLowerCase().includes("/" + seg.toLowerCase()) || fu.search.toLowerCase().includes(seg.toLowerCase());
+    }catch{ return false; } });
     if (!hit) throw new Error("not found"); return {url: hit};
   });
   try{ return await Promise.any([routeA, routeC, ...routeB]); }
@@ -1764,16 +1777,22 @@ async function redditExact(q){
     followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")), exact: true};
 }
 async function searchReddit(q){
-  const [ex, list] = await Promise.all([redditExact(q).catch(() => null), searchRedditList(q).catch(() => [])]);
+  let [ex, list] = await Promise.all([redditExact(q).catch(() => null), searchRedditList(q).catch(() => [])]);
+  const name = q.replace(/^r\//i, "").replace(/[^\w]/g, "");
+  if (!ex && name.length >= 2 && !list.some(r => r.title.toLowerCase() === "r/" + name.toLowerCase())){
+    // Reddit couldn't be asked directly: still offer the obvious subreddit; adding it checks it exists
+    ex = {kind: "reddit", title: "r/" + name, url: `https://www.reddit.com/r/${name}/.rss`, website: `https://www.reddit.com/r/${name}/`,
+      site: "Subreddit · tap to check it's the right one", exact: true};
+  }
   const rest = list.filter(r => !ex || r.url.toLowerCase() !== ex.url.toLowerCase()).map(r => ex ? {...r, exact: false} : r);
-  if (!ex && !rest.length) throw new Error("unreachable");
   return ex ? [ex, ...rest] : rest;
 }
 async function searchRedditList(q){
   try{ const r = await searchRedditDirect(q); if (r.length) return r; }catch{}
   // Fallback: subreddit feeds that Feedly knows about
-  const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=40&query=" + encodeURIComponent(q + " reddit"), 10000);
-  return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).map(u => (u.match(/reddit\.com\/r\/([\w]+)/i) || [])[1]).filter(Boolean)
+  const ask = query => fetchAny("https://cloud.feedly.com/v3/search/feeds?count=40&query=" + encodeURIComponent(query), 10000).then(t => parseJsonIn(t).results || []).catch(() => []);
+  const all = (await Promise.all([ask(q + " reddit"), ask("reddit " + q), ask("r/" + q.replace(/\s+/g, ""))])).flat();
+  return all.map(r => (r.feedId || "").replace(/^feed\//, "")).map(u => (u.match(/reddit\.com\/r\/([\w]+)/i) || [])[1]).filter(Boolean)
     .filter((n, i, a) => a.indexOf(n) === i)
     .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
       exact: n.toLowerCase() === q.replace(/\s+/g, "").toLowerCase()}));
