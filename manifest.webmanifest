@@ -1,14 +1,28 @@
 {
-  "name": "TickRSS",
-  "short_name": "TickRSS",
+  "name": "tick/rss",
+  "short_name": "tick/rss",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0e1217",
-  "theme_color": "#0d6b63",
+  "theme_color": "#d9480f",
   "icons": [
-    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icon.svg", "sizes": "any", "type": "image/svg+xml"}
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
   ]
 }

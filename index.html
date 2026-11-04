@@ -5,16 +5,16 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="TickRSS">
+<meta name="apple-mobile-web-app-title" content="tick/rss">
 <meta name="theme-color" content="#edf0f3">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>TickRSS</title>
+<title>tick/rss</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Instrument+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,400;6..72,600&display=swap">
 <!-- Reader view is switched off (READER_ENABLED in the script). Restore these three libraries when turning it back on:
 <script src="https://cdn.jsdelivr.net/npm/@mozilla/readability@0.5.0/Readability.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.1.6/purify.min.js"></script>
@@ -25,7 +25,8 @@
 :root{
   --bg:#edf0f3; --surface:#ffffff; --sunk:#e2e7ec; --ink:#141a22; --muted:#5a6473;
   --line:#d4dbe3; --danger:#b42318;
-  --accent-l:#0d6b63; --accent-d:#55bdb1;              /* accent pair, changed in Settings */
+  --brand:#d9480f;                                      /* fixed logo orange */
+  --accent-l:#c2410c; --accent-d:#ff8a4c;              /* accent pair, changed in Settings */
   --accent:var(--accent-l); --accent-ink:#ffffff;
   --accent-soft:color-mix(in srgb, var(--accent) 16%, var(--surface));
   --ui:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
@@ -37,18 +38,18 @@
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
+    --brand:#ff8a4c; --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
     --line:#29313b; --accent:var(--accent-d); --accent-ink:#04201d; --danger:#f97066;
     color-scheme:dark;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
+  --brand:#ff8a4c; --bg:#0e1217; --surface:#161b22; --sunk:#1e252e; --ink:#e5e9ee; --muted:#97a1ae;
   --line:#29313b; --accent:var(--accent-d); --accent-ink:#04201d; --danger:#f97066;
   color-scheme:dark;
 }
 :root[data-theme="black"]{
-  --bg:#000000; --surface:#0d0f12; --sunk:#16191d; --ink:#e8eaed; --muted:#8f97a3;
+  --brand:#ff8a4c; --bg:#000000; --surface:#0d0f12; --sunk:#16191d; --ink:#e8eaed; --muted:#8f97a3;
   --line:#22262c; --accent:var(--accent-d); --accent-ink:#04201d; --danger:#f97066;
   color-scheme:dark;
 }
@@ -105,8 +106,10 @@ a.card:focus-visible{outline:2px solid var(--accent);outline-offset:0}
 .toprow{display:flex;align-items:center;gap:8px}
 .toprow{display:grid;grid-template-columns:44px 1fr 44px;align-items:center}
 .toprow > .btn:last-child{justify-self:end}
-.brand{font:600 24px/1 var(--ui);letter-spacing:-.02em;margin:0;display:flex;align-items:center;justify-content:center;gap:9px}
-.brand b{font-weight:700;color:var(--accent)}
+.brand{font:800 27px/1 var(--ui);letter-spacing:-.02em;margin:0;display:flex;align-items:center;justify-content:center;gap:9px}
+.wordmark{font-family:"Bricolage Grotesque",var(--ui);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink);white-space:nowrap}
+.wordmark .slash{width:.6em;height:.9em;margin:0 -.1em 0 .02em;overflow:visible}
+.wordmark .rss{color:var(--brand)}
 .logo{flex:none;display:block}
 .status{font-size:12.5px;color:var(--muted);min-height:1em}
 .status b{font-weight:600;color:var(--danger)}
@@ -200,7 +203,7 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 @keyframes drawerOut{to{transform:translateX(-100%)}}
 @keyframes fadeIn{from{opacity:0}}
 @keyframes fadeOut{to{opacity:0}}
-.dlg header h2.brand{justify-content:flex-start;font:600 21px/1 var(--ui);letter-spacing:-.02em;flex:1}
+.dlg header h2.brand{justify-content:flex-start;font:800 23px/1 var(--ui);letter-spacing:-.02em;flex:1}
 .tabs{margin:12px 18px 0;display:grid;grid-template-columns:1fr 1fr}
 .tabs button{padding:8px 10px}
 .dlg{display:flex;flex-direction:column;max-height:calc(100dvh - 42px)}
@@ -278,7 +281,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <button class="btn icon" id="manage" aria-label="Open menu" aria-controls="dlg" aria-expanded="false" title="Menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <h1 class="brand"><svg class="logo" width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><circle cx="9" cy="23" r="2.6" fill="var(--accent-ink)"/><path d="M7 15a10 10 0 0 1 10 10" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M7 8.5a16.5 16.5 0 0 1 9.4 2.9" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M18 12.5l3.6 3.6 7-8" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tick<b>RSS</b></span></h1>
+        <h1 class="brand" aria-label="tick/rss"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">tick<svg class="slash" viewBox="0 0 60 90" aria-hidden="true"><path d="M6 58L20 82L54 6" fill="none" stroke="var(--brand)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="rss">rss</span></span></h1>
         <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
         </button>
@@ -294,7 +297,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 <dialog id="dlg" class="drawer" aria-label="Menu">
   <div class="dlg">
     <header>
-      <h2 class="brand"><svg class="logo" width="22" height="22" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="8" fill="var(--accent)"/><circle cx="9" cy="23" r="2.6" fill="var(--accent-ink)"/><path d="M7 15a10 10 0 0 1 10 10" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M7 8.5a16.5 16.5 0 0 1 9.4 2.9" fill="none" stroke="var(--accent-ink)" stroke-width="2.8" stroke-linecap="round"/><path d="M18 12.5l3.6 3.6 7-8" fill="none" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Tick<b>RSS</b></span></h2>
+      <h2 class="brand" aria-label="tick/rss"><svg class="logo" width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">tick<svg class="slash" viewBox="0 0 60 90" aria-hidden="true"><path d="M6 58L20 82L54 6" fill="none" stroke="var(--brand)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="rss">rss</span></span></h2>
       <button class="btn icon" id="dlgClose" aria-label="Close menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -1533,9 +1536,9 @@ $("#addForm").addEventListener("submit", async e => {
 });
 
 /* ---------- design settings ---------- */
-const DESIGN_DEFAULT = {theme:"system", accent:"teal", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow"};
+const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow"};
 const ACCENTS = {
-  teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
+  orange:["#c2410c","#ff8a4c"], teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
   amber:["#9a5b00","#f2b453"], green:["#2f7a1f","#8fd47a"], slate:["#3d4a5c","#a9b6c8"], red:["#c0362c","#ff8a7e"]
 };
 const DESIGN_ROWS = [
@@ -1549,6 +1552,7 @@ const DESIGN_ROWS = [
   ["width","Width on desktop",[["narrow","Narrow"],["wide","Wide"]]]
 ];
 let design = {...DESIGN_DEFAULT, ...store.get("tl.design", {})};
+if (!store.get("tl.brand1", false)){ if (design.accent === "teal") design.accent = "orange"; store.set("tl.brand1", true); store.set("tl.design", design); }
 function applyDesign(){
   const r = document.documentElement;
   if (design.theme === "system") r.removeAttribute("data-theme"); else r.dataset.theme = design.theme;

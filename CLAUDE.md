@@ -1,4 +1,6 @@
-# TickRSS (formerly Tideline)
+# tick/rss (TickRSS, formerly Tideline)
+
+Brand: wordmark "tick" + orange tick-shaped slash + "rss", all the same size (Bricolage Grotesque 800); two colours only, ink and orange (`--brand`: #d9480f light, #ff8a4c dark). Icon: Feed Check (two lines and a tick on an orange rounded square). Concepts live on the "TickRSS logo concepts" design canvas.
 
 Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ (the path is case-sensitive). Every push to `main` goes live.
 
