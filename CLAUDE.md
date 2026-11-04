@@ -7,6 +7,7 @@ Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is
 ## How it works
 - Feeds are fetched in the browser. Three routes run at once and their results are combined: Feedly's public stream API (`fetchViaFeedly`, up to 100 items, no key), the rss2json service (10 items without a key, up to 100 with the user's key) and a set of free CORS relays (often failing).
 - Finding a feed from a site or YouTube channel also runs several routes at once, including Feedly's feed search (`feedlyLookup`). Search results add their feed address directly (`addFeed(url, true)`).
+- Publisher pills at the top scroll sideways and show how many unopened stories arrived since the last update (`newCount`, `state.baseline`: set to the previous update time on load and to now on a manual refresh). Pills with 0 are greyed out. Tapping a feed in the menu filters to it; "All feeds" is the first row.
 - Stories are kept for 7 days per feed (`KEEP_DAYS`, `mergeHistory`), stored in the browser's localStorage.
 - Tapping a story opens it on the website. The in-app viewer and Reader view are switched off (`READER_ENABLED = false`); their code is kept for later.
 - The hamburger button (top left) opens a left-hand drawer with two tabs: Your feeds (search/add, edit, remove) and Settings (look options, "Keep links in the browser" (Android intent trick), the rss2json key and a custom proxy).

@@ -117,6 +117,15 @@ a.card:focus-visible{outline:2px solid var(--accent);outline-offset:0}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chips{scroll-behavior:smooth;overscroll-behavior-x:contain;scroll-snap-type:x proximity}
+.chips.fade-r{-webkit-mask-image:linear-gradient(to right,#000 85%,transparent);mask-image:linear-gradient(to right,#000 85%,transparent)}
+.chips.fade-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 15%);mask-image:linear-gradient(to right,transparent,#000 15%)}
+.chips.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent)}
+.chip{scroll-snap-align:start}
+.chip .count{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums;margin-right:-6px}
+.chip.zero .count{background:var(--sunk);color:var(--muted)}
+.chip.zero:not([aria-pressed="true"]){opacity:.55}
+.chip[aria-pressed="true"].zero .count{background:color-mix(in srgb,var(--bg) 25%,transparent);color:var(--bg)}
 
 .btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:6px 11px;font-size:13.5px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none;color:var(--ink);white-space:nowrap}
 .btn:hover{background:var(--sunk)}
@@ -217,13 +226,26 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .msg{font-size:13.5px;min-height:1.2em;margin:0}
 .msg.err{color:var(--danger)}
 .flist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:10px;overflow:hidden}
-.flist li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
+.flist li{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;align-items:center;padding:4px 8px 4px 4px;border-top:1px solid var(--line)}
+.flist .pick{all:unset;box-sizing:border-box;display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px;border-radius:8px;cursor:pointer;min-width:0}
+.flist .pick:hover{background:var(--sunk)}
+.flist .pick:focus-visible{outline:2px solid var(--accent)}
+.flist .pick[aria-current="true"]{background:var(--accent-soft)}
+.flist .pick[aria-current="true"] .nm{color:var(--accent)}
+.flist .info,.flist .sub{display:flex;flex-direction:column;min-width:0}
+.flist .nm{display:block}
+.flist .all-dot{background:conic-gradient(var(--brand) 0 25%,#1c7ed6 0 50%,#2b8a3e 0 75%,#ae3ec9 0)!important}
+.flist .count{min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.flist .count.zero{background:var(--sunk);color:var(--muted)}
+.flist .acts .btn.icon{width:36px;height:36px}
+.flist .acts .btn.armed{width:auto;padding:0 10px;font-weight:600}
+.row-all{background:color-mix(in srgb,var(--sunk) 50%,transparent)}
 .flist li:first-child{border-top:0}
 .flist .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flist .url{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flist .er{font-size:12px;color:var(--danger)}
 .btn.danger{color:var(--danger)}
-.flist li.editing{display:block;background:var(--bg)}
+.flist li.editing{display:block;background:var(--bg);padding:10px 12px}
 .flist .acts{display:flex;gap:6px}
 .editform{display:flex;flex-direction:column;gap:12px}
 .editform .field{margin:0}
@@ -383,6 +405,9 @@ const state = {
   activeId: null,
   modes: {},
   lastUpdated: store.get("tl.updated", 0),
+  // Stories that arrived after this moment and haven't been opened count as "new" on the publisher pills.
+  // It moves to the previous update time when the app opens, and to "now" when you tap refresh.
+  baseline: store.get("tl.updated", 0),
   busy: false,
   proxy: store.get("tl.proxy", ""),
   rssKey: store.get("tl.rsskey", ""),
@@ -712,19 +737,44 @@ function nextColor(){
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 /* ---------- rendering: chips + status ---------- */
+function newCount(feedId){
+  let n = 0;
+  for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && (i.seen || 0) > state.baseline && !state.read.has(i.id)) n++;
+  return n;
+}
+function selectFeed(id){
+  state.filter = id; state.shown = PAGE;
+  renderChips(); renderList();
+  window.scrollTo({top: 0}); $("#list").scrollTop = 0;
+}
 function renderChips(){
-  const c = $("#chips"); c.textContent = "";
+  const c = $("#chips"); const keep = c.scrollLeft; c.textContent = "";
   const mk = (id, label, color) => {
-    const b = el("button", "chip");
+    const n = newCount(id);
+    const b = el("button", "chip" + (n ? "" : " zero"));
     b.type = "button";
     b.setAttribute("aria-pressed", String(state.filter === id));
+    b.setAttribute("aria-label", `${label}, ${n ? n + " new" : "no new stories"}`);
     if (color){ const d = el("span", "dot"); d.style.background = color; b.append(d); }
     b.append(document.createTextNode(label));
-    b.onclick = () => { state.filter = id; state.shown = PAGE; renderChips(); renderList(); $("#list").scrollTop = 0; };
+    b.append(el("span", "count", String(n)));
+    b.onclick = () => selectFeed(id);
     c.append(b);
   };
   mk("all", "All");
   state.feeds.forEach(f => mk(f.id, f.title || "Feed", f.color));
+  c.scrollLeft = keep;
+  const on = c.querySelector('[aria-pressed="true"]');
+  if (on){
+    const cr = c.getBoundingClientRect(), r = on.getBoundingClientRect();
+    if (r.left < cr.left + 16 || r.right > cr.right - 16) c.scrollLeft += (r.left + r.width / 2) - (cr.left + cr.width / 2);
+  }
+  updateChipFades();
+}
+function updateChipFades(){
+  const c = $("#chips");
+  c.classList.toggle("fade-l", c.scrollLeft > 4);
+  c.classList.toggle("fade-r", c.scrollLeft + c.clientWidth < c.scrollWidth - 4);
 }
 function renderStatus(){
   const s = $("#status"); s.textContent = "";
@@ -822,7 +872,7 @@ function cardEl(it){
     th.append(img); a.append(th);
   }
   a.addEventListener("click", e => {
-    state.read.add(it.id); save(); a.classList.add("read");
+    state.read.add(it.id); save(); a.classList.add("read"); renderChips();
     if (state.keepInBrowser && it.link){
       const intent = browserIntent(it.link);
       if (intent){ e.preventDefault(); location.href = intent; }
@@ -1215,23 +1265,47 @@ async function refreshAll(){
 /* ---------- feeds dialog ---------- */
 const dlg = $("#dlg");
 let editingId = null;
+const ICON_EDIT = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
+const ICON_BIN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>';
 function renderFeedList(){
   const ul = $("#flist"); ul.textContent = "";
-  if (!state.feeds.length){ const li = el("li"); li.append(el("span"), el("span", "url", "No feeds yet. Add one above.")); ul.append(li); return; }
+  if (!state.feeds.length){ const li = el("li"); li.append(el("span", "url", "No feeds yet. Add one above.")); ul.append(li); return; }
+  const pickRow = (id, dotColor, name, sub) => {
+    const pick = el("button", "pick"); pick.type = "button";
+    pick.setAttribute("aria-current", String(state.filter === id));
+    const d = el("span", "dot"); d.style.background = dotColor || "transparent"; if (!dotColor) d.classList.add("all-dot");
+    const info = el("span", "info");
+    info.append(el("span", "nm", name));
+    if (sub) info.append(sub);
+    const n = newCount(id);
+    pick.append(d, info, el("span", "count" + (n ? "" : " zero"), n ? String(n) : "0"));
+    pick.onclick = () => { selectFeed(id); closeMenu(); };
+    return pick;
+  };
+  // "All feeds" first
+  const all = el("li", "row-all");
+  all.append(pickRow("all", null, "All feeds", el("span", "url", `${state.feeds.length} feed${state.feeds.length === 1 ? "" : "s"}`)));
+  ul.append(all);
   state.feeds.forEach((f, idx) => {
     const li = el("li");
     if (f.id === editingId){ li.className = "editing"; li.append(editForm(f, idx)); ul.append(li); return; }
-    const d = el("span", "dot"); d.style.background = f.color;
-    const info = el("div"); info.style.minWidth = "0";
-    info.append(el("div", "nm", f.title || "Untitled feed"), el("div", "url", f.url));
-    if (f.error) info.append(el("div", "er", "Couldn't update: " + f.error));
+    const sub = el("span", "sub");
+    sub.append(el("span", "url", f.url));
+    if (f.error) sub.append(el("span", "er", "Couldn't update: " + f.error));
     const acts = el("div", "acts");
-    const ed = el("button", "btn", "Edit"); ed.type = "button";
+    const ed = el("button", "btn icon"); ed.type = "button"; ed.innerHTML = ICON_EDIT;
+    ed.setAttribute("aria-label", "Edit " + (f.title || "feed")); ed.title = "Edit";
     ed.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n) n.focus(); };
-    const rm = el("button", "btn", "Remove"); rm.type = "button";
+    const rm = el("button", "btn icon"); rm.type = "button"; rm.innerHTML = ICON_BIN;
+    rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); rm.title = "Remove";
     let armed = false, timer;
+    const disarm = () => { armed = false; rm.classList.remove("armed", "danger"); rm.innerHTML = ICON_BIN; rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); };
     rm.onclick = () => {
-      if (!armed){ armed = true; rm.textContent = "Confirm"; rm.classList.add("danger"); timer = setTimeout(() => { armed = false; rm.textContent = "Remove"; rm.classList.remove("danger"); }, 3000); return; }
+      if (!armed){
+        armed = true; rm.classList.add("armed", "danger"); rm.textContent = "Remove";
+        rm.setAttribute("aria-label", "Tap again to remove " + (f.title || "feed"));
+        timer = setTimeout(disarm, 3000); return;
+      }
       clearTimeout(timer);
       state.feeds = state.feeds.filter(x => x.id !== f.id);
       state.items = state.items.filter(i => i.feedId !== f.id);
@@ -1241,7 +1315,8 @@ function renderFeedList(){
       setMsg(`Removed ${f.title || "feed"}.`);
     };
     acts.append(ed, rm);
-    li.append(d, info, acts); ul.append(li);
+    li.append(pickRow(f.id, f.color, f.title || "Untitled feed", sub), acts);
+    ul.append(li);
   });
 }
 function editForm(f, idx){
@@ -1368,7 +1443,7 @@ async function addFeed(raw, direct){
   if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
   feed.title = p.title || new URL(feed.url).hostname.replace(/^www\./, "");
   state.feeds.push(feed);
-  state.items = mergeHistory(state.items, p.items);
+  state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
   return {feed, count: p.items.length};
 }
@@ -1614,7 +1689,10 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
   if (now){ if (viewerEl) $("#pane").replaceChildren(viewerEl); else renderPaneEmpty(); }
   else if (id) placeInline();
 });
-$("#refresh").onclick = refreshAll;
+$("#refresh").onclick = () => { if (state.busy) return; state.baseline = Date.now(); store.set("tl.baseline", state.baseline); refreshAll(); };
+$("#chips").addEventListener("scroll", updateChipFades, {passive: true});
+$("#chips").addEventListener("wheel", e => { const c = e.currentTarget; if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && c.scrollWidth > c.clientWidth){ e.preventDefault(); c.scrollLeft += e.deltaY; } }, {passive: false});
+addEventListener("resize", updateChipFades);
 setInterval(renderStatus, 60000);
 setInterval(() => { if (document.visibilityState === "visible") refreshAll(); }, 15 * 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && Date.now() - state.lastUpdated > 10 * 60000) refreshAll(); });
