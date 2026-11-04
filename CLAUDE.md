@@ -16,6 +16,7 @@ Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is
 
 ## Fetching
 - Order: the user's own relay (Settings → Your own relay; Cloudflare Worker in `relay/worker.js`, key kept out of the repo) → direct → free relays / rss2json / Feedly / Jina. Settings has a Connection check that tests each route from the device.
+- Each feed has its own schedule (`everyMin`, `nextCheck`, `isDue`): the feed's <ttl> or sy:updatePeriod/Frequency when given, else 15 min (podcasts 60), clamped 10 min–6 h. Failed feeds back off 5→60 min. Opening the app, the refresh button and the 1-minute timer only fetch feeds that are due.
 - Each feed always keeps its 20 newest stories (`MIN_PER_FEED`) regardless of age, so weekly podcasts and quiet channels show up.
 
 ## When checking or adding a publisher

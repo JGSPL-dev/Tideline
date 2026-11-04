@@ -578,7 +578,7 @@ async function loadFeed(url, feed){
   if (!ok.length) throw res[0].reason;
   const byId = new Map();
   ok.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
-  return {title: (ok.find(g => g.title) || {}).title || "", items: [...byId.values()].sort((x, y) => y.date - x.date)};
+  return {title: (ok.find(g => g.title) || {}).title || "", items: [...byId.values()].sort((x, y) => y.date - x.date), everyMin: Math.max(0, ...ok.map(g => g.everyMin || 0)) || null};
 }
 async function loadOneFeed(url, feed){
   // Ask every route at once. An answer with no stories never wins the race (a service that
@@ -603,7 +603,8 @@ async function loadOneFeed(url, feed){
   const byId = new Map();
   got.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
   const title = (got.find(g => g.title) || first).title;
-  return {title, items: [...byId.values()].sort((x, y) => y.date - x.date)};
+  const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
+  return {title, items: [...byId.values()].sort((x, y) => y.date - x.date), everyMin};
 }
 // Keep a rolling history: everything seen in the last KEEP_DAYS, per feed
 function mergeHistory(oldItems, newItems){
@@ -673,7 +674,8 @@ function makeItem(feed, o){
     date: o.date || 0,
     summary: (o.summary || "").slice(0, 1000),
     image: videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : safeUrl(o.image),
-    videoId: videoId || null
+    videoId: videoId || null,
+    audio: o.audio || undefined
   };
 }
 function rssItem(e, feed){
@@ -685,8 +687,10 @@ function rssItem(e, feed){
   const cands = [...deep(e, "media:content"), ...deep(e, "media:thumbnail")].filter(m => attr(m, "url") && isImg(m))
     .sort((x, y) => (+attr(y, "width") || 0) - (+attr(x, "width") || 0));
   const encl = kids(e, "enclosure").find(x => /^image/.test(attr(x, "type") || ""));
+  const audio = kids(e, "enclosure").some(x => /^audio/.test(attr(x, "type") || ""));
   const image = attr(cands[0], "url") || attr(encl, "url") || attr(kid(e, "itunes:image"), "href") || firstImg(content) || firstImg(desc);
   return makeItem(feed, {
+    audio,
     title: htmlToText(txt(kid(e, "title"))),
     link,
     date: Date.parse(txt(kid(e, "pubdate")) || txt(kid(e, "dc:date"))) || 0,
@@ -709,6 +713,15 @@ function atomItem(e, feed){
     videoId: vid || null
   });
 }
+// How often a feed asks to be checked, in minutes: RSS <ttl>, or <sy:updatePeriod>/<sy:updateFrequency>
+function feedHintMinutes(root){
+  const ttl = parseInt(txt(deep(root, "ttl")[0]), 10);
+  if (ttl > 0) return ttl;
+  const period = txt(deep(root, "sy:updateperiod")[0]).toLowerCase();
+  const per = {hourly: 60, daily: 1440, weekly: 10080, monthly: 43200, yearly: 525600}[period];
+  if (per){ const freq = parseInt(txt(deep(root, "sy:updatefrequency")[0]), 10) || 1; return Math.round(per / freq); }
+  return null;
+}
 function parseFeed(xml, feed){
   const doc = new DOMParser().parseFromString(xml.replace(/^﻿/, "").trim(), "application/xml");
   const root = doc.documentElement;
@@ -724,7 +737,7 @@ function parseFeed(xml, feed){
     items = deep(root, "item").map(e => rssItem(e, feed));
   } else throw new Error("That address isn't an RSS or Atom feed");
   items = items.filter(i => i.link || i.title).sort((a, b) => b.date - a.date).slice(0, 40);
-  return {title: htmlToText(title), items};
+  return {title: htmlToText(title), items, everyMin: feedHintMinutes(root)};
 }
 const looksLikeFeed = t => /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000));
 
@@ -921,7 +934,11 @@ function renderStatus(){
   if (state.busy){ s.textContent = "Checking for new stories…"; return; }
   const bad = state.feeds.filter(f => f.error).length;
   const n = state.feeds.length;
-  s.append(document.createTextNode(state.lastUpdated ? `Updated ${ago(state.lastUpdated)} · ${n} feed${n === 1 ? "" : "s"}` : `${n} feed${n === 1 ? "" : "s"}`));
+  const next = state.feeds.length ? soonestCheck() : 0;
+  const mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
+  const nextTxt = next > Date.now() ? ` · next check in ${mins} min` : "";
+  if (state.note === "upToDate") s.append(document.createTextNode(`All feeds are up to date${nextTxt}`));
+  else s.append(document.createTextNode(state.lastUpdated ? `Updated ${ago(state.lastUpdated)}${nextTxt}` : `${n} feed${n === 1 ? "" : "s"}`));
   if (bad && bad === n){ s.textContent = ""; s.append(el("b", null, "Couldn't reach any feeds. ")); s.append(document.createTextNode("Check you're online and that TickRSS is open in a web browser, then tap refresh.")); }
   else if (bad){ s.append(document.createTextNode(" · ")); s.append(el("b", null, `${bad} couldn't update`)); }
 }
@@ -1375,21 +1392,55 @@ async function loadReader(it, body){
 }
 
 /* ---------- refresh ---------- */
+/* ---------- per-feed schedule ---------- */
+// How often each kind of source is checked when its feed doesn't say (minutes)
+function defaultEveryMin(f){
+  const u = f.url || "";
+  if (/youtube\.com\/feeds/.test(u)) return 15;          // YouTube refreshes its channel feeds about every 15 minutes
+  if (/reddit\.com/.test(u)) return 15;                    // keep well inside Reddit's request limits
+  if (/news\.google\.com/.test(u)) return 15;
+  if (/bsky\.app|mastodon|\.rss$/.test(u) && /bsky|@/.test(u)) return 15;
+  if (f.audio) return 60;                                   // podcasts publish rarely
+  return 15;
+}
+const MIN_EVERY = 10, MAX_EVERY = 6 * 60;   // never more often than 10 min, never less than every 6 h
+function everyMin(f){
+  const want = f.everyMin || defaultEveryMin(f);
+  return Math.min(MAX_EVERY, Math.max(MIN_EVERY, want));
+}
+function nextCheck(f){
+  if (!f.lastFetched) return 0;
+  if (f.error){                                             // failed: try again after 5, 10, 20… minutes, at most an hour
+    const wait = Math.min(60, 5 * 2 ** Math.min(4, (f.fails || 1) - 1));
+    return (f.lastTried || f.lastFetched) + wait * 60000;
+  }
+  return f.lastFetched + everyMin(f) * 60000;
+}
+const isDue = (f, now = Date.now()) => nextCheck(f) <= now + 30000;
+function soonestCheck(){ return Math.min(...state.feeds.map(nextCheck)); }
+
 async function refreshAll(){
   if (state.busy || !state.feeds.length) return;
+  // Only feeds whose own refresh time has come are fetched; the rest keep what they have
+  const due = state.feeds.filter(f => isDue(f));
+  if (!due.length){ state.note = "upToDate"; renderStatus(); return; }
+  state.note = "";
   state.busy = true; renderStatus();
   const btn = $("#refresh"); btn.disabled = true; btn.classList.add("spin");
   if (!state.items.length) renderList();
-  const results = await pool(state.feeds, 4, async f => {
+  const results = await pool(due, 4, async f => {
+    f.lastTried = Date.now();
     try{
       const p = await loadFeed(f.url, f);
       if (!f.title && p.title) f.title = p.title;
-      f.error = null;
+      f.error = null; f.fails = 0; f.lastFetched = Date.now();
+      f.everyMin = p.everyMin || null;
+      f.audio = p.items.some(i => i.audio) || f.audio || false;
       return p.items;
-    }catch(e){ f.error = e.message; return null; }
+    }catch(e){ f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now(); return null; }
   });
   const ids = new Set(state.feeds.map(f => f.id));
-  const fresh = new Map(state.feeds.map((f, i) => [f.id, results[i]]));
+  const fresh = new Map(due.map((f, i) => [f.id, results[i]]));
   let incoming = [];
   fresh.forEach(v => { if (v) incoming = incoming.concat(v); });
   state.items = mergeHistory(state.items.filter(i => ids.has(i.feedId)), incoming);
@@ -1431,6 +1482,8 @@ function renderFeedList(){
     if (f.id === editingId){ li.className = "editing"; li.append(editForm(f, idx)); ul.append(li); return; }
     const sub = el("span", "sub");
     sub.append(el("span", "url", f.url));
+    const every = everyMin(f);
+    sub.append(el("span", "url", `Checks every ${every >= 60 ? (every % 60 ? (every / 60).toFixed(1) : every / 60) + " h" : every + " min"}${f.everyMin ? " (set by the feed)" : ""}${f.lastFetched ? " · last " + ago(f.lastFetched) : ""}`));
     if (f.error) sub.append(el("span", "er", "Couldn't update: " + f.error));
     const acts = el("div", "acts");
     const ed = el("button", "btn icon"); ed.type = "button"; ed.innerHTML = ICON_EDIT;
@@ -1618,6 +1671,7 @@ async function addFeed(raw, direct){
   }
   if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
   feed.title = p.title || new URL(feed.url).hostname.replace(/^www\./, "");
+  feed.lastFetched = Date.now(); feed.everyMin = p.everyMin || null; feed.audio = p.items.some(i => i.audio);
   state.feeds.push(feed);
   state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
@@ -2121,13 +2175,18 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
   if (now){ if (viewerEl) $("#pane").replaceChildren(viewerEl); else renderPaneEmpty(); }
   else if (id) placeInline();
 });
-$("#refresh").onclick = () => { if (state.busy) return; state.baseline = Date.now(); store.set("tl.baseline", state.baseline); refreshAll(); };
+$("#refresh").onclick = async () => {
+  if (state.busy) return;
+  state.baseline = Date.now(); store.set("tl.baseline", state.baseline);
+  await refreshAll();
+  if (state.note === "upToDate") setTimeout(() => { state.note = ""; renderStatus(); }, 4000);
+};
 $("#chips").addEventListener("scroll", updateChipFades, {passive: true});
 $("#chips").addEventListener("wheel", e => { const c = e.currentTarget; if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && c.scrollWidth > c.clientWidth){ e.preventDefault(); c.scrollLeft += e.deltaY; } }, {passive: false});
 addEventListener("resize", updateChipFades);
 setInterval(renderStatus, 60000);
-setInterval(() => { if (document.visibilityState === "visible") refreshAll(); }, 15 * 60000);
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && Date.now() - state.lastUpdated > 10 * 60000) refreshAll(); });
+setInterval(() => { if (document.visibilityState === "visible" && soonestCheck() <= Date.now()) refreshAll(); }, 60000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && soonestCheck() <= Date.now()) refreshAll(); });
 
 /* ---------- set-up link: …/#relay=<address> saves your relay ---------- */
 (() => {
@@ -2150,8 +2209,8 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 /* ---------- start ---------- */
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();
 // Opening the app only fetches if the last update is over 10 minutes old (or there's nothing to show yet)
-const FRESH_MS = 10 * 60000;
-if (state.forceRefresh || !state.items.length || Date.now() - state.lastUpdated > FRESH_MS) refreshAll();
+if (state.forceRefresh) state.feeds.forEach(f => { f.lastFetched = 0; });
+refreshAll();   // fetches only the feeds that are due
 })();
 </script>
 </body>
