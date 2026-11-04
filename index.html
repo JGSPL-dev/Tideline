@@ -65,6 +65,7 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 a.card{color:inherit;text-decoration:none}
 /* Settings-driven variations */
 :root[data-sum="off"] .sum{display:none}
+:root[data-sum="full"] .sum{display:block;-webkit-line-clamp:unset;overflow:visible;white-space:pre-line}
 :root[data-thumbs="off"] .thumb{display:none}
 :root[data-thumbs="large"] .thumb{width:132px}
 :root[data-thumbs="large"] .thumb.vid{width:176px}
@@ -498,7 +499,7 @@ function makeItem(feed, o){
     title: o.title || "Untitled",
     link,
     date: o.date || 0,
-    summary: (o.summary || "").slice(0, 320),
+    summary: (o.summary || "").slice(0, 1000),
     image: videoId ? `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg` : safeUrl(o.image),
     videoId: videoId || null
   };
@@ -1253,7 +1254,7 @@ const DESIGN_ROWS = [
   ["head","Headlines",[["serif","Serif"],["sans","Sans"]]],
   ["density","Spacing",[["compact","Compact"],["normal","Normal"],["roomy","Roomy"]]],
   ["thumbs","Images",[["off","Off"],["small","Small"],["large","Large"]]],
-  ["sum","Summaries",[["on","Show"],["off","Hide"]]],
+  ["sum","Summaries",[["on","Short"],["full","Full"],["off","Hide"]]],
   ["width","Width on desktop",[["narrow","Narrow"],["wide","Wide"]]]
 ];
 let design = {...DESIGN_DEFAULT, ...store.get("tl.design", {})};
