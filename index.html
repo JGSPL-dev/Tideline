@@ -264,6 +264,10 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .rtitle{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rmeta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rmatch{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--brand);margin-bottom:2px}
+a.rinfo{color:inherit;text-decoration:none;display:block;min-width:0;border-radius:6px}
+a.rinfo:hover .rtitle{text-decoration:underline}
+a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.rmeta .ext{display:inline-block;vertical-align:-2px;margin-left:4px;opacity:.7}
 .rerr{font-size:12.5px;color:var(--danger);margin-top:4px}
 .rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
@@ -632,7 +636,8 @@ function channelIdIn(text, isVideo){
   const pats = isVideo
     ? [/"channelId":"(UC[\w-]{22})"/, /itemprop="channelId" content="(UC[\w-]{22})"/, /\/channel\/(UC[\w-]{22})/]
     : [/<link rel="canonical" href="https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})"/, /"externalId":"(UC[\w-]{22})"/,
-       /channel_id=(UC[\w-]{22})/, /"browseId":"(UC[\w-]{22})"/, /youtube\.com\/channel\/(UC[\w-]{22})/];
+       /channel_id=(UC[\w-]{22})/, /"browseId":"(UC[\w-]{22})"/, /itemprop="(?:channelId|identifier)" content="(UC[\w-]{22})"/,
+       /youtube\.com\/channel\/(UC[\w-]{22})/, /href="\/channel\/(UC[\w-]{22})"/];
   for (const p of pats){ const m = text.match(p); if (m) return m[1]; }
   return null;
 }
@@ -641,12 +646,22 @@ async function feedlyLookup(address){
   const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=10&query=" + encodeURIComponent(address), 10000);
   return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).filter(u => /^https?:/.test(u));
 }
+// UK/EU visitors get a cookie-consent page instead of YouTube. ucbcb=1 skips it.
+function ytPage(url){
+  try{ const u = new URL(url); u.searchParams.set("hl", "en"); u.searchParams.set("gl", "GB"); u.searchParams.set("ucbcb", "1"); return u.href; }catch{ return url; }
+}
+// The reader service, asked for the page's HTML (with consent cookies set) rather than a text summary
+function jinaHtml(url, ms = 15000){
+  return fetchWithTimeout("https://r.jina.ai/" + url, ms, {"X-Return-Format": "html", "X-Set-Cookie": "SOCS=CAI; CONSENT=YES+1"})
+    .then(r => { if (!r.ok) throw new Error("reader " + r.status); return r.text(); });
+}
 async function findChannelId(page, original){
   const isVideo = /watch\?v=/.test(page);
   const need = t => { const id = channelIdIn(t, isVideo); if (!id) throw new Error("no id"); return id; };
   const routes = [
-    fetchText(page, 12000).then(need),
-    fetchWithTimeout("https://r.jina.ai/" + page, 15000).then(r => { if (!r.ok) throw new Error("jina " + r.status); return r.text(); }).then(need),
+    fetchText(ytPage(page), 12000).then(need),
+    jinaHtml(ytPage(page)).then(need),
+    fetchWithTimeout("https://r.jina.ai/" + ytPage(page), 15000).then(r => { if (!r.ok) throw new Error("jina " + r.status); return r.text(); }).then(need),
     feedlyLookup(page).then(list => { for (const u of list){ const m = u.match(/channel_id=(UC[\w-]{22})/); if (m) return m[1]; } throw new Error("no id"); })
   ];
   try{ return await Promise.any(routes); }catch{ return null; }
@@ -1513,14 +1528,22 @@ async function searchWeb(q){
   const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=12&query=" + encodeURIComponent(q));
   const j = jsonIn(t);
   return (j.results || []).filter(r => /^feed\/https?:/.test(r.feedId || "") && !/youtube\.com\/feeds/.test(r.feedId)).map(r => ({
-    title: htmlToText(r.title || ""), url: r.feedId.slice(5), site: (r.website || r.feedId.slice(5)).replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, ""),
+    title: htmlToText(r.title || ""), url: r.feedId.slice(5), website: safeUrl(r.website || ""), site: (r.website || r.feedId.slice(5)).replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, ""),
     desc: htmlToText(r.description || ""), followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")
   }));
 }
 async function searchYouTube(q){
   const seen = new Set(), out = [];
   const add = r => { const k = (r.id || r.url).toLowerCase(); if (seen.has(k)) return; seen.add(k); out.push(r); };
-  const page = "https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q);   // channels only
+  const page = ytPage("https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q));   // channels only
+  const parseHtml = t => {
+    for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g))
+      add({title: m[2], url: m[1], id: m[1], site: "YouTube channel", yt: true});
+    // Rendered channel results: <a href="/@handle" …> with the channel name in a following title element
+    for (const m of t.matchAll(/href="(?:https:\/\/www\.youtube\.com)?\/(@[\w.-]+)"[^>]*>[\s\S]{0,600}?(?:id="(?:channel-title|text)"[^>]*>|title=")\s*([^<"]{2,80})/g))
+      add({title: htmlToText(m[2]).trim(), url: m[1], site: "youtube.com/" + m[1], yt: true});
+  };
+  const fromHtml = jinaHtml(page, 16000).then(parseHtml);
   const fromYT = fetchAny(page, 12000).then(t => {
     for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g))
       add({title: m[2], url: m[1], id: m[1], site: "YouTube channel", yt: true});
@@ -1530,13 +1553,14 @@ async function searchYouTube(q){
     for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/(@[\w.-]+)\)/g))
       add({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], site: "youtube.com/" + m[2], yt: true});
   });
-  const fromFeedly = fetchAny("https://cloud.feedly.com/v3/search/feeds?count=20&query=" + encodeURIComponent(q + " youtube"), 10000).then(t => {
+  const feedlyYT = query => fetchAny("https://cloud.feedly.com/v3/search/feeds?count=20&query=" + encodeURIComponent(query), 10000).then(t => {
     for (const r of parseJsonIn(t).results || []){
       const m = (r.feedId || "").match(/youtube\.com\/feeds\/videos\.xml\?channel_id=(UC[\w-]{22})/);
       if (m) add({title: htmlToText((r.title || "").replace(/ - YouTube$/, "")), url: m[1], id: m[1], site: "YouTube channel", yt: true,
         followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")});
     }
   });
+  const fromFeedly = Promise.any([feedlyYT(q + " youtube"), feedlyYT(q)]);
   // Exact handle: "the retro future" → youtube.com/@theretrofuture, if that channel exists
   const handle = q.toLowerCase().replace(/^@/, "").replace(/[^a-z0-9._-]/g, "");
   let exact = null;
@@ -1547,7 +1571,7 @@ async function searchYouTube(q){
     try{ title = (await Promise.race([loadFeed(feedUrl, {id: "probe"}), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 6000))])).title; }catch{}
     exact = {title: title || "@" + handle, url: id, id, site: "youtube.com/@" + handle, yt: true, exact: true};
   }) : Promise.resolve();
-  const res = await Promise.allSettled([fromYT, fromFeedly, fromHandle]);
+  const res = await Promise.allSettled([fromYT, fromHtml, fromFeedly, fromHandle]);
   if (!out.length && !exact && res.every(r => r.status === "rejected")) throw new Error("unreachable");
   // Exact handle match first, then results that are ready to add (with a channel ID)
   const rest = out.filter(r => !exact || (r.id !== exact.id && r.url.toLowerCase() !== "@" + handle))
@@ -1574,16 +1598,24 @@ async function runSearch(q){
   }).catch(() => { if (seq === searchSeq){ part.ul.textContent = ""; part.ul.append(el("li", "rnote", "Search isn't reachable right now. Try pasting the site's address instead.")); } });
   await Promise.allSettled([fill(web, searchWeb(q), "No feeds found."), fill(yt, searchYouTube(q), "No channels found.")]);
 }
+function resultLink(r){
+  if (r.yt) return /^UC[\w-]{22}$/.test(r.url) ? "https://www.youtube.com/channel/" + r.url : "https://www.youtube.com/" + r.url.replace(/^youtube\.com\//, "");
+  return r.website || (() => { try{ return new URL(r.url).origin; }catch{ return r.url; } })();
+}
 function resultEl(r){
   const li = el("li", "ritem");
   const ic = el("div", "ricon");
   if (r.icon){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = r.icon; im.onerror = () => { im.remove(); ic.textContent = (r.title || "?")[0]; }; ic.append(im); }
   else ic.textContent = r.yt ? "▶" : (r.title || "?")[0];
-  const info = el("div", "rinfo");
+  const info = el("a", "rinfo");
+  info.href = resultLink(r); info.target = "_blank"; info.rel = "noopener noreferrer";
+  info.title = "Open to check it's the right one";
   if (r.exact) info.append(el("div", "rmatch", "Exact match"));
   info.append(el("div", "rtitle", r.title || r.site));
   const meta = [r.site, r.followers ? (r.followers >= 1000 ? Math.round(r.followers / 1000) + "k followers" : r.followers + " followers") : ""].filter(Boolean).join(" · ");
-  info.append(el("div", "rmeta", meta));
+  const metaEl = el("div", "rmeta", meta);
+  metaEl.insertAdjacentHTML("beforeend", '<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>');
+  info.append(metaEl);
   if (r.desc) info.append(el("div", "rdesc", r.desc));
   const already = !r.yt && state.feeds.some(f => f.url === r.url);
   const b = el("button", "btn" + (already ? "" : " primary"), already ? "Following" : "Add"); b.type = "button"; b.disabled = already;
