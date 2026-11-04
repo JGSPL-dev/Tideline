@@ -455,7 +455,7 @@ const DEFAULT_FEEDS = [
 ];
 const PAGE = 30;
 const READER_ENABLED = false;   // Reader view is off for now: stories show the live website instead
-const KEEP_DAYS = 7, MAX_PER_FEED = 300, MIN_PER_FEED = 20;   // story history kept per feed
+const KEEP_DAYS = 7, MAX_PER_FEED = 300, MIN_PER_FEED = 20, MIN_MAX_AGE_DAYS = 180;   // story history kept per feed
 
 const state = {
   feeds: store.get("tl.feeds", null) || DEFAULT_FEEDS.map(f => ({...f})),
@@ -475,6 +475,7 @@ const state = {
   keepInBrowser: store.get("tl.keepbrowser", false)
 };
 const readerCache = new Map();
+state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/\.rss$/i); if (m) f.url = m[1] + "/new/.rss"; });
 
 /* ---------- fetching ---------- */
 // Each relay: build(url) -> request URL; json:true means the page text is wrapped in {contents}
@@ -596,7 +597,12 @@ function mergeHistory(oldItems, newItems){
   return [...byId.values()]
     .map(i => i.seen ? i : {...i, seen: now})
     .sort((x, y) => (y.date || y.seen) - (x.date || x.seen))
-    .filter(i => { const n = counts[i.feedId] = (counts[i.feedId] || 0) + 1; return n <= MIN_PER_FEED || ((i.date || i.seen) >= cutoff && n <= MAX_PER_FEED); });
+    .filter(i => {
+      const when = i.date || i.seen;
+      if (when < now - MIN_MAX_AGE_DAYS * 86400000) return false;     // nothing older than ~6 months, ever
+      const n = counts[i.feedId] = (counts[i.feedId] || 0) + 1;
+      return n <= MIN_PER_FEED || (when >= cutoff && n <= MAX_PER_FEED);
+    });
 }
 async function pool(arr, n, fn){
   const out = new Array(arr.length); let i = 0;
@@ -754,7 +760,7 @@ async function findChannelId(page){ const c = await findChannel(page); return c 
 async function resolveInput(raw){
   let s = raw.trim();
   if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
-  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/.rss"};                       // r/subreddit
+  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/new/.rss"};                       // r/subreddit
   if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
   if (!/^https?:\/\//i.test(s)) s = "https://" + s;
   let u;
@@ -1582,7 +1588,7 @@ async function addFeed(raw, direct){
   state.feeds.push(feed);
   state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
-  return {feed, count: p.items.length};
+  return {feed, count: state.items.filter(i => i.feedId === feed.id).length};
 }
 const storyCount = n => `${n} stor${n === 1 ? "y" : "ies"}`;
 // Is this something to add directly, rather than words to search for?
@@ -1727,13 +1733,29 @@ async function searchWebAll(q){
 async function searchYouTubeAll(q){
   return (await searchYouTube(q)).map(r => ({...r, kind: "youtube"}));
 }
+// Does r/<words without spaces> exist? e.g. "gunners" → r/Gunners
+async function redditExact(q){
+  const name = q.replace(/^r\//i, "").replace(/[^\w]/g, "");
+  if (name.length < 2) return null;
+  const j = await getJSON(`https://www.reddit.com/r/${name}/about.json`, 10000);
+  const d = j && j.data; if (!d || !d.display_name || d.over18) return null;
+  return {kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/new/.rss`,
+    website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
+    followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")), exact: true};
+}
 async function searchReddit(q){
+  const [ex, list] = await Promise.all([redditExact(q).catch(() => null), searchRedditList(q).catch(() => [])]);
+  const rest = list.filter(r => !ex || r.url.toLowerCase() !== ex.url.toLowerCase()).map(r => ex ? {...r, exact: false} : r);
+  if (!ex && !rest.length) throw new Error("unreachable");
+  return ex ? [ex, ...rest] : rest;
+}
+async function searchRedditList(q){
   try{ const r = await searchRedditDirect(q); if (r.length) return r; }catch{}
   // Fallback: subreddit feeds that Feedly knows about
   const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=40&query=" + encodeURIComponent(q + " reddit"), 10000);
   return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).map(u => (u.match(/reddit\.com\/r\/([\w]+)/i) || [])[1]).filter(Boolean)
     .filter((n, i, a) => a.indexOf(n) === i)
-    .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
+    .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/new/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
       exact: n.toLowerCase() === q.replace(/\s+/g, "").toLowerCase()}));
 }
 async function searchRedditDirect(q){
@@ -1742,7 +1764,7 @@ async function searchRedditDirect(q){
   const j = await getJSON("https://www.reddit.com/subreddits/search.json?include_over_18=0&limit=25&q=" + encodeURIComponent(q));
   for (const c of (j.data && j.data.children) || []){
     const d = c.data || {}; if (!d.display_name || d.over18) continue;
-    out.push({kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/.rss`,
+    out.push({kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/new/.rss`,
       website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
       followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")),
       exact: d.display_name.toLowerCase() === name.toLowerCase()});
