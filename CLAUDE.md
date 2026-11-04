@@ -14,6 +14,10 @@ Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is
 - The hamburger button (top left) opens a left-hand drawer with two tabs: Your feeds (search/add, edit, remove) and Settings (look options, "Keep links in the browser" (Android intent trick), the rss2json key and a custom proxy).
 - Browser storage keys still use the old `tl.` prefix so existing feeds and settings carry over; keep them.
 
+## Fetching
+- Order: the user's own relay (Settings → Your own relay; Cloudflare Worker in `relay/worker.js`, key kept out of the repo) → direct → free relays / rss2json / Feedly / Jina. Settings has a Connection check that tests each route from the device.
+- Each feed always keeps its 20 newest stories (`MIN_PER_FEED`) regardless of age, so weekly podcasts and quiet channels show up.
+
 ## When checking or adding a publisher
 The user wants every publisher checked for the same issues that came up with BBC, the Guardian and Time Extension:
 1. **Image sharpness.** Feeds usually send small thumbnails, which look blurry in Magazine layout. Look at the image addresses in the publisher's feed and, if there's a bigger version, add a rule to `IMAGE_RULES` (or a special case in `imageCandidates` when the address is signed, as with the Guardian). Every rewrite must keep the fallback to the feed's own image.

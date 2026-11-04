@@ -291,6 +291,13 @@ a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rmeta .ext{display:inline-block;vertical-align:-2px;margin-left:4px;opacity:.7}
 .rerr{font-size:12.5px;color:var(--danger);margin-top:4px}
 .rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
+.lbl-strong{font-weight:600;font-size:14px}
+.checks{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
+.check-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:center}
+.check-row .mark{font-weight:700;text-align:center}
+.check-row.ok .mark{color:var(--cds-ok,#2b8a3e)}
+.check-row.bad .mark{color:var(--danger)}
+.check-row .ms{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
 .check input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent);flex:none}
 .flist .tagline{font-size:12px;color:var(--muted)}
@@ -391,13 +398,21 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <p class="msg" id="rssKeyMsg"></p>
         </div>
       </details>
-      <details>
-        <summary>Advanced: use your own fetch proxy</summary>
-        <div class="field">
-          <p class="hint">TickRSS reads feeds through free public proxies, which can be slow or go down. If you run your own, paste its prefix here. The feed address is added to the end.</p>
-          <input id="proxyInput" type="text" placeholder="https://my-proxy.example.com/?url=" aria-label="Custom proxy prefix">
+      <div class="field">
+        <label class="lbl-strong" for="proxyInput">Your own relay</label>
+        <p class="hint">Browsers can't read most feeds directly, so tick/rss borrows free services that are often slow or blocked. A free Cloudflare relay of your own fixes this. Paste its address here, including the key.</p>
+        <div class="addrow">
+          <input id="proxyInput" type="url" placeholder="https://tickrss-relay.yourname.workers.dev/?key=…" aria-label="Your relay address" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <button class="btn" type="button" id="proxyTest">Test</button>
         </div>
-      </details>
+        <p class="msg" id="proxyMsg" aria-live="polite"></p>
+      </div>
+      <div class="field">
+        <span class="lbl-strong">Connection check</span>
+        <p class="hint">Tests each service from this device, so you can see what's blocked.</p>
+        <div><button class="btn" type="button" id="connCheck">Run check</button></div>
+        <ul class="checks" id="connResults" hidden></ul>
+      </div>
       </section>
     </div>
   </div>
@@ -440,7 +455,7 @@ const DEFAULT_FEEDS = [
 ];
 const PAGE = 30;
 const READER_ENABLED = false;   // Reader view is off for now: stories show the live website instead
-const KEEP_DAYS = 7, MAX_PER_FEED = 300;   // story history kept per feed
+const KEEP_DAYS = 7, MAX_PER_FEED = 300, MIN_PER_FEED = 20;   // story history kept per feed
 
 const state = {
   feeds: store.get("tl.feeds", null) || DEFAULT_FEEDS.map(f => ({...f})),
@@ -477,9 +492,23 @@ async function fetchWithTimeout(url, ms, headers){
   try{ return await fetch(url, headers ? {signal: ctrl.signal, headers} : {signal: ctrl.signal}); } finally { clearTimeout(t); }
 }
 // Ask every relay at once and use whichever answers first; cancel the rest.
+// Your own relay address → a prefix the page address can be added to
+function relayPrefix(){
+  const p = (state.proxy || "").trim(); if (!p) return "";
+  if (/[?&]url=$/.test(p)) return p;
+  return p + (p.includes("?") ? "&url=" : (p.endsWith("/") ? "?url=" : "/?url="));
+}
+async function fetchViaRelay(url, ms = 12000){
+  const r = await fetchWithTimeout(relayPrefix() + encodeURIComponent(url), ms);
+  if (!r.ok) throw new Error("Your relay answered with error " + r.status);
+  return r.text();
+}
 async function fetchText(url, ms = 10000){
-  const tries = [];
-  if (state.proxy) tries.push({build: u => state.proxy + encodeURIComponent(u)});
+  // Your own relay is the dependable route: when it works, use it alone
+  if (relayPrefix()){
+    try{ const t = await fetchViaRelay(url, ms + 2000); if (t.trim().length >= 40) return t; }catch{}
+  }
+  const tries = [{build: u => u}];            // direct: works for feeds that allow it
   PROXIES.forEach(p => tries.push(p));
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
@@ -562,11 +591,12 @@ function mergeHistory(oldItems, newItems){
   oldItems.forEach(i => byId.set(i.id, i));
   newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now}); });
   const counts = {};
+  // Newest first; each feed always keeps its MIN_PER_FEED newest stories, however old,
+  // so weekly podcasts and quiet channels never vanish. Beyond that, only the last KEEP_DAYS.
   return [...byId.values()]
     .map(i => i.seen ? i : {...i, seen: now})
-    .filter(i => (i.date || i.seen) >= cutoff)
     .sort((x, y) => (y.date || y.seen) - (x.date || x.seen))
-    .filter(i => (counts[i.feedId] = (counts[i.feedId] || 0) + 1) <= MAX_PER_FEED);
+    .filter(i => { const n = counts[i.feedId] = (counts[i.feedId] || 0) + 1; return n <= MIN_PER_FEED || ((i.date || i.seen) >= cutoff && n <= MAX_PER_FEED); });
 }
 async function pool(arr, n, fn){
   const out = new Array(arr.length); let i = 0;
@@ -1491,7 +1521,43 @@ $("#rssKeyInput").addEventListener("change", e => {
   $("#rssKeyMsg").textContent = state.rssKey ? "Key saved. Refreshing your feeds…" : "Key removed.";
   if (state.rssKey) refreshAll().then(() => { $("#rssKeyMsg").textContent = "Key saved. Feeds refreshed."; });
 });
-$("#proxyInput").addEventListener("change", e => { state.proxy = e.target.value.trim(); store.set("tl.proxy", state.proxy); });
+$("#proxyInput").addEventListener("change", e => { state.proxy = e.target.value.trim(); store.set("tl.proxy", state.proxy); $("#proxyMsg").textContent = state.proxy ? "Saved." : "Removed."; });
+$("#proxyTest").onclick = async () => {
+  state.proxy = $("#proxyInput").value.trim(); store.set("tl.proxy", state.proxy);
+  const m = $("#proxyMsg"); m.className = "msg";
+  if (!state.proxy){ m.textContent = "Paste your relay's address first."; return; }
+  m.textContent = "Testing…";
+  try{
+    const t = await fetchViaRelay("https://feeds.bbci.co.uk/news/rss.xml", 12000);
+    if (!looksLikeFeed(t)) throw new Error("It answered, but not with a feed. Check the address and key");
+    m.textContent = "Working. Refreshing your feeds through it…";
+    await refreshAll(); m.textContent = "Working. Your feeds now load through your relay.";
+  }catch(e){ m.className = "msg err"; m.textContent = (e.name === "AbortError" ? "No answer. Check the address" : e.message.replace(/\.$/, "")) + "."; }
+};
+// Try each service once from this device and show what works
+$("#connCheck").onclick = async () => {
+  const ul = $("#connResults"); ul.hidden = false; ul.textContent = "";
+  const feed = "https://feeds.bbci.co.uk/news/rss.xml";
+  const checks = [
+    ["Your relay", () => relayPrefix() ? fetchViaRelay(feed).then(t => { if (!looksLikeFeed(t)) throw 0; }) : Promise.reject(new Error("not set up"))],
+    ["Direct from this device", () => fetchWithTimeout(feed, 8000).then(r => r.text()).then(t => { if (!looksLikeFeed(t)) throw 0; })],
+    ["Feed service (rss2json)", () => fetchViaRss2json(feed, {id: "probe"})],
+    ["Feedly", () => fetchWithTimeout("https://cloud.feedly.com/v3/streams/contents?count=1&streamId=" + encodeURIComponent("feed/" + feed), 9000).then(r => r.json()).then(j => { if (!j.items) throw 0; })],
+    ["Reader service (Jina)", () => fetchWithTimeout("https://r.jina.ai/https://example.com", 12000).then(r => { if (!r.ok) throw new Error(r.status); })],
+    ...PROXIES.map((p, i) => ["Free relay " + (i + 1) + " (" + new URL(p.build("x")).hostname + ")", () => fetchWithTimeout(p.build(feed), 9000).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(t => { if (p.json) t = JSON.parse(t).contents || ""; if (!looksLikeFeed(t)) throw 0; })]),
+    ["Reddit search", () => fetchWithTimeout("https://www.reddit.com/subreddits/search.json?limit=1&q=football", 9000).then(r => r.json()).then(j => { if (!j.data) throw 0; })],
+    ["Apple podcasts", () => fetchWithTimeout("https://itunes.apple.com/search?media=podcast&limit=1&term=news", 9000).then(r => r.json())],
+    ["Bluesky", () => fetchWithTimeout("https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?limit=1&q=news", 9000).then(r => r.json())],
+    ["Mastodon", () => fetchWithTimeout("https://mastodon.social/api/v2/search?type=accounts&limit=1&q=news", 9000).then(r => r.json())]
+  ];
+  await Promise.all(checks.map(async ([name, run]) => {
+    const li = el("li", "check-row"); const mark = el("span", "mark", "…"); const nm = el("span", null, name); const t = el("span", "ms", "");
+    li.append(mark, nm, t); ul.append(li);
+    const t0 = performance.now();
+    try{ await run(); mark.textContent = "✓"; li.classList.add("ok"); t.textContent = Math.round(performance.now() - t0) + " ms"; }
+    catch(e){ mark.textContent = "✕"; li.classList.add("bad"); t.textContent = e && e.message === "not set up" ? "not set up" : "blocked"; }
+  }));
+};
 // Add a feed from an address, @handle, channel ID or r/subreddit. Returns the new feed.
 async function addFeed(raw, direct){
   const feed = {id: uid(), url: "", title: "", color: nextColor()};
@@ -1662,6 +1728,15 @@ async function searchYouTubeAll(q){
   return (await searchYouTube(q)).map(r => ({...r, kind: "youtube"}));
 }
 async function searchReddit(q){
+  try{ const r = await searchRedditDirect(q); if (r.length) return r; }catch{}
+  // Fallback: subreddit feeds that Feedly knows about
+  const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=40&query=" + encodeURIComponent(q + " reddit"), 10000);
+  return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).map(u => (u.match(/reddit\.com\/r\/([\w]+)/i) || [])[1]).filter(Boolean)
+    .filter((n, i, a) => a.indexOf(n) === i)
+    .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
+      exact: n.toLowerCase() === q.replace(/\s+/g, "").toLowerCase()}));
+}
+async function searchRedditDirect(q){
   const out = [];
   const name = q.replace(/^r\//i, "").replace(/\s+/g, "");
   const j = await getJSON("https://www.reddit.com/subreddits/search.json?include_over_18=0&limit=25&q=" + encodeURIComponent(q));
