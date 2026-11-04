@@ -217,6 +217,7 @@ dialog::backdrop{background:rgba(10,14,20,.45)}
 .ricon img{width:100%;height:100%;object-fit:cover}
 .rtitle{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rmeta{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rerr{font-size:12.5px;color:var(--danger);margin-top:4px}
 .rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
 .check input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent);flex:none}
@@ -434,20 +435,38 @@ async function fetchViaRss2json(url, feed){
   return {title: htmlToText((j.feed && j.feed.title) || ""), items};
 }
 // Get a feed by any route that works
+// Feedly keeps a public copy of most feeds and returns up to 100 stories as JSON, no key needed
+const parseJsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a < 0 || b < a) throw new Error("No data"); return JSON.parse(t.slice(a, b + 1)); };
+async function fetchViaFeedly(url, feed){
+  const t = await fetchAny("https://cloud.feedly.com/v3/streams/contents?count=100&streamId=" + encodeURIComponent("feed/" + url), 12000);
+  const j = parseJsonIn(t);
+  if (!Array.isArray(j.items) || (!j.items.length && !j.title)) throw new Error("Feedly doesn't have that feed");
+  const items = j.items.map(it => {
+    const link = (it.alternate && it.alternate[0] && it.alternate[0].href) || it.canonicalUrl || (/^https?:/.test(it.originId || "") ? it.originId : "");
+    const html = (it.summary && it.summary.content) || (it.content && it.content.content) || "";
+    const vis = it.visual && it.visual.url && it.visual.url !== "none" ? it.visual.url : null;
+    return makeItem(feed, {
+      title: htmlToText(it.title || ""), link, date: it.published || it.crawled || 0,
+      summary: htmlToText(html), image: vis || (it.thumbnail && it.thumbnail[0] && it.thumbnail[0].url) || firstImg(html)
+    });
+  }).sort((a, b) => b.date - a.date);
+  return {title: htmlToText(j.title || ""), items};
+}
 async function loadFeed(url, feed){
   // Ask the feed service and the relays together. Use the first answer, but give the other
   // a few seconds to arrive too, and combine both (the feed service only returns 10 items).
   const got = [];
   const svc = fetchViaRss2json(url, feed).then(r => (got.push(r), r));
   const rel = fetchText(url).then(t => parseFeed(t, feed)).then(r => (got.push(r), r));
+  const fdl = fetchViaFeedly(url, feed).then(r => (got.push(r), r));
   let first;
-  try{ first = await Promise.any([svc, rel]); }
+  try{ first = await Promise.any([svc, rel, fdl]); }
   catch(agg){
     const errs = agg.errors || [];
-    const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service|Failed to fetch|NetworkError|Load failed|aborted/i.test(e.message));
+    const real = errs.find(e => e && !/Couldn't reach|took too long|Feed service|Feedly|No data|Failed to fetch|NetworkError|Load failed|aborted|^\d+$|JSON/i.test(e.message));
     throw real || new Error("Couldn't reach that feed");
   }
-  await Promise.race([Promise.allSettled([svc, rel]), new Promise(r => setTimeout(r, 4000))]);
+  await Promise.race([Promise.allSettled([svc, rel, fdl]), new Promise(r => setTimeout(r, 4000))]);
   const byId = new Map();
   got.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
   const title = (got.find(g => g.title) || first).title;
@@ -579,12 +598,18 @@ function channelIdIn(text, isVideo){
   for (const p of pats){ const m = text.match(p); if (m) return m[1]; }
   return null;
 }
+// Ask Feedly's search to find the feed for an address
+async function feedlyLookup(address){
+  const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=10&query=" + encodeURIComponent(address), 10000);
+  return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).filter(u => /^https?:/.test(u));
+}
 async function findChannelId(page, original){
   const isVideo = /watch\?v=/.test(page);
   const need = t => { const id = channelIdIn(t, isVideo); if (!id) throw new Error("no id"); return id; };
   const routes = [
     fetchText(page, 12000).then(need),
-    fetchWithTimeout("https://r.jina.ai/" + page, 15000).then(r => { if (!r.ok) throw new Error("jina " + r.status); return r.text(); }).then(need)
+    fetchWithTimeout("https://r.jina.ai/" + page, 15000).then(r => { if (!r.ok) throw new Error("jina " + r.status); return r.text(); }).then(need),
+    feedlyLookup(page).then(list => { for (const u of list){ const m = u.match(/channel_id=(UC[\w-]{22})/); if (m) return m[1]; } throw new Error("no id"); })
   ];
   try{ return await Promise.any(routes); }catch{ return null; }
 }
@@ -625,7 +650,12 @@ async function resolveInput(raw){
     throw new Error("no feed link");
   });
   const routeB = candidates.map(g => fetchViaRss2json(g, {id: "probe"}).then(() => ({url: g})));
-  try{ return await Promise.any([routeA, ...routeB]); }
+  const site = u.hostname.replace(/^www\./, "");
+  const routeC = feedlyLookup(u.href).then(list => {
+    const hit = list.find(f => { try{ return new URL(f).hostname.replace(/^www\./, "").endsWith(site.split(".").slice(-2).join(".")); }catch{ return false; } });
+    if (!hit) throw new Error("not found"); return {url: hit};
+  });
+  try{ return await Promise.any([routeA, routeC, ...routeB]); }
   catch{ throw new Error("Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead"); }
 }
 
@@ -1283,12 +1313,26 @@ $("#rssKeyInput").addEventListener("change", e => {
 });
 $("#proxyInput").addEventListener("change", e => { state.proxy = e.target.value.trim(); store.set("tl.proxy", state.proxy); });
 // Add a feed from an address, @handle, channel ID or r/subreddit. Returns the new feed.
-async function addFeed(raw){
-  const res = await resolveInput(raw);
-  if (state.feeds.some(f => f.url === res.url)) throw new Error("You already follow that feed");
-  const feed = {id: uid(), url: res.url, title: "", color: nextColor()};
-  const p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
-  feed.title = p.title || new URL(res.url).hostname.replace(/^www\./, "");
+async function addFeed(raw, direct){
+  const feed = {id: uid(), url: "", title: "", color: nextColor()};
+  let p;
+  if (direct){
+    // From search: the feed address is already known, so load it straight away.
+    // Only if that fails, look for the feed again from the site's home page.
+    if (state.feeds.some(f => f.url === raw)) throw new Error("You already follow that feed");
+    try{ p = await loadFeed(raw, feed); feed.url = raw; }
+    catch(e){
+      let res; try{ res = await resolveInput(new URL(raw).origin); }catch{ throw e; }
+      feed.url = res.url;
+      p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
+    }
+  } else {
+    const res = await resolveInput(raw);
+    feed.url = res.url;
+    p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
+  }
+  if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
+  feed.title = p.title || new URL(feed.url).hostname.replace(/^www\./, "");
   state.feeds.push(feed);
   state.items = mergeHistory(state.items, p.items);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
@@ -1358,24 +1402,35 @@ const jsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); return J
 async function searchWeb(q){
   const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=12&query=" + encodeURIComponent(q));
   const j = jsonIn(t);
-  return (j.results || []).filter(r => /^feed\/https?:/.test(r.feedId || "")).map(r => ({
+  return (j.results || []).filter(r => /^feed\/https?:/.test(r.feedId || "") && !/youtube\.com\/feeds/.test(r.feedId)).map(r => ({
     title: htmlToText(r.title || ""), url: r.feedId.slice(5), site: (r.website || r.feedId.slice(5)).replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, ""),
     desc: htmlToText(r.description || ""), followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")
   }));
 }
 async function searchYouTube(q){
-  const page = "https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q);   // channels only
-  const t = await fetchAny(page, 12000);
   const seen = new Set(), out = [];
-  // Page HTML (relays) carries channel data; the reader service returns links like [Name](https://www.youtube.com/@handle)
-  for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g)){
-    if (!seen.has(m[1])){ seen.add(m[1]); out.push({title: m[2], url: m[1], site: "YouTube channel", yt: true}); }
-  }
-  if (!out.length) for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/(@[\w.-]+)\)/g)){
-    const h = m[2].toLowerCase(); if (seen.has(h)) continue; seen.add(h);
-    out.push({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], site: "youtube.com/" + m[2], yt: true});
-  }
-  return out.slice(0, 6);
+  const add = r => { const k = (r.id || r.url).toLowerCase(); if (seen.has(k)) return; seen.add(k); out.push(r); };
+  const page = "https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q);   // channels only
+  const fromYT = fetchAny(page, 12000).then(t => {
+    for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g))
+      add({title: m[2], url: m[1], id: m[1], site: "YouTube channel", yt: true});
+    // Reader-service text: prefer /channel/UC… links (ready to add), then @handles
+    for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})\)/g))
+      add({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], id: m[2], site: "YouTube channel", yt: true});
+    for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/(@[\w.-]+)\)/g))
+      add({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], site: "youtube.com/" + m[2], yt: true});
+  });
+  const fromFeedly = fetchAny("https://cloud.feedly.com/v3/search/feeds?count=20&query=" + encodeURIComponent(q + " youtube"), 10000).then(t => {
+    for (const r of parseJsonIn(t).results || []){
+      const m = (r.feedId || "").match(/youtube\.com\/feeds\/videos\.xml\?channel_id=(UC[\w-]{22})/);
+      if (m) add({title: htmlToText((r.title || "").replace(/ - YouTube$/, "")), url: m[1], id: m[1], site: "YouTube channel", yt: true,
+        followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")});
+    }
+  });
+  const res = await Promise.allSettled([fromYT, fromFeedly]);
+  if (!out.length && res.every(r => r.status === "rejected")) throw new Error("unreachable");
+  // Ready-to-add (with a channel ID) first
+  return out.sort((a, b) => (b.id ? 1 : 0) - (a.id ? 1 : 0)).slice(0, 8);
 }
 let searchSeq = 0;
 async function runSearch(q){
@@ -1411,8 +1466,15 @@ function resultEl(r){
   const b = el("button", "btn" + (already ? "" : " primary"), already ? "Following" : "Add"); b.type = "button"; b.disabled = already;
   b.onclick = async () => {
     b.disabled = true; b.textContent = "Adding…";
-    try{ const {feed, count} = await addFeed(r.url); b.textContent = "Added"; b.classList.remove("primary"); setMsg(`Added ${feed.title} with ${storyCount(count)}.`); }
-    catch(err){ b.disabled = false; b.textContent = "Add"; setMsg(err.message.replace(/\.$/, "") + ".", true); }
+    li.querySelector(".rerr")?.remove();
+    try{
+      const {feed, count} = await addFeed(r.url, !r.yt);
+      b.textContent = "Added"; b.classList.remove("primary");
+      setMsg(`Added ${feed.title} with ${storyCount(count)}.`);
+    }catch(err){
+      b.disabled = false; b.textContent = "Try again";
+      info.append(el("div", "rerr", err.message.replace(/\.$/, "") + "."));
+    }
   };
   li.append(ic, info, b);
   return li;
