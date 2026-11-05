@@ -611,6 +611,19 @@ if (IS_APP){
     });
   };
   document.documentElement.classList.add("is-app");
+  // Links open in an in-app browser tab (Android Custom Tab) on top of tick/rss: back returns to the feed
+  document.addEventListener("click", e => {
+    if (e.defaultPrevented || e.button) return;
+    const a = e.target.closest && e.target.closest("a[href]");
+    if (!a || !/^https?:/i.test(a.href)) return;
+    e.preventDefault();
+    openOutside(a.href);
+  });
+}
+function openOutside(url){
+  const B = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser;
+  if (B && B.open) B.open({url, toolbarColor: getComputedStyle(document.documentElement).getPropertyValue("--brand").trim() || "#d9480f"}).catch(() => window.open(url, "_blank"));
+  else window.open(url, "_blank");
 }
 "use strict";
 const $ = s => document.querySelector(s);
