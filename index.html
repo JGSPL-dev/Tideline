@@ -579,8 +579,21 @@ const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && windo
 if (IS_APP){
   // The native request layer may ignore "cancel" signals, so make timeouts reject anyway
   const nativeFetch = window.fetch.bind(window);
+  // Look like the phone's own browser (sites refuse the bare Android default), and space out
+  // Reddit requests: it answers 403/429 to bursts from one connection
+  const browserUA = navigator.userAgent.replace(/; wv\)/, ")").replace(/\s*Version\/[\d.]+/, "");
+  let redditGate = Promise.resolve();
+  const REDDIT_GAP = 1100;
   window.fetch = (u, init = {}) => {
-    const sig = init && init.signal, p = nativeFetch(u, init);
+    const url = String(u && u.url || u);
+    init = {...init, headers: {"User-Agent": browserUA, "Accept-Language": navigator.language || "en-GB", ...(init.headers || {})}};
+    let p;
+    if (/^https:\/\/(www\.|old\.)?reddit\.com\//.test(url)){
+      const turn = redditGate.then(() => nativeFetch(u, init));
+      redditGate = turn.catch(() => {}).then(() => new Promise(r => setTimeout(r, REDDIT_GAP)));
+      p = turn;
+    } else p = nativeFetch(u, init);
+    const sig = init.signal;
     if (!sig) return p;
     return new Promise((res, rej) => {
       const stop = () => rej(new DOMException("Aborted", "AbortError"));
@@ -820,6 +833,21 @@ async function fetchViaRedditJson(url, feed){
 }
 async function loadFeed(url, feed){
   if (!redditJsonUrl(url)) return loadOneFeed(url, feed);   // loadOneFeed stashes its own articles
+  // In the app: one request, newest posts, straight from the phone. Only fall back if Reddit refuses.
+  if (IS_APP){
+    const v = redditVariants(url), direct = v ? v[1] : url;
+    try{
+      const r = await fetchWithTimeout(direct, 15000);
+      if (!r.ok) throw new Error("Reddit answered with error " + r.status);
+      const t = await r.text();
+      if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
+      const p = parseFeed(t, feed);
+      if (p.items.length){
+        feed.routes = [{k: "phone", ok: true, n: p.items.length, newest: Math.max(0, ...p.items.map(i => i.date || 0))}];
+        return {title: p.title, items: stashArticles(p.items), everyMin: p.everyMin || null};
+      }
+    }catch(e){ feed._phoneErr = String(e.message || "Failed").replace(/\.$/, ""); }
+  }
   const variants = redditVariants(url) || [url];
   const logs = variants.map(() => ({}));
   const jsonLog = {};
@@ -839,7 +867,8 @@ async function loadFeed(url, feed){
     const b = best[r.k], score = x => x.ok ? 2 + (x.n || 0) : x.slow || x.skip ? 0 : 1;
     if (!b || score(r) > score(b)) best[r.k] = r;
   }));
-  feed.routes = [{k: "reddit", ...(Object.keys(jsonLog).length ? jsonLog : {slow: true})}, ...Object.values(best)];
+  feed.routes = [...(feed._phoneErr ? [{k: "phone", ok: false, err: feed._phoneErr}] : []), {k: "reddit", ...(Object.keys(jsonLog).length ? jsonLog : {slow: true})}, ...Object.values(best)];
+  delete feed._phoneErr;
   const ok = done.filter(Boolean);
   if (!ok.some(g => g.items.length)){
     if (ok.length) throw new Error("Every route answered with no stories");
@@ -853,7 +882,7 @@ function notFeedReason(t){
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
-const ROUTE_NAMES = {reddit: "Reddit, from this device", relay: "Your relay", open: "Direct and free relays", rss2json: "Feed service", feedly: "Feedly"};
+const ROUTE_NAMES = {phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", relay: "Your relay", open: "Direct and free relays", rss2json: "Feed service", feedly: "Feedly"};
 async function loadOneFeed(url, feed, logOut){
   // Ask every route at once. An answer with no stories never wins the race (a service that
   // doesn't know the feed yet often answers instantly with nothing); wait for one with stories,
@@ -1177,7 +1206,7 @@ function metaRow(it){
 }
 function save(){
   if (state.items.some(i => i._full)) state.items = stashArticles(state.items);   // full text lives in the article store, not here
-  store.set("tl.feeds", state.feeds.map(({_checking, ...f}) => f));
+  store.set("tl.feeds", state.feeds.map(({_checking, _phoneErr, ...f}) => f));
   store.set("tl.items", state.items);
   store.set("tl.read", [...state.read].slice(-3000));
   store.set("tl.updated", state.lastUpdated);
