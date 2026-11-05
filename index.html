@@ -59,6 +59,7 @@ body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--ui);-webkit-font
 button,input{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 [hidden]{display:none!important}
+.top{position:relative}
 
 .app.solo{display:block;height:auto;max-width:760px;margin:0 auto}
 .app.solo .feedcol{border-right:0}
@@ -312,6 +313,62 @@ body.has-mini dialog.fullpage .dlg{padding-bottom:72px}
 dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rkind.k-youtube{color:#ff8787}}
 :root[data-theme="dark"] .rkind.k-youtube,:root[data-theme="black"] .rkind.k-youtube{color:#ff8787}
+/* status row + filter box */
+.statusrow{display:flex;align-items:center;gap:8px;min-height:36px;margin-top:-2px}
+.statusrow .status{flex:1;min-width:0;border:0;background:none;padding:4px 0;text-align:left;cursor:pointer;display:flex;align-items:center;gap:6px;flex-wrap:wrap;border-radius:6px}
+.hdot{width:8px;height:8px;border-radius:50%;background:#2b8a3e;flex:none}
+.hdot.warn{background:#e8590c}.hdot.idle{background:var(--muted);opacity:.5}
+.fpill{flex:none;max-width:42%;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:4px 6px 4px 10px;font-size:12.5px;font-weight:600;display:inline-flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap}
+.fpill span{overflow:hidden;text-overflow:ellipsis}
+.fpill svg{flex:none;opacity:.7}
+.filterbtn{flex:none;height:36px;font-weight:600}
+.filterbtn[aria-expanded="true"]{border-color:var(--ink)}
+.filterbtn .fcount{min-width:18px;height:18px;padding:0 6px;border-radius:99px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
+.filterbox{position:absolute;right:12px;top:calc(100% - 6px);width:min(340px,calc(100vw - 24px));background:var(--surface);color:var(--ink);border-radius:16px;box-shadow:0 12px 32px rgba(14,18,23,.24),0 0 0 1px var(--line);padding:14px;display:flex;flex-direction:column;gap:14px;z-index:30}
+.fb-head{display:flex;align-items:baseline;justify-content:space-between}
+.fb-head h2{margin:0;font:700 16px var(--ui)}
+.linkbtn{border:0;background:none;padding:2px 0;font-size:13.5px;font-weight:600;color:var(--accent);cursor:pointer}
+.fb-sec{display:flex;flex-direction:column;gap:6px;min-width:0}
+.fb-lbl{font:700 11.5px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.filterbox .seg,.org-row .seg{display:flex;padding:3px;border-radius:10px}
+.filterbox .seg button,.org-row .seg button{flex:1;padding:7px 4px;border-radius:8px;font-size:13px}
+.fb-chips{display:flex;flex-wrap:wrap;gap:6px}
+.fb-select{width:100%;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font-size:13.5px}
+.fb-two{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px}
+.fb-go{height:42px;justify-content:center;font-weight:700;border-radius:10px}
+/* stacks */
+.stack{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin:6px 0;overflow:hidden}
+.stack-head{display:flex;align-items:center;gap:8px;padding:10px 12px 4px;font-weight:700;font-size:14.5px}
+.stack-head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stack-head .n{font-size:12px;font-weight:700;color:var(--muted)}
+.stack-head .n.new{background:var(--brand);color:#fff;border-radius:99px;padding:1px 8px}
+.stack .card{border-radius:0;margin:0}
+.stack .card + .card{border-top:1px solid var(--line)}
+.stack .meta .src,.stack .meta .src + span,.stack .meta > .dot{display:none}
+.stack-more{display:block;width:100%;border:0;border-top:1px solid var(--line);background:var(--sunk);padding:10px 12px;text-align:left;font-size:13.5px;font-weight:600;color:var(--accent);cursor:pointer}
+:root[data-layout="magazine"] .stack .card{border:0;margin:0}
+/* menu groups */
+.groups{display:flex;flex-direction:column;gap:12px}
+.attn{background:color-mix(in srgb,#e8590c 9%,var(--surface));border:1px solid color-mix(in srgb,#e8590c 45%,var(--line));border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.attn-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+.attn-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.attn-row .who{border:0;background:none;padding:0;text-align:left;cursor:pointer;font-size:13.5px;line-height:1.35;min-width:0}
+.attn-row .who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.attn-row .why{color:var(--muted)}
+.org-row{display:flex;align-items:center;gap:10px;padding:0 2px}
+.org-row .fb-lbl{flex:none}
+.org-row .seg{flex:1}
+.group{display:flex;flex-direction:column;gap:6px}
+.ghead{border:0;background:none;display:flex;align-items:center;gap:8px;padding:6px 4px;text-align:left;cursor:pointer;border-radius:6px;width:100%}
+.ghead svg{flex:none;transition:transform .15s}
+.ghead[aria-expanded="false"] svg{transform:rotate(-90deg)}
+.ghead .gname{flex:1;min-width:0;font:700 12.5px var(--ui);letter-spacing:.06em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ghead .gmeta{font-size:12.5px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.flist li.gempty{padding:10px 12px;font-size:13px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;gap:8px}
+.newfolder{border:1px dashed var(--line);background:none;border-radius:10px;padding:10px 12px;font-size:14px;font-weight:600;color:var(--muted);text-align:left;cursor:pointer}
+.addfolder{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.addfolder .fb-chips .chip{font-weight:600}
+.flist .pick .warn{color:#e8590c;font-weight:700}
 .listhead{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -6px}
 .sresults{display:flex;flex-direction:column;gap:14px}
 .rsec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
@@ -381,8 +438,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
         </button>
       </div>
-      <div class="chips" id="chips" role="toolbar" aria-label="Filter by source"></div>
-      <div class="status" id="status" aria-live="polite"></div>
+      <div class="chips" id="chips" role="toolbar" aria-label="Story types"></div>
+      <div class="statusrow">
+        <button type="button" class="status" id="status" aria-live="polite" title="Show your sources"></button>
+        <button type="button" class="fpill" id="activeFilter" hidden></button>
+        <button type="button" class="btn filterbtn" id="filterBtn" aria-expanded="false" aria-controls="filterBox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter<span class="fcount" id="filterCount" hidden></span></button>
+      </div>
+      <div class="filterbox" id="filterBox" role="dialog" aria-label="Filter your feed" hidden></div>
     </div>
     <div class="list" id="list"><div class="empty"><h3>TickRSS isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
   </section>
@@ -409,9 +471,9 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>.</p>
       <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
       <p class="msg" id="addMsg" aria-live="polite"></p>
+      <div class="addfolder" id="addFolder" hidden></div>
       <div id="searchResults" class="sresults" hidden></div>
-      <h3 class="listhead">Following</h3>
-      <ul class="flist" id="flist"></ul>
+      <div class="groups" id="flist"></div>
     </div>
     <div class="inner" id="panelSettings" role="tabpanel" aria-labelledby="tab-settings" hidden>
       <section class="set-sec" aria-labelledby="sh-look">
@@ -543,6 +605,13 @@ const state = {
   keepInBrowser: store.get("tl.keepbrowser", false),
   readInApp: store.get("tl.readinapp", true)
 };
+state.folders = store.get("tl.folders", []);
+state.organise = store.get("tl.organise", "category");
+state.collapsed = new Set(store.get("tl.collapsed", []));
+state.stackShown = {};
+const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest"};
+const view = {...VIEW_DEFAULT, ...store.get("tl.view", {})};
+const saveView = () => store.set("tl.view", view);
 const readerCache = new Map();
 state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
 
@@ -1008,33 +1077,109 @@ function nextColor(){
 }
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-/* ---------- rendering: chips + status ---------- */
+/* ---------- sources: platforms, folders, story types ---------- */
+const UNSORTED = "Unsorted";
+const PLATFORMS = ["YouTube", "Reddit", "Podcasts", "Websites", "News topics", "Social"];
+function platformOf(f){
+  const u = f.url || "";
+  if (/youtube\.com/.test(u)) return "YouTube";
+  if (/reddit\.com/.test(u)) return "Reddit";
+  if (f.audio) return "Podcasts";
+  if (/news\.google\.com/.test(u)) return "News topics";
+  if (/bsky\.app\/profile\/|\/@[\w.-]+\.rss$/.test(u)) return "Social";
+  return "Websites";
+}
+const folderOf = f => f.folder && state.folders.includes(f.folder) ? f.folder : UNSORTED;
+const byName = (a, b) => (a.title || "").localeCompare(b.title || "", undefined, {sensitivity: "base", numeric: true});
+const saveFolders = () => { store.set("tl.folders", state.folders); };
+const TYPES = [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["reddit", "Reddit"], ["podcasts", "Podcasts"], ["social", "Social"]];
+function typeOf(it){
+  if (it.videoId) return "videos";
+  if (it.audioUrl) return "podcasts";
+  const f = feedById(it.feedId), p = f ? platformOf(f) : "";
+  if (p === "Reddit") return "reddit";
+  if (p === "Social") return "social";
+  return "articles";
+}
+// Groups shown in the menu and the filter box: folders (A–Z, Unsorted last) or platforms
+function groupList(mode = state.organise){
+  if (mode === "platform"){
+    return PLATFORMS.map(p => [p, state.feeds.filter(f => platformOf(f) === p).sort(byName)]).filter(([, fs]) => fs.length);
+  }
+  const names = [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"}));
+  const out = names.map(n => [n, state.feeds.filter(f => folderOf(f) === n).sort(byName)]);
+  const loose = state.feeds.filter(f => folderOf(f) === UNSORTED).sort(byName);
+  if (loose.length) out.push([UNSORTED, loose]);
+  return out;
+}
+function sourceMatch(feedId){
+  const s = view.source;
+  if (s === "all") return true;
+  const f = feedById(feedId); if (!f) return false;
+  if (s.startsWith("feed:")) return f.id === s.slice(5);
+  if (s.startsWith("folder:")) return folderOf(f) === s.slice(7);
+  if (s.startsWith("platform:")) return platformOf(f) === s.slice(9);
+  return true;
+}
+function sourceLabel(){
+  const s = view.source;
+  if (s.startsWith("feed:")) return (feedById(s.slice(5)) || {}).title || "One source";
+  return s.replace(/^(folder|platform):/, "");
+}
+function checkView(){
+  if (view.source.startsWith("feed:") && !feedById(view.source.slice(5))) view.source = "all";
+  if (view.source.startsWith("folder:") && view.source !== "folder:" + UNSORTED && !state.folders.includes(view.source.slice(7))) view.source = "all";
+  if (!TYPES.some(([k]) => k === view.type)) view.type = "all";
+}
+// Every filter except the story type
+function baseItems(){
+  let cut = 0;
+  if (view.from === "today"){ const d = new Date(); d.setHours(0, 0, 0, 0); cut = d.getTime(); }
+  else if (view.from === "week") cut = Date.now() - 7 * 86400000;
+  return state.items.filter(i => sourceMatch(i.feedId) && (!view.unread || !state.read.has(i.id)) && (!cut || (i.date || i.seen || 0) >= cut));
+}
+function visibleItems(){
+  const base = baseItems();
+  const list = view.type === "all" ? base : base.filter(i => typeOf(i) === view.type);
+  if (view.sort === "source"){
+    const name = id => ((feedById(id) || {}).title || "").toLowerCase();
+    return [...list].sort((a, b) => name(a.feedId).localeCompare(name(b.feedId)) || (b.date || 0) - (a.date || 0));
+  }
+  return list;
+}
+const isNew = i => (i.seen || 0) > state.baseline && !state.read.has(i.id);
+
+/* ---------- rendering: type tabs + status ---------- */
 function newCount(feedId){
   let n = 0;
-  for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && (i.seen || 0) > state.baseline && !state.read.has(i.id)) n++;
+  for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && isNew(i)) n++;
   return n;
 }
-function selectFeed(id){
-  state.filter = id; state.shown = PAGE;
-  renderChips(); renderList();
-  window.scrollTo({top: 0}); $("#list").scrollTop = 0;
+function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
+// Show one source, folder or platform ("all" for everything)
+function selectFeed(src){
+  view.source = src === "all" || /^(feed|folder|platform):/.test(src) ? src : "feed:" + src;
+  saveView(); state.shown = PAGE;
+  renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
 }
 function renderChips(){
+  checkView();
   const c = $("#chips"); const keep = c.scrollLeft; c.textContent = "";
-  const mk = (id, label, color) => {
-    const n = newCount(id);
+  const base = baseItems();
+  const present = new Set(state.items.map(typeOf));
+  TYPES.forEach(([k, label]) => {
+    if (k !== "all" && !present.has(k) && view.type !== k) return;
+    const its = k === "all" ? base : base.filter(i => typeOf(i) === k);
+    const n = its.filter(isNew).length;
     const b = el("button", "chip" + (n ? "" : " zero"));
     b.type = "button";
-    b.setAttribute("aria-pressed", String(state.filter === id));
+    b.setAttribute("aria-pressed", String(view.type === k));
     b.setAttribute("aria-label", `${label}, ${n ? n + " new" : "no new stories"}`);
-    if (color){ const d = el("span", "dot"); d.style.background = color; b.append(d); }
     b.append(document.createTextNode(label));
     b.append(el("span", "count", String(n)));
-    b.onclick = () => selectFeed(id);
+    b.onclick = () => setView("type", k);
     c.append(b);
-  };
-  mk("all", "All");
-  state.feeds.forEach(f => mk(f.id, f.title || "Feed", f.color));
+  });
   c.scrollLeft = keep;
   const on = c.querySelector('[aria-pressed="true"]');
   if (on){
@@ -1042,6 +1187,7 @@ function renderChips(){
     if (r.left < cr.left + 16 || r.right > cr.right - 16) c.scrollLeft += (r.left + r.width / 2) - (cr.left + cr.width / 2);
   }
   updateChipFades();
+  renderFilterBar();
 }
 function updateChipFades(){
   const c = $("#chips");
@@ -1050,21 +1196,85 @@ function updateChipFades(){
 }
 function renderStatus(){
   const s = $("#status"); s.textContent = "";
-  if (state.busy){ s.textContent = "Checking for new stories…"; return; }
-  const bad = state.feeds.filter(f => f.error).length;
+  if (state.busy){ s.append(el("span", "hdot idle"), document.createTextNode("Checking for new stories…")); return; }
   const n = state.feeds.length;
-  const next = state.feeds.length ? soonestCheck() : 0;
-  const mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
-  const nextTxt = next > Date.now() ? ` · next check in ${mins} min` : "";
-  if (state.note === "upToDate") s.append(document.createTextNode(`All feeds are up to date${nextTxt}`));
-  else s.append(document.createTextNode(state.lastUpdated ? `Updated ${ago(state.lastUpdated)}${nextTxt}` : `${n} feed${n === 1 ? "" : "s"}`));
-  if (bad && bad === n){ s.textContent = ""; s.append(el("b", null, "Couldn't reach any feeds. ")); s.append(document.createTextNode("Check you're online and that TickRSS is open in a web browser, then tap refresh.")); }
-  else if (bad){ s.append(document.createTextNode(" · ")); s.append(el("b", null, `${bad} couldn't update`)); }
+  if (!n){ s.append(document.createTextNode("No sources yet")); return; }
+  const bad = state.feeds.filter(f => f.error).length;
+  if (bad === n){ s.append(el("span", "hdot warn"), el("b", null, "Couldn't reach any sources."), document.createTextNode(" Check you're online, then tap refresh.")); return; }
+  s.append(el("span", "hdot" + (bad ? " warn" : "")));
+  s.append(document.createTextNode(bad ? `${n - bad} of ${n} sources working` : `All ${n} source${n === 1 ? "" : "s"} working`));
+  if (state.note === "upToDate"){
+    const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
+    s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
+  } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
 }
+function renderFilterBar(){
+  const pill = $("#activeFilter");
+  if (view.source === "all"){ pill.hidden = true; }
+  else {
+    pill.hidden = false; pill.textContent = "";
+    pill.append(el("span", null, sourceLabel()));
+    pill.insertAdjacentHTML("beforeend", '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>');
+    pill.setAttribute("aria-label", `Showing ${sourceLabel()}. Show all sources`);
+  }
+  const n = (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "any" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0);
+  const fc = $("#filterCount"); fc.hidden = !n; fc.textContent = String(n);
+  $("#filterBtn").setAttribute("aria-label", n ? `Filter, ${n} on` : "Filter");
+}
+
+/* ---------- filter box ---------- */
+function setView(k, v, focusId){
+  view[k] = v; saveView(); state.shown = PAGE;
+  renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
+  if (focusId){ const b = document.getElementById(focusId); if (b) b.focus(); }
+}
+function fbSeg(label, key, opts, cur, pick){
+  const wrap = el("div", "fb-sec"); const l = el("span", "fb-lbl", label); l.id = "fbl-" + key; wrap.append(l);
+  const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-labelledby", l.id);
+  opts.forEach(([v, t]) => {
+    const b = el("button", null, t); b.type = "button"; b.id = `fb-${key}-${v}`;
+    b.setAttribute("aria-pressed", String(cur === v)); b.onclick = () => pick(v, b.id); seg.append(b);
+  });
+  wrap.append(seg); return wrap;
+}
+function renderFilterBox(){
+  const box = $("#filterBox"); if (box.hidden) return;
+  box.textContent = "";
+  const head = el("div", "fb-head"); head.append(el("h2", null, "Filter"));
+  const reset = el("button", "linkbtn", "Reset"); reset.type = "button"; reset.id = "fb-reset";
+  reset.onclick = () => { Object.assign(view, VIEW_DEFAULT, {type: view.type}); setView("type", view.type, "fb-reset"); };
+  head.append(reset); box.append(head);
+  box.append(fbSeg("Show", "unread", [["all", "All stories"], ["unread", "Unread only"]], view.unread ? "unread" : "all", (v, id) => setView("unread", v === "unread", id)));
+  const sec = el("div", "fb-sec"); sec.append(el("span", "fb-lbl", "Sources"));
+  const chips = el("div", "fb-chips");
+  const mk = (src, label, id) => { const b = el("button", "chip", label); b.type = "button"; b.id = id; b.setAttribute("aria-pressed", String(view.source === src)); b.onclick = () => setView("source", view.source === src && src !== "all" ? "all" : src, id); chips.append(b); };
+  mk("all", `All ${state.feeds.length}`, "fb-src-all");
+  const pre = state.organise === "platform" ? "platform:" : "folder:";
+  groupList().filter(([, fs]) => fs.length).forEach(([name], i) => mk(pre + name, name, "fb-src-" + i));
+  sec.append(chips);
+  const sel = el("select", "fb-select"); sel.id = "fb-one"; sel.setAttribute("aria-label", "Just one source");
+  const o0 = el("option", null, "Just one source…"); o0.value = ""; sel.append(o0);
+  [...state.feeds].sort(byName).forEach(f => { const o = el("option", null, f.title || f.url); o.value = f.id; o.selected = view.source === "feed:" + f.id; sel.append(o); });
+  sel.onchange = () => setView("source", sel.value ? "feed:" + sel.value : "all", "fb-one");
+  sec.append(sel); box.append(sec);
+  const two = el("div", "fb-two");
+  two.append(fbSeg("From", "from", [["today", "Today"], ["week", "Week"], ["any", "Any"]], view.from, (v, id) => setView("from", v, id)));
+  two.append(fbSeg("Sort", "sort", [["newest", "Newest"], ["source", "Source"]], view.sort, (v, id) => setView("sort", v, id)));
+  box.append(two);
+  const go = el("button", "btn primary fb-go", `Show ${storyCount(visibleItems().length)}`); go.type = "button";
+  go.onclick = () => closeFilterBox(true);
+  box.append(go);
+}
+function openFilterBox(){ const box = $("#filterBox"); box.hidden = false; $("#filterBtn").setAttribute("aria-expanded", "true"); renderFilterBox(); const f = box.querySelector('[aria-pressed="true"]') || box.querySelector("button"); if (f) f.focus(); }
+function closeFilterBox(focusBtn){ const box = $("#filterBox"); if (box.hidden) return; box.hidden = true; $("#filterBtn").setAttribute("aria-expanded", "false"); if (focusBtn) $("#filterBtn").focus(); }
+$("#filterBtn").onclick = () => $("#filterBox").hidden ? openFilterBox() : closeFilterBox();
+$("#activeFilter").onclick = () => selectFeed("all");
+$("#status").onclick = () => openMenu("feeds");
+document.addEventListener("pointerdown", e => { const box = $("#filterBox"); if (!box.hidden && !box.contains(e.target) && !$("#filterBtn").contains(e.target)) closeFilterBox(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#filterBox").hidden){ e.preventDefault(); closeFilterBox(true); } });
 
 /* ---------- rendering: list ---------- */
 let io;
-const visibleItems = () => state.filter === "all" ? state.items : state.items.filter(i => i.feedId === state.filter);
 // Android: ask the current browser to open a link itself, so apps like YouTube don't take it over
 function browserPackage(){
   const ua = navigator.userAgent;
@@ -1158,19 +1368,65 @@ function cardEl(it){
   });
   return a;
 }
+// What the list shows: single stories, or (with stacking on) one stack per source
+const STACK_SHOW = 2, STACK_STEP = 10;
+function listUnits(){
+  const items = visibleItems();
+  if (design.stack !== "on") return items.map(it => ({it}));
+  const groups = new Map();
+  for (const it of items){
+    let g = groups.get(it.feedId);
+    if (!g){ g = {feedId: it.feedId, items: []}; groups.set(it.feedId, g); }
+    g.items.push(it);
+  }
+  return [...groups.values()].map(g => g.items.length === 1 ? {it: g.items[0]} : {group: g});
+}
+const unitEl = u => u.it ? cardEl(u.it) : stackEl(u.group);
+function stackEl(g){
+  const f = feedById(g.feedId) || {title: "Feed", color: "#888"};
+  const total = g.items.length, fresh = g.items.filter(isNew).length;
+  const box = el("section", "stack"); box.setAttribute("aria-label", `${f.title}, ${total} stories`);
+  const head = el("div", "stack-head");
+  const d = el("span", "dot"); d.style.background = f.color;
+  head.append(d, el("span", "nm", f.title || "Feed"), fresh ? el("span", "n new", fresh + " new") : el("span", "n", String(total)));
+  box.append(head);
+  const shown = Math.min(total, state.stackShown[g.feedId] || STACK_SHOW);
+  g.items.slice(0, shown).forEach(it => box.append(cardEl(it)));
+  if (total > STACK_SHOW){
+    const more = total - shown;
+    const b = el("button", "stack-more", more ? `Show ${Math.min(more, STACK_STEP)} more from ${f.title}` + (more > STACK_STEP ? ` (${more} left)` : "") : `Show fewer from ${f.title}`);
+    b.type = "button"; b.setAttribute("aria-expanded", String(!more));
+    b.onclick = () => {
+      state.stackShown[g.feedId] = more ? shown + STACK_STEP : STACK_SHOW;
+      const fresh = stackEl(g); box.replaceWith(fresh);
+      if (!isWide() && state.activeId) placeInline();
+      placePodPanel();
+      const nb = fresh.querySelector(".stack-more"); if (nb) nb.focus();
+      if (!more) fresh.scrollIntoView({block: "nearest"});
+    };
+    box.append(b);
+  }
+  return box;
+}
 function renderList(){
   const list = $("#list");
   if (io) io.disconnect();
   list.textContent = "";
-  const all = visibleItems();
+  const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
-    if (state.busy){ e.append(el("h3", null, "Loading your feeds…"), el("p", null, "This takes a few seconds the first time.")); }
-    else if (!state.feeds.length){ e.append(el("h3", null, "No feeds yet"), el("p", null, "Tap Feeds to add a website or YouTube channel.")); }
-    else { e.append(el("h3", null, "Nothing here yet"), el("p", null, "Try refreshing, or check the Feeds list for any that couldn't load.")); }
+    if (state.busy && !state.items.length){ e.append(el("h3", null, "Loading your feeds…"), el("p", null, "This takes a few seconds the first time.")); }
+    else if (!state.feeds.length){ e.append(el("h3", null, "No feeds yet"), el("p", null, "Open the menu to search for websites, YouTube channels, subreddits and podcasts.")); }
+    else if (state.items.length){
+      e.append(el("h3", null, "Nothing matches"), el("p", null, view.unread ? "You've read everything here. Turn off Unread only, or pick another type or source." : "No stories match this type or filter."));
+      const b = el("button", "btn", "Clear filters"); b.type = "button";
+      b.onclick = () => { Object.assign(view, VIEW_DEFAULT); setView("type", "all"); };
+      e.append(b);
+    }
+    else { e.append(el("h3", null, "Nothing here yet"), el("p", null, "Try refreshing, or check the menu for sources that couldn't load.")); }
     list.append(e); return;
   }
-  all.slice(0, state.shown).forEach(it => list.append(cardEl(it)));
+  all.slice(0, state.shown).forEach(u => list.append(unitEl(u)));
   if (!isWide() && state.activeId) placeInline();
   placePodPanel();
   addSentinel(all.length);
@@ -1182,8 +1438,8 @@ function addSentinel(total){
   io = new IntersectionObserver(es => {
     if (!es.some(e => e.isIntersecting)) return;
     io.disconnect(); s.remove();
-    const all = visibleItems();
-    all.slice(state.shown, state.shown + PAGE).forEach(it => list.append(cardEl(it)));
+    const all = listUnits();
+    all.slice(state.shown, state.shown + PAGE).forEach(u => list.append(unitEl(u)));
     state.shown += PAGE;
     addSentinel(all.length);
   }, {rootMargin: "600px"});
@@ -1581,68 +1837,189 @@ const dlg = $("#dlg");
 let editingId = null;
 const ICON_EDIT = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
 const ICON_BIN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>';
+const ICON_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+// Sources that need a look: failing ones, and ones that have gone quiet
+function attentionList(){
+  const out = [];
+  state.feeds.forEach(f => {
+    if (f.error){ out.push({f, why: (f.fails || 1) > 1 ? `Failed the last ${f.fails} checks` : "Couldn't update last time", act: "Try again"}); return; }
+    if (!f.lastFetched) return;
+    const its = state.items.filter(i => i.feedId === f.id);
+    if (!its.length){ out.push({f, why: "No stories found yet", act: "Check"}); return; }
+    const newest = Math.max(...its.map(i => i.date || 0));
+    const quietDays = f.audio ? 30 : 3;
+    if (newest && Date.now() - newest > quietDays * 86400000) out.push({f, why: `Nothing new for ${Math.floor((Date.now() - newest) / 86400000)} days`, act: "Check"});
+  });
+  return out;
+}
+function checkNow(f){ f.lastFetched = 0; f.lastTried = 0; refreshAll(); }
+function feedSub(f){
+  const sub = el("span", "sub");
+  if (f.error){ sub.append(el("span", "er", "Couldn't update")); return sub; }
+  const bits = [state.organise === "platform" ? folderOf(f) : platformOf(f)];
+  if (f.lastFetched) bits.push("checked " + ago(f.lastFetched));
+  sub.append(el("span", "url", bits.join(" · ")));
+  return sub;
+}
 function renderFeedList(){
-  const ul = $("#flist"); ul.textContent = "";
-  if (!state.feeds.length){ const li = el("li"); li.append(el("span", "url", "No feeds yet. Add one above.")); ul.append(li); return; }
-  const pickRow = (id, dotColor, name, sub) => {
+  const box = $("#flist"); box.textContent = "";
+  if (!state.feeds.length){ box.append(el("p", "hint", "No sources yet. Search or paste a link above to add one.")); return; }
+  const pickRow = (src, dotColor, name, sub) => {
     const pick = el("button", "pick"); pick.type = "button";
-    pick.setAttribute("aria-current", String(state.filter === id));
+    pick.setAttribute("aria-current", String(view.source === src));
     const d = el("span", "dot"); d.style.background = dotColor || "transparent"; if (!dotColor) d.classList.add("all-dot");
     const info = el("span", "info");
     info.append(el("span", "nm", name));
     if (sub) info.append(sub);
-    const n = newCount(id);
-    pick.append(d, info, el("span", "count" + (n ? "" : " zero"), n ? String(n) : "0"));
-    pick.onclick = () => { selectFeed(id); closeMenu(); };
+    const n = newCount(src === "all" ? "all" : src.slice(5));
+    pick.append(d, info, el("span", "count" + (n ? "" : " zero"), String(n)));
+    pick.onclick = () => { selectFeed(src); closeMenu(); };
     return pick;
   };
-  // "All feeds" first
-  const all = el("li", "row-all");
-  all.append(pickRow("all", null, "All feeds", el("span", "url", `${state.feeds.length} feed${state.feeds.length === 1 ? "" : "s"}`)));
-  ul.append(all);
-  state.feeds.forEach((f, idx) => {
-    const li = el("li");
-    if (f.id === editingId){ li.className = "editing"; li.append(editForm(f, idx)); ul.append(li); return; }
-    const sub = el("span", "sub");
-    sub.append(el("span", "url", f.url));
-    const every = everyMin(f);
-    sub.append(el("span", "url", `Checks every ${every >= 60 ? (every % 60 ? (every / 60).toFixed(1) : every / 60) + " h" : every + " min"}${f.everyMin ? " (set by the feed)" : ""}${f.lastFetched ? " · last " + ago(f.lastFetched) : ""}`));
-    if (f.error) sub.append(el("span", "er", "Couldn't update: " + f.error));
-    const acts = el("div", "acts");
-    const ed = el("button", "btn icon"); ed.type = "button"; ed.innerHTML = ICON_EDIT;
-    ed.setAttribute("aria-label", "Edit " + (f.title || "feed")); ed.title = "Edit";
-    ed.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n) n.focus(); };
-    const rm = el("button", "btn icon"); rm.type = "button"; rm.innerHTML = ICON_BIN;
-    rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); rm.title = "Remove";
-    let armed = false, timer;
-    const disarm = () => { armed = false; rm.classList.remove("armed", "danger"); rm.innerHTML = ICON_BIN; rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); };
-    rm.onclick = () => {
-      if (!armed){
-        armed = true; rm.classList.add("armed", "danger"); rm.textContent = "Remove";
-        rm.setAttribute("aria-label", "Tap again to remove " + (f.title || "feed"));
-        timer = setTimeout(disarm, 3000); return;
-      }
-      clearTimeout(timer);
-      state.feeds = state.feeds.filter(x => x.id !== f.id);
-      state.items = state.items.filter(i => i.feedId !== f.id);
-      if (state.filter === f.id) state.filter = "all";
-      if (state.activeId && !itemById(state.activeId)) closeViewer();
-      save(); renderFeedList(); renderChips(); renderStatus(); renderList();
-      setMsg(`Removed ${f.title || "feed"}.`);
-    };
-    acts.append(ed, rm);
-    li.append(pickRow(f.id, f.color, f.title || "Untitled feed", sub), acts);
-    ul.append(li);
+  // Needs attention
+  const attn = attentionList();
+  if (attn.length){
+    const sec = el("section", "attn"); sec.setAttribute("aria-label", "Sources that need attention");
+    const h = el("div", "attn-h"); h.append(el("span", "hdot warn"), document.createTextNode(`${attn.length} source${attn.length === 1 ? " needs" : "s need"} attention`));
+    sec.append(h);
+    attn.slice(0, 4).forEach(({f, why, act}) => {
+      const row = el("div", "attn-row");
+      const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", `Edit ${f.title}: ${why}`);
+      who.append(el("b", null, f.title || f.url), el("span", "why", why));
+      who.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n){ n.focus(); n.scrollIntoView({block: "center"}); } };
+      const b = el("button", "btn" + (f.error ? " primary" : ""), state.busy ? "Checking…" : act); b.type = "button"; b.disabled = state.busy;
+      b.onclick = () => checkNow(f);
+      row.append(who, b); sec.append(row);
+    });
+    if (attn.length > 4) sec.append(el("span", "hint", `and ${attn.length - 4} more below`));
+    box.append(sec);
+  }
+  // Everything
+  const ev = el("ul", "flist"); const li = el("li", "row-all");
+  li.append(pickRow("all", null, "Everything", el("span", "url", `${state.feeds.length} source${state.feeds.length === 1 ? "" : "s"}`)));
+  ev.append(li); box.append(ev);
+  // Organise by
+  const org = el("div", "org-row"); const ol = el("span", "fb-lbl", "Organise by"); ol.id = "org-lbl"; org.append(ol);
+  const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-labelledby", "org-lbl");
+  [["category", "Category"], ["platform", "Platform"]].forEach(([v, t]) => {
+    const b = el("button", null, t); b.type = "button"; b.id = "org-" + v; b.setAttribute("aria-pressed", String(state.organise === v));
+    b.onclick = () => { state.organise = v; store.set("tl.organise", v); renderFeedList(); $("#org-" + v).focus(); };
+    seg.append(b);
   });
+  org.append(seg); box.append(org);
+  // Groups, channels A–Z inside each
+  const mode = state.organise;
+  groupList().forEach(([name, feeds], gi) => {
+    const key = (mode === "platform" ? "plat:" : "cat:") + name;
+    const open = !state.collapsed.has(key);
+    const sec = el("section", "group"); sec.setAttribute("aria-label", name);
+    const h = el("button", "ghead"); h.type = "button"; h.id = "gh-" + gi; h.setAttribute("aria-expanded", String(open));
+    h.innerHTML = ICON_CHEV;
+    const fresh = feeds.reduce((n, f) => n + newCount(f.id), 0);
+    const meta = el("span", "gmeta");
+    if (feeds.some(f => f.error)) meta.append(el("span", "hdot warn"));
+    meta.append(document.createTextNode(`${feeds.length} · ${fresh} new`));
+    h.append(el("span", "gname", name), meta);
+    h.onclick = () => { state.collapsed[open ? "add" : "delete"](key); store.set("tl.collapsed", [...state.collapsed]); renderFeedList(); $("#gh-" + gi).focus(); };
+    sec.append(h);
+    if (open){
+      const ul = el("ul", "flist");
+      if (!feeds.length){
+        const e = el("li", "gempty"); e.append(el("span", null, "Empty. Edit a source to move it here."));
+        const rm = el("button", "btn", "Remove folder"); rm.type = "button";
+        rm.onclick = () => { state.folders = state.folders.filter(x => x !== name); saveFolders(); checkView(); renderFeedList(); renderChips(); };
+        e.append(rm); ul.append(e);
+      }
+      feeds.forEach(f => ul.append(feedRow(f, pickRow)));
+      sec.append(ul);
+    }
+    box.append(sec);
+  });
+  if (mode === "category") box.append(newFolderControl(name => { renderFeedList(); }));
 }
-function editForm(f, idx){
+// "+ New folder" button that turns into a name box
+function newFolderControl(onMade, label = "+ New folder"){
+  const wrap = el("div");
+  const b = el("button", "newfolder", label); b.type = "button";
+  b.onclick = () => {
+    const form = el("form", "addrow"); form.autocomplete = "off";
+    const inp = el("input"); inp.type = "text"; inp.placeholder = "Folder name, e.g. Football"; inp.setAttribute("aria-label", "New folder name"); inp.maxLength = 40;
+    const ok = el("button", "btn primary", "Add"); ok.type = "submit";
+    form.append(inp, ok);
+    form.onsubmit = e => {
+      e.preventDefault();
+      const name = makeFolder(inp.value);
+      if (name) onMade(name);
+    };
+    wrap.replaceChildren(form); inp.focus();
+  };
+  wrap.append(b);
+  return wrap;
+}
+function makeFolder(raw){
+  const name = (raw || "").trim().replace(/\s+/g, " ");
+  if (!name) return null;
+  if (name.toLowerCase() === UNSORTED.toLowerCase()) return UNSORTED;
+  const have = state.folders.find(x => x.toLowerCase() === name.toLowerCase());
+  if (have) return have;
+  state.folders.push(name); saveFolders();
+  return name;
+}
+function setFolder(f, name){
+  f.folder = name && name !== UNSORTED ? name : "";
+  save(); renderChips(); renderList();
+}
+function feedRow(f, pickRow){
+  const li = el("li");
+  if (f.id === editingId){ li.className = "editing"; li.append(editForm(f)); return li; }
+  const acts = el("div", "acts");
+  const ed = el("button", "btn icon"); ed.type = "button"; ed.innerHTML = ICON_EDIT;
+  ed.setAttribute("aria-label", "Edit " + (f.title || "feed")); ed.title = "Edit";
+  ed.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n) n.focus(); };
+  const rm = el("button", "btn icon"); rm.type = "button"; rm.innerHTML = ICON_BIN;
+  rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); rm.title = "Remove";
+  let armed = false, timer;
+  const disarm = () => { armed = false; rm.classList.remove("armed", "danger"); rm.innerHTML = ICON_BIN; rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); };
+  rm.onclick = () => {
+    if (!armed){
+      armed = true; rm.classList.add("armed", "danger"); rm.textContent = "Remove";
+      rm.setAttribute("aria-label", "Tap again to remove " + (f.title || "feed"));
+      timer = setTimeout(disarm, 3000); return;
+    }
+    clearTimeout(timer);
+    state.feeds = state.feeds.filter(x => x.id !== f.id);
+    state.items = state.items.filter(i => i.feedId !== f.id);
+    checkView(); saveView();
+    if (state.activeId && !itemById(state.activeId)) closeViewer();
+    save(); renderFeedList(); renderChips(); renderStatus(); renderList();
+    setMsg(`Removed ${f.title || "feed"}.`);
+  };
+  acts.append(ed, rm);
+  li.append(pickRow("feed:" + f.id, f.color, f.title || "Untitled feed", feedSub(f)), acts);
+  return li;
+}
+function folderField(cur){
+  const fF = el("label", "field"); fF.append(el("span", "lbl", "Folder"));
+  const sel = el("select", "fb-select"); sel.id = "ef-folder";
+  const names = [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"}));
+  [...names, UNSORTED].forEach(n => { const o = el("option", null, n); o.value = n; o.selected = n === cur; sel.append(o); });
+  const o = el("option", null, "New folder…"); o.value = "\u0000new"; sel.append(o);
+  const nf = el("input"); nf.type = "text"; nf.placeholder = "New folder name"; nf.hidden = true; nf.setAttribute("aria-label", "New folder name"); nf.maxLength = 40;
+  sel.onchange = () => { nf.hidden = sel.value !== "\u0000new"; if (!nf.hidden) nf.focus(); };
+  fF.append(sel, nf);
+  return {node: fF, value: () => sel.value === "\u0000new" ? (makeFolder(nf.value) || cur) : sel.value};
+}
+function editForm(f){
   const form = el("form", "editform"); form.autocomplete = "off";
   const nameF = el("label", "field"); nameF.append(el("span", "lbl", "Name"));
   const name = el("input"); name.id = "ef-name"; name.type = "text"; name.value = f.title || ""; name.placeholder = "Feed name";
   nameF.append(name);
+  const folder = folderField(folderOf(f));
   const urlF = el("label", "field"); urlF.append(el("span", "lbl", "Link"));
   const url = el("input"); url.id = "ef-url"; url.type = "text"; url.inputMode = "url"; url.value = f.url;
-  urlF.append(url, el("span", "hint", "A feed link, website or YouTube channel. Changing it reloads this feed's stories."));
+  const every = everyMin(f);
+  urlF.append(url, el("span", "hint", `${platformOf(f)} · checked every ${every >= 60 ? (every % 60 ? (every / 60).toFixed(1) : every / 60) + " h" : every + " min"}${f.everyMin ? " (set by the feed)" : ""}${f.lastFetched ? " · last " + ago(f.lastFetched) : ""}. Changing the link reloads this feed's stories.`));
+  if (f.error) urlF.append(el("span", "er", "Last check failed: " + f.error));
   const colF = el("div", "field"); colF.append(el("span", "lbl", "Colour"));
   const sw = el("div", "swatches"); sw.setAttribute("role", "radiogroup"); sw.setAttribute("aria-label", "Colour");
   let color = f.color;
@@ -1653,23 +2030,13 @@ function editForm(f, idx){
     sw.append(b);
   });
   colF.append(sw);
-  const order = el("div", "field"); order.append(el("span", "lbl", "Position"));
-  const orow = el("div", "row");
-  const up = el("button", "btn", "Move up"); up.type = "button"; up.disabled = idx === 0;
-  const down = el("button", "btn", "Move down"); down.type = "button"; down.disabled = idx === state.feeds.length - 1;
-  const move = dir => { const i = state.feeds.indexOf(f); const j = i + dir; [state.feeds[i], state.feeds[j]] = [state.feeds[j], state.feeds[i]]; save(); renderChips(); renderFeedList(); };
-  up.onclick = () => move(-1); down.onclick = () => move(1);
-  orow.append(up, down); order.append(orow);
-  const dirF = el("label", "check");
-  const dir = el("input"); dir.type = "checkbox"; dir.id = "ef-direct"; dir.checked = !!f.direct;
-  dirF.append(dir, el("span", null, "Always open stories on the website (for sites Reader can't load)"));
   const msg = el("p", "msg");
   const row = el("div", "row");
   const saveB = el("button", "btn primary", "Save"); saveB.type = "submit";
   const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
   cancel.onclick = () => { editingId = null; renderFeedList(); };
   row.append(saveB, cancel);
-  form.append(nameF, urlF, colF, order, msg, row);
+  form.append(nameF, folder.node, urlF, colF, msg, row);
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const newUrl = url.value.trim();
@@ -1687,7 +2054,7 @@ function editForm(f, idx){
       }
       f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
       f.color = color;
-      f.direct = dir.checked;
+      const fv = folder.value(); f.folder = fv && fv !== UNSORTED ? fv : "";
       editingId = null;
       save(); renderFeedList(); renderChips(); renderStatus(); renderList();
       if (viewerEl && state.activeId){ const it = itemById(state.activeId); if (it) viewerEl.querySelector(".vbar .meta")?.replaceWith(metaRow(it)); }
@@ -1698,6 +2065,19 @@ function editForm(f, idx){
     }
   });
   return form;
+}
+// After adding a source: "Put it in" a folder
+function showFolderPrompt(feed){
+  const box = $("#addFolder"); box.hidden = false; box.textContent = "";
+  box.append(el("span", "fb-lbl", `Put ${feed.title} in`));
+  const chips = el("div", "fb-chips");
+  const done = name => { setFolder(feed, name); box.hidden = true; renderFeedList(); setMsg(`${feed.title} is in ${name}.`); };
+  [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"})).forEach(n => {
+    const b = el("button", "chip", n); b.type = "button"; b.onclick = () => done(n); chips.append(b);
+  });
+  const skip = el("button", "chip", "Leave unsorted"); skip.type = "button"; skip.onclick = () => { box.hidden = true; };
+  chips.append(skip);
+  box.append(chips, newFolderControl(done));
 }
 function setMsg(t, err){ const m = $("#addMsg"); m.textContent = t; m.classList.toggle("err", !!err); }
 function showTab(which){
@@ -1798,6 +2178,7 @@ async function addFeed(raw, direct){
   state.feeds.push(feed);
   state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
+  showFolderPrompt(feed);
   return {feed, count: state.items.filter(i => i.feedId === feed.id).length};
 }
 const storyCount = n => `${n} stor${n === 1 ? "y" : "ies"}`;
@@ -2220,7 +2601,7 @@ $("#searchPage").addEventListener("close", () => { renderTopResults(); renderFee
 renderFilterChips($("#searchFilters"), renderAllResults);
 
 /* ---------- design settings ---------- */
-const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow"};
+const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow", stack:"off"};
 const ACCENTS = {
   orange:["#c2410c","#ff8a4c"], teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
   amber:["#9a5b00","#f2b453"], green:["#2f7a1f","#8fd47a"], slate:["#3d4a5c","#a9b6c8"], red:["#c0362c","#ff8a7e"]
@@ -2233,6 +2614,7 @@ const DESIGN_ROWS = [
   ["density","Spacing",[["compact","Compact"],["normal","Normal"],["roomy","Roomy"]]],
   ["thumbs","Images",[["off","Off"],["small","Small"],["large","Large"]]],
   ["sum","Summaries",[["on","Short"],["full","Full"],["off","Hide"]]],
+  ["stack","Stack stories from the same source",[["off","Off"],["on","On"]]],
   ["width","Width on desktop",[["narrow","Narrow"],["wide","Wide"]]]
 ];
 let design = {...DESIGN_DEFAULT, ...store.get("tl.design", {})};
@@ -2258,7 +2640,7 @@ function renderDesign(){
     opts.forEach(([v, t]) => {
       const b = el("button", null, t); b.type = "button"; b.id = "set-" + key + "-" + v;
       b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(design[key] === v)); b.setAttribute("aria-pressed", String(design[key] === v));
-      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); };
+      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "stack"){ state.shown = PAGE; renderList(); } $("#" + b.id).focus(); };
       seg.append(b);
     });
     row.append(lab, seg); rows.append(row);
@@ -2276,13 +2658,13 @@ function renderDesign(){
   const sample = state.items.find(i => i.image) || state.items[0] || {id:"x", feedId:(state.feeds[0] || {}).id, title:"Example headline for a story in your feed", summary:"A short summary of the story appears here so you can judge the size and spacing.", date:Date.now() - 3600000, image:null};
   pv.append(cardEl(sample));
 }
-$("#resetDesign").onclick = () => { design = {...DESIGN_DEFAULT}; saveDesign(); renderDesign(); };
+$("#resetDesign").onclick = () => { design = {...DESIGN_DEFAULT}; saveDesign(); renderDesign(); renderList(); };
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyDesign(); if (dlg.open && !$("#panelSettings").hidden) renderDesign(); });
 applyDesign();
 
 /* ---------- keyboard + layout ---------- */
 document.addEventListener("keydown", e => {
-  if (dlg.open || $("#articlePage").open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (dlg.open || $("#articlePage").open || !$("#filterBox").hidden || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k !== "j" && k !== "k") return;
   const cards = [...document.querySelectorAll(".card")]; if (!cards.length) return;

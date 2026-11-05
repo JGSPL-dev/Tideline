@@ -31,3 +31,9 @@ The user wants every publisher checked for the same issues that came up with BBC
 ## Testing
 - The cloud sandbox can't reach outside sites, so test with Playwright against mocked responses (route the relay, rss2json and image hosts).
 - After pushing, the live site can be checked in the Claude desktop app's built-in browser when that is available.
+
+## Organising and filtering (Nov 2026)
+- Top bar: story-type tabs (Everything, Articles, Videos, Reddit, Podcasts, Social) with new counts; `typeOf(item)`.
+- Filter box (`#filterBox`, `view` in `tl.view`): Unread only, Sources (folder/platform/one feed), From (Today/Week/Any), Sort (Newest/Source).
+- Menu: Needs attention (failing or quiet sources), Everything, Organise by Category (folders, `f.folder`, `tl.folders`) or Platform (`platformOf`); channels A–Z in each group.
+- Settings → "Stack stories from the same source" (`design.stack`) groups the feed into one card per source.
