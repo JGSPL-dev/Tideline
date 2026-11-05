@@ -269,6 +269,13 @@ dialog.fullpage{margin:0;inset:0;width:100vw;max-width:none;height:100dvh;max-he
   padding-top:env(safe-area-inset-top,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 dialog.fullpage .dlg{height:100%;max-height:none;max-width:760px;margin:0 auto}
 dialog.fullpage header{gap:10px}
+.art-bar{display:flex;align-items:center;gap:10px}
+.art-src{flex:1;min-width:0}
+.art-body{padding:0 !important;display:block !important}
+.art-body .reader{padding-top:18px}
+.art-hero{width:100%;border-radius:10px;margin:0 0 18px;display:block}
+.art-audio{width:100%;margin:0 0 18px}
+.tag-in{border-color:var(--brand);color:var(--brand)}
 dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rkind.k-youtube{color:#ff8787}}
 :root[data-theme="dark"] .rkind.k-youtube,:root[data-theme="black"] .rkind.k-youtube{color:#ff8787}
@@ -383,6 +390,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       </section>
       <section class="set-sec" aria-labelledby="sh-links">
         <h3 id="sh-links">Opening stories</h3>
+      <label class="check" for="readInApp">
+        <input type="checkbox" id="readInApp">
+        <span><b>Read full stories in tick/rss</b><br><span class="hint">When a feed includes the whole article, or a podcast episode, open it here. Other stories open on the website.</span></span>
+      </label>
       <label class="check" for="keepBrowser">
         <input type="checkbox" id="keepBrowser">
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
@@ -419,6 +430,19 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 </dialog>
 
 
+
+<dialog id="articlePage" class="fullpage article-page" aria-label="Story">
+  <div class="dlg">
+    <header class="art-bar">
+      <button class="btn icon" id="artBack" aria-label="Back to your feed">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <div class="art-src" id="artSrc"></div>
+      <a class="btn" id="artOpen" target="_blank" rel="noopener noreferrer">Open website</a>
+    </header>
+    <div class="inner art-body" id="artBody"></div>
+  </div>
+</dialog>
 
 <dialog id="searchPage" class="fullpage" aria-labelledby="spTitle">
   <div class="dlg">
@@ -472,7 +496,8 @@ const state = {
   busy: false,
   proxy: store.get("tl.proxy", ""),
   rssKey: store.get("tl.rsskey", ""),
-  keepInBrowser: store.get("tl.keepbrowser", false)
+  keepInBrowser: store.get("tl.keepbrowser", false),
+  readInApp: store.get("tl.readinapp", true)
 };
 const readerCache = new Map();
 state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
@@ -539,6 +564,9 @@ async function fetchViaRss2json(url, feed){
   const j = await r.json();
   if (j.status !== "ok" || !Array.isArray(j.items)) throw new Error(j.message || "Feed service couldn't read it");
   const items = j.items.map(it => makeItem(feed, {
+    html: (it.content || "").length > (it.description || "").length ? it.content : it.description,
+    audioUrl: it.enclosure && /audio/.test(it.enclosure.type || "") ? it.enclosure.link : "",
+    audio: !!(it.enclosure && /audio/.test(it.enclosure.type || "")),
     title: htmlToText(it.title),
     link: it.link || it.guid,
     date: Date.parse((it.pubDate || "").replace(" ", "T") + "Z") || 0,
@@ -556,14 +584,57 @@ async function fetchViaFeedly(url, feed){
   if (!Array.isArray(j.items) || (!j.items.length && !j.title)) throw new Error("Feedly doesn't have that feed");
   const items = j.items.map(it => {
     const link = (it.alternate && it.alternate[0] && it.alternate[0].href) || it.canonicalUrl || (/^https?:/.test(it.originId || "") ? it.originId : "");
-    const html = (it.summary && it.summary.content) || (it.content && it.content.content) || "";
+    const html = (it.content && it.content.content) || (it.summary && it.summary.content) || "";
+    const enc = (it.enclosure || []).find(x => /audio/.test(x.type || ""));
     const vis = it.visual && it.visual.url && it.visual.url !== "none" ? it.visual.url : null;
     return makeItem(feed, {
+      html, audio: !!enc, audioUrl: enc && enc.href,
       title: htmlToText(it.title || ""), link, date: it.published || it.crawled || 0,
       summary: htmlToText(html), image: vis || (it.thumbnail && it.thumbnail[0] && it.thumbnail[0].url) || firstImg(html)
     });
   }).sort((a, b) => b.date - a.date);
   return {title: htmlToText(j.title || ""), items};
+}
+/* ---------- saved articles ---------- */
+const artDB = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    try{ const r = indexedDB.open("tickrss", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("articles");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    }catch(e){ rej(e); }
+  }));
+  const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+    const t = db.transaction("articles", mode), st = t.objectStore("articles"); const req = fn(st);
+    t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); }); };
+  return {
+    put: rows => run("readwrite", st => { rows.forEach(r => st.put(r.value, r.key)); }).catch(() => {}),
+    get: key => run("readonly", st => st.get(key)).catch(() => null),
+    keepOnly: keys => run("readwrite", st => { const q = st.getAllKeys(); q.onsuccess = () => q.result.forEach(k => { if (!keys.has(k)) st.delete(k); }); }).catch(() => {})
+  };
+})();
+// Move full articles out of the story list into the article store, and mark the stories
+function stashArticles(items){
+  const rows = [];
+  const out = items.map(i => {
+    if (!i._full) return i;
+    rows.push({key: i.id, value: {html: i._full, base: i.link}});
+    const {_full, ...rest} = i;
+    return {...rest, full: true};
+  });
+  if (rows.length) artDB.put(rows);
+  return out;
+}
+// Combine stories from several routes; when the same story comes twice, keep the fullest version
+function mergeItems(lists){
+  const byId = new Map();
+  lists.flat().forEach(i => {
+    const had = byId.get(i.id);
+    if (!had) byId.set(i.id, i);
+    else byId.set(i.id, {...had, _full: (i._full || "").length > (had._full || "").length ? i._full : had._full,
+      audioUrl: had.audioUrl || i.audioUrl, audio: had.audio || i.audio, image: had.image || i.image});
+  });
+  return [...byId.values()].sort((x, y) => y.date - x.date);
 }
 // Reddit: read both the main list (which feed services already know) and the "new" list, and combine them
 function redditVariants(url){
@@ -572,13 +643,11 @@ function redditVariants(url){
 }
 async function loadFeed(url, feed){
   const variants = redditVariants(url);
-  if (!variants) return loadOneFeed(url, feed);
+  if (!variants) return loadOneFeed(url, feed);   // loadOneFeed stashes its own articles
   const res = await Promise.allSettled(variants.map(v => loadOneFeed(v, feed)));
   const ok = res.filter(r => r.status === "fulfilled").map(r => r.value);
   if (!ok.length) throw res[0].reason;
-  const byId = new Map();
-  ok.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
-  return {title: (ok.find(g => g.title) || {}).title || "", items: [...byId.values()].sort((x, y) => y.date - x.date), everyMin: Math.max(0, ...ok.map(g => g.everyMin || 0)) || null};
+  return {title: (ok.find(g => g.title) || {}).title || "", items: stashArticles(mergeItems(ok.map(g => g.items))), everyMin: Math.max(0, ...ok.map(g => g.everyMin || 0)) || null};
 }
 async function loadOneFeed(url, feed){
   // Ask every route at once. An answer with no stories never wins the race (a service that
@@ -600,18 +669,16 @@ async function loadOneFeed(url, feed){
     throw real || new Error("Couldn't reach that feed");
   }
   await Promise.race([Promise.allSettled(routes), new Promise(r => setTimeout(r, 4000))]);
-  const byId = new Map();
-  got.flatMap(g => g.items).forEach(i => { if (!byId.has(i.id)) byId.set(i.id, i); });
   const title = (got.find(g => g.title) || first).title;
   const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
-  return {title, items: [...byId.values()].sort((x, y) => y.date - x.date), everyMin};
+  return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin};
 }
 // Keep a rolling history: everything seen in the last KEEP_DAYS, per feed
 function mergeHistory(oldItems, newItems){
   const now = Date.now(), cutoff = now - KEEP_DAYS * 86400000;
   const byId = new Map();
   oldItems.forEach(i => byId.set(i.id, i));
-  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now}); });
+  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined}); });
   const counts = {};
   // Newest first; each feed always keeps its MIN_PER_FEED newest stories, however old,
   // so weekly podcasts and quiet channels never vanish. Beyond that, only the last KEEP_DAYS.
@@ -675,7 +742,10 @@ function makeItem(feed, o){
     summary: (o.summary || "").slice(0, 1000),
     image: videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : safeUrl(o.image),
     videoId: videoId || null,
-    audio: o.audio || undefined
+    audio: o.audio || undefined,
+    audioUrl: safeUrl(o.audioUrl || "") || undefined,
+    // The whole article, when the feed includes it (kept out of the saved list; see stashArticles)
+    _full: o.html && htmlToText(o.html).length >= 500 ? o.html : undefined
   };
 }
 function rssItem(e, feed){
@@ -687,10 +757,12 @@ function rssItem(e, feed){
   const cands = [...deep(e, "media:content"), ...deep(e, "media:thumbnail")].filter(m => attr(m, "url") && isImg(m))
     .sort((x, y) => (+attr(y, "width") || 0) - (+attr(x, "width") || 0));
   const encl = kids(e, "enclosure").find(x => /^image/.test(attr(x, "type") || ""));
-  const audio = kids(e, "enclosure").some(x => /^audio/.test(attr(x, "type") || ""));
+  const audioEnc = kids(e, "enclosure").find(x => /^audio/.test(attr(x, "type") || ""));
+  const audio = !!audioEnc;
   const image = attr(cands[0], "url") || attr(encl, "url") || attr(kid(e, "itunes:image"), "href") || firstImg(content) || firstImg(desc);
   return makeItem(feed, {
-    audio,
+    audio, audioUrl: attr(audioEnc, "url"),
+    html: content.length > desc.length ? content : desc,
     title: htmlToText(txt(kid(e, "title"))),
     link,
     date: Date.parse(txt(kid(e, "pubdate")) || txt(kid(e, "dc:date"))) || 0,
@@ -705,6 +777,7 @@ function atomItem(e, feed){
   const group = kid(e, "media:group");
   const content = txt(kid(e, "content")), summary = txt(kid(e, "summary"));
   return makeItem(feed, {
+    html: vid ? "" : (content.length > summary.length ? content : summary),
     title: htmlToText(txt(kid(e, "title"))),
     link: attr(l, "href"),
     date: Date.parse(txt(kid(e, "published")) || txt(kid(e, "updated"))) || 0,
@@ -875,9 +948,12 @@ function metaRow(it){
   m.append(el("span", "src", f.title || "Feed"));
   if (it.date){ m.append(el("span", null, "·")); const t = el("time", null, ago(it.date)); t.dateTime = new Date(it.date).toISOString(); m.append(t); }
   if (it.videoId) m.append(el("span", "tag", "Video"));
+  else if (it.audioUrl) m.append(el("span", "tag tag-in", "Listen"));
+  else if (it.full) m.append(el("span", "tag tag-in", "Full story"));
   return m;
 }
 function save(){
+  if (state.items.some(i => i._full)) state.items = stashArticles(state.items);   // full text lives in the article store, not here
   store.set("tl.feeds", state.feeds);
   store.set("tl.items", state.items);
   store.set("tl.read", [...state.read].slice(-3000));
@@ -1030,6 +1106,7 @@ function cardEl(it){
   }
   a.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
+    if (state.readInApp && !it.videoId && (it.full || it.audioUrl)){ e.preventDefault(); openArticle(it); return; }
     if (state.keepInBrowser && it.link){
       const intent = browserIntent(it.link);
       if (intent){ e.preventDefault(); location.href = intent; }
@@ -1444,6 +1521,7 @@ async function refreshAll(){
   let incoming = [];
   fresh.forEach(v => { if (v) incoming = incoming.concat(v); });
   state.items = mergeHistory(state.items.filter(i => ids.has(i.feedId)), incoming);
+  artDB.keepOnly(new Set(state.items.map(i => i.id)));
   state.lastUpdated = Date.now();
   state.busy = false;
   btn.disabled = false; btn.classList.remove("spin");
@@ -1582,7 +1660,7 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; }
+  else { renderDesign(); $("#readInApp").checked = state.readInApp; $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
@@ -1602,6 +1680,7 @@ $("#dlgClose").onclick = closeMenu;
 $("#tab-feeds").onclick = () => showTab("feeds");
 $("#tab-settings").onclick = () => showTab("settings");
 dlg.addEventListener("click", e => { if (e.target === dlg) closeMenu(); });
+$("#readInApp").addEventListener("change", e => { state.readInApp = e.target.checked; store.set("tl.readinapp", state.readInApp); });
 $("#keepBrowser").addEventListener("change", e => {
   state.keepInBrowser = e.target.checked; store.set("tl.keepbrowser", state.keepInBrowser);
   const h = $("#keepBrowserHint");
@@ -2159,7 +2238,7 @@ applyDesign();
 
 /* ---------- keyboard + layout ---------- */
 document.addEventListener("keydown", e => {
-  if (dlg.open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (dlg.open || $("#articlePage").open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k !== "j" && k !== "k") return;
   const cards = [...document.querySelectorAll(".card")]; if (!cards.length) return;
@@ -2187,6 +2266,63 @@ addEventListener("resize", updateChipFades);
 setInterval(renderStatus, 60000);
 setInterval(() => { if (document.visibilityState === "visible" && soonestCheck() <= Date.now()) refreshAll(); }, 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && soonestCheck() <= Date.now()) refreshAll(); });
+
+/* ---------- reading a story in tick/rss ---------- */
+function articleFragment(html, base){
+  // Make image and link addresses absolute, bring in lazy-loaded images, then keep only safe article markup
+  const d = new DOMParser().parseFromString(`<!doctype html><html><head><base href="${(base || "").replace(/"/g, "")}"></head><body>${html}</body></html>`, "text/html");
+  d.querySelectorAll("img").forEach(i => {
+    const lazy = i.getAttribute("data-src") || i.getAttribute("data-lazy-src") || i.getAttribute("data-original");
+    if (lazy) i.setAttribute("src", lazy);
+    if (i.getAttribute("src")) i.setAttribute("src", i.src);
+    if ((+i.getAttribute("width") || 99) < 4) i.remove();                 // tracking pixels
+  });
+  d.querySelectorAll("a[href]").forEach(a => a.setAttribute("href", a.href));
+  const frag = basicSanitize(d.body.innerHTML);
+  const wrap = el("div"); wrap.append(frag);
+  wrap.querySelectorAll("a").forEach(a => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
+  wrap.querySelectorAll("img").forEach(i => { i.loading = "lazy"; i.referrerPolicy = "no-referrer"; i.decoding = "async"; i.onerror = () => i.remove(); });
+  return wrap;
+}
+async function openArticle(it){
+  const page = $("#articlePage"), body = $("#artBody");
+  const f = feedById(it.feedId) || {};
+  const src = el("div", "meta"); const dot = el("span", "dot"); dot.style.background = f.color || "var(--muted)";
+  src.append(dot, el("span", "src", f.title || "")); $("#artSrc").replaceChildren(src);
+  const open = $("#artOpen"); open.hidden = !it.link; if (it.link) open.href = it.link;
+  body.textContent = "";
+  const r = el("article", "reader");
+  const kick = el("div", "kicker");
+  kick.append(el("span", null, f.title || ""));
+  if (it.date) kick.append(el("span", null, "· " + new Date(it.date).toLocaleString(undefined, {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})));
+  r.append(kick, el("h1", null, it.title));
+  if (it.audioUrl){
+    const au = document.createElement("audio"); au.controls = true; au.preload = "none"; au.src = it.audioUrl; au.className = "art-audio";
+    r.append(au);
+  }
+  body.append(r);
+  if (!page.open) page.showModal();
+  body.scrollTop = 0;
+  const saved = it.full ? await artDB.get(it.id) : null;
+  if (saved && saved.html){
+    const content = articleFragment(saved.html, saved.base || it.link);
+    const words = content.textContent.trim().split(/\s+/).length;
+    kick.append(el("span", null, "· " + Math.max(1, Math.round(words / 230)) + " min read"));
+    const firstImgEl = content.querySelector("img");
+    if (it.image && !it.audioUrl && (!firstImgEl || content.firstElementChild !== firstImgEl.closest("p,figure,div") && content.firstElementChild !== firstImgEl)){
+      const hero = el("img", "art-hero"); hero.alt = ""; hero.referrerPolicy = "no-referrer"; hero.src = hiRes(it.image); hero.onerror = () => hero.remove();
+      r.insertBefore(hero, r.querySelector("h1").nextSibling);
+    }
+    r.append(content);
+  } else if (it.summary){
+    r.append(el("p", null, it.summary));
+  }
+  if (it.link){
+    const o = el("p", "orig"); const a = el("a", null, "Read on " + new URL(it.link).hostname.replace(/^www\./, "")); a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer"; o.append(a); r.append(o);
+  }
+}
+$("#artBack").onclick = () => $("#articlePage").close();
+$("#articlePage").addEventListener("close", () => { const au = $("#artBody audio"); if (au) au.pause(); });
 
 /* ---------- set-up link: …/#relay=<address> saves your relay ---------- */
 (() => {
