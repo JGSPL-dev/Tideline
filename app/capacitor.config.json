@@ -1,0 +1,16 @@
+{
+  "appId": "dev.jgspl.tickrss",
+  "appName": "tick/rss",
+  "webDir": "www",
+  "android": {
+    "adjustMarginsForEdgeToEdge": "auto"
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  },
+  "server": {
+    "cleartext": true
+  }
+}

@@ -573,6 +573,24 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 
 <script>
 (() => {
+// Inside the Android/iPhone app (Capacitor), requests go out natively from the phone: no browser
+// cross-site rules, and sites see an ordinary phone on home or mobile internet. Relays become a backup.
+const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+if (IS_APP){
+  // The native request layer may ignore "cancel" signals, so make timeouts reject anyway
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = (u, init = {}) => {
+    const sig = init && init.signal, p = nativeFetch(u, init);
+    if (!sig) return p;
+    return new Promise((res, rej) => {
+      const stop = () => rej(new DOMException("Aborted", "AbortError"));
+      if (sig.aborted) return stop();
+      sig.addEventListener("abort", stop, {once: true});
+      p.then(res, rej);
+    });
+  };
+  document.documentElement.classList.add("is-app");
+}
 "use strict";
 const $ = s => document.querySelector(s);
 const store = {
@@ -645,6 +663,13 @@ async function fetchViaRelay(url, ms = 12000){
   return r.text();
 }
 async function fetchText(url, ms = 10000, opts = {}){
+  // In the app, ask the site directly first: it usually just works
+  if (IS_APP){
+    try{
+      const r = await fetchWithTimeout(url, ms, {"Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9, */*;q=0.8"});
+      if (r.ok){ const t = await r.text(); if (t.trim().length >= 40 && (!opts.needFeed || looksLikeFeed(t))) return t; }
+    }catch{}
+  }
   // Your own relay is the dependable route: when it works, use it alone
   if (relayPrefix() && !opts.skipRelay){
     try{ const t = await fetchViaRelay(url, ms + 2000); if (t.trim().length >= 40 && (!opts.needFeed || looksLikeFeed(t))) return t; }catch{}

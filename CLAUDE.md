@@ -41,3 +41,8 @@ The user wants every publisher checked for the same issues that came up with BBC
 - A route only counts if it returns a real feed (`looksLikeFeed`); bot-check pages from the relay no longer stop the other routes.
 - "Nothing new" warnings scale with each source's usual gap between stories (3× the median gap, at least 3 days, 30 for podcasts).
 - Reddit: besides the RSS routes, `fetchViaRedditJson` reads `/r/X/new.json` (or `/user/X/submitted.json`) straight from the device, because Reddit often refuses cloud servers. Its links match the RSS permalinks, so the lists merge without duplicates.
+
+## Android app (test builds)
+- `app/` wraps `index.html` with Capacitor 7. `CapacitorHttp` sends every fetch natively from the phone, so no cross-site limits and sites see a normal phone connection. `IS_APP` in the script turns on direct-first fetching.
+- `.github/workflows/android.yml` builds a debug APK on every push to main and publishes it as the `test-build` release: https://github.com/JGSPL-dev/Tideline/releases/download/test-build/tickrss.apk
+- `app/debug.keystore` is a throwaway test signing key (password "android") so each test build installs over the last. Make a real, private key before any Play Store release.
