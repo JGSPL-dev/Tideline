@@ -369,6 +369,9 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .addfolder{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .addfolder .fb-chips .chip{font-weight:600}
 .flist .pick .warn{color:#e8590c;font-weight:700}
+.about{padding:4px 2px 8px;color:var(--muted);font-size:13px}
+.about p{margin:0}
+.about b{color:var(--ink)}
 .listhead{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -6px}
 .sresults{display:flex;flex-direction:column;gap:14px}
 .rsec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
@@ -518,6 +521,9 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <ul class="checks" id="connResults" hidden></ul>
       </div>
       </section>
+      <section class="about" aria-label="About this version">
+        <p><b>tick/rss</b> <span id="appVersion"></span></p>
+      </section>
     </div>
   </div>
 </dialog>
@@ -576,6 +582,8 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 // Inside the Android/iPhone app (Capacitor), requests go out natively from the phone: no browser
 // cross-site rules, and sites see an ordinary phone on home or mobile internet. Relays become a backup.
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+// The Android build stamps this with its version, commit and date (see .github/workflows/android.yml)
+const APP_BUILD = "__APP_BUILD__";
 if (IS_APP){
   // The native request layer may ignore "cancel" signals, so make timeouts reject anyway
   const nativeFetch = window.fetch.bind(window);
@@ -2833,6 +2841,9 @@ function renderDesign(){
   const sample = state.items.find(i => i.image) || state.items[0] || {id:"x", feedId:(state.feeds[0] || {}).id, title:"Example headline for a story in your feed", summary:"A short summary of the story appears here so you can judge the size and spacing.", date:Date.now() - 3600000, image:null};
   pv.append(cardEl(sample));
 }
+$("#appVersion").textContent = IS_APP
+  ? (APP_BUILD.startsWith("__") ? "Android app · development build" : "Android app · test build " + APP_BUILD)
+  : "Website version";
 $("#resetDesign").onclick = () => { design = {...DESIGN_DEFAULT}; saveDesign(); renderDesign(); renderList(); };
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyDesign(); if (dlg.open && !$("#panelSettings").hidden) renderDesign(); });
 applyDesign();
