@@ -757,12 +757,69 @@ function redditVariants(url){
   const m = (url || "").match(/^https:\/\/(?:www\.|old\.)?reddit\.com\/r\/(\w+)/i);
   return m ? [`https://www.reddit.com/r/${m[1]}/.rss`, `https://www.reddit.com/r/${m[1]}/new/.rss`] : null;
 }
+// Reddit: its RSS is often refused to cloud servers (relays, Feedly, the feed service), but its
+// JSON listing answers this device directly. Same posts and links as the RSS, newest first.
+function redditJsonUrl(url){
+  const sub = (url || "").match(/^https:\/\/(?:www\.|old\.)?reddit\.com\/r\/(\w+)/i);
+  if (sub) return `https://www.reddit.com/r/${sub[1]}/new.json?limit=50&raw_json=1`;
+  const usr = (url || "").match(/^https:\/\/(?:www\.|old\.)?reddit\.com\/(?:u|user)\/([\w-]+)/i);
+  if (usr) return `https://www.reddit.com/user/${usr[1]}/submitted.json?limit=50&raw_json=1`;
+  return null;
+}
+async function fetchViaRedditJson(url, feed){
+  const api = redditJsonUrl(url); if (!api) throw new Error("Not a Reddit address");
+  let j;
+  try{
+    const r = await fetchWithTimeout(api, 10000);
+    if (!r.ok) throw new Error("Reddit answered with error " + r.status);
+    j = await r.json();
+  }catch(e){
+    if (!relayPrefix()) throw e.name === "AbortError" ? new Error("Took too long") : e;
+    j = parseJsonIn(await fetchViaRelay(api, 12000));
+  }
+  const kids = j && j.data && j.data.children;
+  if (!Array.isArray(kids)) throw new Error("Reddit sent no posts");
+  const posts = kids.map(c => c.data).filter(d => d && d.permalink);
+  const items = posts.map(d => {
+    const prev = d.preview && d.preview.images && d.preview.images[0];
+    const img = (prev && prev.source && prev.source.url) || (/^https?:/.test(d.thumbnail || "") ? d.thumbnail : "");
+    return makeItem(feed, {
+      title: d.title || "", link: "https://www.reddit.com" + d.permalink,
+      date: (d.created_utc || 0) * 1000,
+      summary: (d.selftext || "").replace(/\s+/g, " ").trim() || (d.domain && !/^self\./.test(d.domain) ? "Link to " + d.domain : ""),
+      image: img
+    });
+  }).sort((a, b) => b.date - a.date);
+  const name = posts[0] && (posts[0].subreddit_name_prefixed || (posts[0].author && "u/" + posts[0].author));
+  return {title: name || "", items};
+}
 async function loadFeed(url, feed){
-  const variants = redditVariants(url);
-  if (!variants) return loadOneFeed(url, feed);   // loadOneFeed stashes its own articles
-  const res = await Promise.allSettled(variants.map(v => loadOneFeed(v, feed)));
-  const ok = res.filter(r => r.status === "fulfilled").map(r => r.value);
-  if (!ok.length) throw res[0].reason;
+  if (!redditJsonUrl(url)) return loadOneFeed(url, feed);   // loadOneFeed stashes its own articles
+  const variants = redditVariants(url) || [url];
+  const logs = variants.map(() => ({}));
+  const jsonLog = {};
+  const tasks = [
+    fetchViaRedditJson(url, feed).then(r => { const newest = Math.max(0, ...r.items.map(i => i.date || 0)); Object.assign(jsonLog, {ok: true, n: r.items.length, newest}); return r; },
+      e => { Object.assign(jsonLog, {ok: false, err: String(e.message || "Failed").replace(/\.$/, "")}); throw e; }),
+    ...variants.map((v, i) => loadOneFeed(v, feed, logs[i]))
+  ];
+  const done = new Array(tasks.length).fill(null), errs = [];
+  tasks.forEach((t, i) => t.then(r => { done[i] = r; }, e => { errs.push(e); }));
+  const anyStories = Promise.any(tasks.map(t => t.then(r => { if (!r.items.length) throw new Error("empty"); return r; }))).catch(() => null);
+  if (await anyStories) await Promise.race([Promise.allSettled(tasks), new Promise(r => setTimeout(r, 4000))]);
+  else await Promise.allSettled(tasks);
+  // What each route said, best result across the Reddit variants
+  const best = {};
+  logs.forEach(l => (l.routes || []).forEach(r => {
+    const b = best[r.k], score = x => x.ok ? 2 + (x.n || 0) : x.slow || x.skip ? 0 : 1;
+    if (!b || score(r) > score(b)) best[r.k] = r;
+  }));
+  feed.routes = [{k: "reddit", ...(Object.keys(jsonLog).length ? jsonLog : {slow: true})}, ...Object.values(best)];
+  const ok = done.filter(Boolean);
+  if (!ok.some(g => g.items.length)){
+    if (ok.length) throw new Error("Every route answered with no stories");
+    throw errs.find(e => e && !/empty|All promises/i.test(e.message)) || new Error("Couldn't reach that feed");
+  }
   return {title: (ok.find(g => g.title) || {}).title || "", items: stashArticles(mergeItems(ok.map(g => g.items))), everyMin: Math.max(0, ...ok.map(g => g.everyMin || 0)) || null};
 }
 // Why a route's answer isn't a feed
@@ -771,8 +828,8 @@ function notFeedReason(t){
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
-const ROUTE_NAMES = {relay: "Your relay", open: "Direct and free relays", rss2json: "Feed service", feedly: "Feedly"};
-async function loadOneFeed(url, feed){
+const ROUTE_NAMES = {reddit: "Reddit, from this device", relay: "Your relay", open: "Direct and free relays", rss2json: "Feed service", feedly: "Feedly"};
+async function loadOneFeed(url, feed, logOut){
   // Ask every route at once. An answer with no stories never wins the race (a service that
   // doesn't know the feed yet often answers instantly with nothing); wait for one with stories,
   // then give the others a few seconds and combine them. What each route said is kept on the
@@ -799,7 +856,7 @@ async function loadOneFeed(url, feed){
   routes.push(take("open", openGate.then(() => fetchText(url, 10000, {skipRelay: true, needFeed: true})).then(t => parseFeed(t, feed))));
   routes.push(take("rss2json", fetchViaRss2json(url, feed)));
   routes.push(take("feedly", fetchViaFeedly(url, feed)));
-  const keep = () => { feed.routes = Object.keys(ROUTE_NAMES).filter(k => k !== "relay" || relayP).map(k => ({k, ...(log[k] || {slow: true})})); };
+  const keep = () => { const r = ["relay", "open", "rss2json", "feedly"].filter(k => k !== "relay" || relayP).map(k => ({k, ...(log[k] || {slow: true})})); if (logOut) logOut.routes = r; else feed.routes = r; };
   let first;
   try{ first = await Promise.any(routes); }
   catch(agg){
