@@ -394,7 +394,9 @@ a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .check-row .mark{font-weight:700;text-align:center}
 .check-row.ok .mark{color:var(--cds-ok,#2b8a3e)}
 .check-row.bad .mark{color:var(--danger)}
-.check-row .ms{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums}
+.check-row .ms{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+.flist .checks li{display:grid;grid-template-columns:18px auto minmax(0,1fr);gap:8px;padding:3px 0;border-top:0;align-items:baseline;font-size:13px}
+.flist .checks .mark{text-align:left}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
 .check input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent);flex:none}
 .flist .tagline{font-size:12px;color:var(--muted)}
@@ -642,10 +644,10 @@ async function fetchViaRelay(url, ms = 12000){
   if (!r.ok) throw new Error("Your relay answered with error " + r.status);
   return r.text();
 }
-async function fetchText(url, ms = 10000){
+async function fetchText(url, ms = 10000, opts = {}){
   // Your own relay is the dependable route: when it works, use it alone
-  if (relayPrefix()){
-    try{ const t = await fetchViaRelay(url, ms + 2000); if (t.trim().length >= 40) return t; }catch{}
+  if (relayPrefix() && !opts.skipRelay){
+    try{ const t = await fetchViaRelay(url, ms + 2000); if (t.trim().length >= 40 && (!opts.needFeed || looksLikeFeed(t))) return t; }catch{}
   }
   const tries = [{build: u => u}];            // direct: works for feeds that allow it
   PROXIES.forEach(p => tries.push(p));
@@ -658,12 +660,13 @@ async function fetchText(url, ms = 10000){
       let t = await r.text();
       if (p.json){ const j = JSON.parse(t); t = j.contents || ""; if (j.status && j.status.http_code >= 400) throw new Error("The site answered with error " + j.status.http_code); }
       if (t.trim().length < 40) throw new Error("The site sent back an empty page");
+      if (opts.needFeed && !looksLikeFeed(t)) throw new Error(notFeedReason(t));
       return t;
     }));
   }catch(agg){
     const errs = (agg.errors || []);
     if (errs.some(e => e.name === "AbortError")) throw new Error("The site took too long to answer");
-    const http = errs.find(e => /error \d/.test(e.message));
+    const http = errs.find(e => /error \d|bot protection|web page/.test(e.message));
     throw new Error(http ? http.message : "Couldn't reach that address");
   }finally{
     clearTimeout(timer);
@@ -762,26 +765,52 @@ async function loadFeed(url, feed){
   if (!ok.length) throw res[0].reason;
   return {title: (ok.find(g => g.title) || {}).title || "", items: stashArticles(mergeItems(ok.map(g => g.items))), everyMin: Math.max(0, ...ok.map(g => g.everyMin || 0)) || null};
 }
+// Why a route's answer isn't a feed
+function notFeedReason(t){
+  if (/Just a moment|cf-chl|challenge-platform|Attention Required|captcha|Access denied|Request blocked/i.test(t)) return "Blocked by the site's bot protection";
+  if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
+  return "Didn't send a feed";
+}
+const ROUTE_NAMES = {relay: "Your relay", open: "Direct and free relays", rss2json: "Feed service", feedly: "Feedly"};
 async function loadOneFeed(url, feed){
   // Ask every route at once. An answer with no stories never wins the race (a service that
   // doesn't know the feed yet often answers instantly with nothing); wait for one with stories,
-  // then give the others a few seconds and combine them.
-  const got = [], empties = [];
-  const take = p => p.then(r => { if (r.items.length){ got.push(r); return r; } empties.push(r); throw new Error("empty"); });
-  const routes = [
-    take(fetchViaRss2json(url, feed)),
-    take(fetchText(url).then(t => parseFeed(t, feed))),
-    take(fetchViaFeedly(url, feed))
-  ];
+  // then give the others a few seconds and combine them. What each route said is kept on the
+  // feed (feed.routes) so the menu can show why a source isn't updating.
+  const got = [], empties = [], log = {};
+  const take = (key, p) => p.then(r => {
+    const newest = Math.max(0, ...r.items.map(i => i.date || 0));
+    log[key] = {ok: true, n: r.items.length, newest};
+    if (r.items.length){ got.push(r); return r; }
+    empties.push(r); throw new Error("empty");
+  }, e => {
+    if (e && e.message === "skip") log[key] = {skip: true};
+    else log[key] = {ok: false, err: e && e.name === "AbortError" ? "Took too long" : String(e && e.message || "Failed").replace(/\.$/, "")};
+    throw e;
+  });
+  const routes = [];
+  let relayP = null;
+  if (relayPrefix()){
+    relayP = fetchViaRelay(url, 12000).then(t => { if (!looksLikeFeed(t)) throw new Error(notFeedReason(t)); return parseFeed(t, feed); });
+    routes.push(take("relay", relayP));
+  }
+  // The free relays only run when your relay didn't bring stories, to stay inside their limits
+  const openGate = relayP ? relayP.then(r => { if (r.items.length) throw new Error("skip"); }, () => {}) : Promise.resolve();
+  routes.push(take("open", openGate.then(() => fetchText(url, 10000, {skipRelay: true, needFeed: true})).then(t => parseFeed(t, feed))));
+  routes.push(take("rss2json", fetchViaRss2json(url, feed)));
+  routes.push(take("feedly", fetchViaFeedly(url, feed)));
+  const keep = () => { feed.routes = Object.keys(ROUTE_NAMES).filter(k => k !== "relay" || relayP).map(k => ({k, ...(log[k] || {slow: true})})); };
   let first;
   try{ first = await Promise.any(routes); }
   catch(agg){
-    if (empties.length) return {title: (empties.find(e => e.title) || empties[0]).title, items: []};
+    keep();
+    if (empties.length) throw new Error("Every route answered with no stories");
     const errs = agg.errors || [];
-    const real = errs.find(e => e && !/empty|Couldn't reach|took too long|Feed service|Feedly|No data|Failed to fetch|NetworkError|Load failed|aborted|^\d+$|JSON|All promises|Unexpected token/i.test(e.message));
+    const real = errs.find(e => e && !/^skip$|empty|Couldn't reach|took too long|Feed service|Feedly|No data|Failed to fetch|NetworkError|Load failed|aborted|^\d+$|JSON|All promises|Unexpected token/i.test(e.message));
     throw real || new Error("Couldn't reach that feed");
   }
   await Promise.race([Promise.allSettled(routes), new Promise(r => setTimeout(r, 4000))]);
+  keep();
   const title = (got.find(g => g.title) || first).title;
   const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
   return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin};
@@ -1066,7 +1095,7 @@ function metaRow(it){
 }
 function save(){
   if (state.items.some(i => i._full)) state.items = stashArticles(state.items);   // full text lives in the article store, not here
-  store.set("tl.feeds", state.feeds);
+  store.set("tl.feeds", state.feeds.map(({_checking, ...f}) => f));
   store.set("tl.items", state.items);
   store.set("tl.read", [...state.read].slice(-3000));
   store.set("tl.updated", state.lastUpdated);
@@ -1797,6 +1826,29 @@ function nextCheck(f){
 const isDue = (f, now = Date.now()) => nextCheck(f) <= now + 30000;
 function soonestCheck(){ return Math.min(...state.feeds.map(nextCheck)); }
 
+async function fetchFeedNow(f){
+  f.lastTried = Date.now();
+  try{
+    const p = await loadFeed(f.url, f);
+    if (!f.title && p.title) f.title = p.title;
+    f.error = null; f.fails = 0; f.lastFetched = Date.now();
+    f.everyMin = p.everyMin || null;
+    f.audio = p.items.some(i => i.audio) || f.audio || false;
+    return p.items;
+  }catch(e){ f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now(); return null; }
+}
+// Check one source straight away, whatever its schedule
+async function refreshOne(f){
+  if (f._checking) return;
+  f._checking = true; renderFeedList();
+  const items = await fetchFeedNow(f);
+  f._checking = false;
+  if (items){
+    state.items = mergeHistory(state.items, items);
+    artDB.keepOnly(new Set(state.items.map(i => i.id)));
+  }
+  save(); renderChips(); renderStatus(); renderFeedList(); renderList();
+}
 async function refreshAll(){
   if (state.busy || !state.feeds.length) return;
   // Only feeds whose own refresh time has come are fetched; the rest keep what they have
@@ -1806,17 +1858,7 @@ async function refreshAll(){
   state.busy = true; renderStatus();
   const btn = $("#refresh"); btn.disabled = true; btn.classList.add("spin");
   if (!state.items.length) renderList();
-  const results = await pool(due, 4, async f => {
-    f.lastTried = Date.now();
-    try{
-      const p = await loadFeed(f.url, f);
-      if (!f.title && p.title) f.title = p.title;
-      f.error = null; f.fails = 0; f.lastFetched = Date.now();
-      f.everyMin = p.everyMin || null;
-      f.audio = p.items.some(i => i.audio) || f.audio || false;
-      return p.items;
-    }catch(e){ f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now(); return null; }
-  });
+  const results = await pool(due, 4, fetchFeedNow);
   const ids = new Set(state.feeds.map(f => f.id));
   const fresh = new Map(due.map((f, i) => [f.id, results[i]]));
   let incoming = [];
@@ -1842,17 +1884,21 @@ const ICON_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" s
 function attentionList(){
   const out = [];
   state.feeds.forEach(f => {
-    if (f.error){ out.push({f, why: (f.fails || 1) > 1 ? `Failed the last ${f.fails} checks` : "Couldn't update last time", act: "Try again"}); return; }
+    if (f.error){ out.push({f, why: f.error.replace(/\.$/, "") + ((f.fails || 1) > 1 ? ` · ${f.fails} checks in a row` : ""), act: "Try again"}); return; }
     if (!f.lastFetched) return;
     const its = state.items.filter(i => i.feedId === f.id);
     if (!its.length){ out.push({f, why: "No stories found yet", act: "Check"}); return; }
-    const newest = Math.max(...its.map(i => i.date || 0));
-    const quietDays = f.audio ? 30 : 3;
+    const dates = its.map(i => i.date || 0).filter(Boolean).sort((a, b) => b - a);
+    const newest = dates[0] || 0;
+    // Judge "quiet" against the source's own rhythm: a weekly channel isn't quiet after 5 days
+    const gaps = dates.slice(0, 11).map((d, i, a) => i ? (a[i - 1] - d) / 86400000 : null).filter(g => g != null).sort((a, b) => a - b);
+    const usual = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 0;
+    const quietDays = Math.max(f.audio ? 30 : 3, usual * 3);
     if (newest && Date.now() - newest > quietDays * 86400000) out.push({f, why: `Nothing new for ${Math.floor((Date.now() - newest) / 86400000)} days`, act: "Check"});
   });
   return out;
 }
-function checkNow(f){ f.lastFetched = 0; f.lastTried = 0; refreshAll(); }
+function checkNow(f){ refreshOne(f); }
 function feedSub(f){
   const sub = el("span", "sub");
   if (f.error){ sub.append(el("span", "er", "Couldn't update")); return sub; }
@@ -1887,7 +1933,7 @@ function renderFeedList(){
       const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", `Edit ${f.title}: ${why}`);
       who.append(el("b", null, f.title || f.url), el("span", "why", why));
       who.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n){ n.focus(); n.scrollIntoView({block: "center"}); } };
-      const b = el("button", "btn" + (f.error ? " primary" : ""), state.busy ? "Checking…" : act); b.type = "button"; b.disabled = state.busy;
+      const b = el("button", "btn" + (f.error ? " primary" : ""), f._checking ? "Checking…" : act); b.type = "button"; b.disabled = !!f._checking;
       b.onclick = () => checkNow(f);
       row.append(who, b); sec.append(row);
     });
@@ -2020,6 +2066,24 @@ function editForm(f){
   const every = everyMin(f);
   urlF.append(url, el("span", "hint", `${platformOf(f)} · checked every ${every >= 60 ? (every % 60 ? (every / 60).toFixed(1) : every / 60) + " h" : every + " min"}${f.everyMin ? " (set by the feed)" : ""}${f.lastFetched ? " · last " + ago(f.lastFetched) : ""}. Changing the link reloads this feed's stories.`));
   if (f.error) urlF.append(el("span", "er", "Last check failed: " + f.error));
+  const diag = el("div", "field"); diag.append(el("span", "lbl", "Last check, route by route"));
+  const its = state.items.filter(i => i.feedId === f.id);
+  const newest = Math.max(0, ...its.map(i => i.date || 0));
+  diag.append(el("span", "hint", its.length ? `${its.length} stories saved · newest ${newest ? ago(newest) : "has no date"}` : "No stories saved yet"));
+  if (f.routes && f.routes.length){
+    const ul = el("ul", "checks");
+    f.routes.forEach(r => {
+      const li = el("li", "check-row" + (r.ok ? " ok" : r.skip || r.slow ? "" : " bad"));
+      const what = r.ok ? `${r.n} stor${r.n === 1 ? "y" : "ies"}` + (r.newest ? `, newest ${ago(r.newest)}` : "") : r.skip ? "not needed" : r.slow ? "no answer in time" : r.err;
+      li.append(el("span", "mark", r.ok ? (r.n ? "✓" : "–") : r.skip || r.slow ? "·" : "✕"), el("span", null, ROUTE_NAMES[r.k] || r.k), el("span", "ms", what));
+      ul.append(li);
+    });
+    diag.append(ul);
+  }
+  const chk = el("button", "btn", f._checking ? "Checking…" : "Check now"); chk.type = "button"; chk.disabled = !!f._checking;
+  chk.onclick = async () => { chk.disabled = true; chk.textContent = "Checking…"; await refreshOne(f); const b = document.querySelector(".editform .diag-check"); if (b) b.focus(); };
+  chk.classList.add("diag-check");
+  const cr = el("div"); cr.append(chk); diag.append(cr);
   const colF = el("div", "field"); colF.append(el("span", "lbl", "Colour"));
   const sw = el("div", "swatches"); sw.setAttribute("role", "radiogroup"); sw.setAttribute("aria-label", "Colour");
   let color = f.color;
@@ -2036,7 +2100,7 @@ function editForm(f){
   const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
   cancel.onclick = () => { editingId = null; renderFeedList(); };
   row.append(saveB, cancel);
-  form.append(nameF, folder.node, urlF, colF, msg, row);
+  form.append(nameF, folder.node, urlF, diag, colF, msg, row);
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const newUrl = url.value.trim();

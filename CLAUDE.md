@@ -37,3 +37,6 @@ The user wants every publisher checked for the same issues that came up with BBC
 - Filter box (`#filterBox`, `view` in `tl.view`): Unread only, Sources (folder/platform/one feed), From (Today/Week/Any), Sort (Newest/Source).
 - Menu: Needs attention (failing or quiet sources), Everything, Organise by Category (folders, `f.folder`, `tl.folders`) or Platform (`platformOf`); channels A–Z in each group.
 - Settings → "Stack stories from the same source" (`design.stack`) groups the feed into one card per source.
+- Each check records what every route said in `feed.routes` (relay, direct/free relays, rss2json, Feedly); the edit form shows it with a "Check now" button (`refreshOne`).
+- A route only counts if it returns a real feed (`looksLikeFeed`); bot-check pages from the relay no longer stop the other routes.
+- "Nothing new" warnings scale with each source's usual gap between stories (3× the median gap, at least 3 days, 30 for podcasts).
