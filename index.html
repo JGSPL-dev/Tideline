@@ -276,6 +276,39 @@ dialog.fullpage header{gap:10px}
 .art-hero{width:100%;border-radius:10px;margin:0 0 18px;display:block}
 .art-audio{width:100%;margin:0 0 18px}
 .tag-in{border-color:var(--brand);color:var(--brand)}
+.card.pod[aria-expanded="true"]{background:var(--surface);border-color:var(--line);border-bottom-left-radius:0;border-bottom-right-radius:0}
+.pod-panel{display:flex;flex-direction:column;gap:8px;padding:10px 14px 14px;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;margin:-2px 0 6px}
+.art-body .pod-panel{border:1px solid var(--line);border-radius:12px;margin:0 0 18px;font-family:var(--ui)}
+.pod-row{display:flex;align-items:center;justify-content:center;gap:14px}
+.pod-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:none;color:var(--ink);cursor:pointer;padding:0}
+.pod-btn:hover{background:var(--sunk)}
+.pod-btn:disabled{opacity:.35;cursor:default}
+.pod-btn.main{width:52px;height:52px;background:var(--brand);color:#fff}
+.pod-btn.main:hover{filter:brightness(1.08);background:var(--brand)}
+.pod-btn.speed{width:auto;min-width:44px;padding:0 8px;border-radius:99px;font:700 13px var(--ui);font-variant-numeric:tabular-nums;border:1px solid var(--line)}
+.pod-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
+.pod-t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px}
+.pod-t.dur{text-align:right}
+.pod-range{width:100%;accent-color:var(--brand);height:28px;margin:0}
+.pod-more{align-self:flex-start;border:0;background:none;color:var(--accent);font:600 14px var(--ui);padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.mini-prog{height:3px;background:var(--sunk);margin:0 calc(-1 * max(8px,env(safe-area-inset-left,0px)))}
+.mini-prog span{display:block;height:100%;background:var(--brand);width:0}
+.mini-row{display:flex;align-items:center;gap:2px;max-width:760px;margin:0 auto;padding:6px 0}
+.mini-row .pod-btn{width:40px;height:40px}
+.mini-row .pod-btn.main{width:44px;height:44px}
+.mini-row .pod-btn.speed{min-width:40px;font-size:12px}
+.mini-info{all:unset;flex:1;min-width:0;display:flex;gap:10px;align-items:center;cursor:pointer;padding:4px;border-radius:8px}
+.mini-info:focus-visible{outline:2px solid var(--accent)}
+.mini-art{width:40px;height:40px;border-radius:6px;background:var(--sunk);overflow:hidden;flex:none}
+.mini-art img{width:100%;height:100%;object-fit:cover;display:block}
+.mini-text{display:flex;flex-direction:column;min-width:0}
+.mini-title{font-weight:600;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-sub{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+body.has-mini .list{padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+body.has-mini dialog.fullpage .dlg{padding-bottom:72px}
+@media (max-width:420px){ #miniSpeed{display:none} }
 dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .rkind.k-youtube{color:#ff8787}}
 :root[data-theme="dark"] .rkind.k-youtube,:root[data-theme="black"] .rkind.k-youtube{color:#ff8787}
@@ -390,10 +423,6 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       </section>
       <section class="set-sec" aria-labelledby="sh-links">
         <h3 id="sh-links">Opening stories</h3>
-      <label class="check" for="readInApp">
-        <input type="checkbox" id="readInApp">
-        <span><b>Read full stories in tick/rss</b><br><span class="hint">When a feed includes the whole article, or a podcast episode, open it here. Other stories open on the website.</span></span>
-      </label>
       <label class="check" for="keepBrowser">
         <input type="checkbox" id="keepBrowser">
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
@@ -430,6 +459,21 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 </dialog>
 
 
+
+<div id="mini" class="mini" hidden role="region" aria-label="Podcast player">
+  <div class="mini-prog"><span id="miniProg"></span></div>
+  <div class="mini-row">
+    <button type="button" class="mini-info" id="miniInfo" aria-label="Show episode description">
+      <span class="mini-art" id="miniArt"></span>
+      <span class="mini-text"><span class="mini-title" id="miniTitle"></span><span class="mini-sub"><span id="miniSrc"></span> · <span id="miniTime"></span></span></span>
+    </button>
+    <button type="button" class="pod-btn" id="miniBack" aria-label="Back 15 seconds"></button>
+    <button type="button" class="pod-btn main" id="miniPlay" aria-label="Play"></button>
+    <button type="button" class="pod-btn" id="miniFwd" aria-label="Forward 30 seconds"></button>
+    <button type="button" class="pod-btn speed" id="miniSpeed" aria-label="Playback speed">1×</button>
+    <button type="button" class="pod-btn" id="miniClose" aria-label="Stop and close player"></button>
+  </div>
+</div>
 
 <dialog id="articlePage" class="fullpage article-page" aria-label="Story">
   <div class="dlg">
@@ -949,7 +993,6 @@ function metaRow(it){
   if (it.date){ m.append(el("span", null, "·")); const t = el("time", null, ago(it.date)); t.dateTime = new Date(it.date).toISOString(); m.append(t); }
   if (it.videoId) m.append(el("span", "tag", "Video"));
   else if (it.audioUrl) m.append(el("span", "tag tag-in", "Listen"));
-  else if (it.full) m.append(el("span", "tag tag-in", "Full story"));
   return m;
 }
 function save(){
@@ -1088,6 +1131,7 @@ function cardEl(it){
   if (it.link){ a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer"; }
   if (state.read.has(it.id)) a.classList.add("read");
   a.dataset.id = it.id;
+  if (it.audioUrl && !it.videoId){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); a.setAttribute("aria-label", it.title + ", podcast episode, show player"); }
   const body = el("div");
   body.style.minWidth = "0";
   body.append(metaRow(it), el("h2", "title", it.title));
@@ -1106,7 +1150,7 @@ function cardEl(it){
   }
   a.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
-    if (state.readInApp && !it.videoId && (it.full || it.audioUrl)){ e.preventDefault(); openArticle(it); return; }
+    if (it.audioUrl && !it.videoId){ e.preventDefault(); togglePodPanel(it); return; }
     if (state.keepInBrowser && it.link){
       const intent = browserIntent(it.link);
       if (intent){ e.preventDefault(); location.href = intent; }
@@ -1128,6 +1172,7 @@ function renderList(){
   }
   all.slice(0, state.shown).forEach(it => list.append(cardEl(it)));
   if (!isWide() && state.activeId) placeInline();
+  placePodPanel();
   addSentinel(all.length);
 }
 function addSentinel(total){
@@ -1660,7 +1705,7 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#readInApp").checked = state.readInApp; $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
@@ -1680,7 +1725,6 @@ $("#dlgClose").onclick = closeMenu;
 $("#tab-feeds").onclick = () => showTab("feeds");
 $("#tab-settings").onclick = () => showTab("settings");
 dlg.addEventListener("click", e => { if (e.target === dlg) closeMenu(); });
-$("#readInApp").addEventListener("change", e => { state.readInApp = e.target.checked; store.set("tl.readinapp", state.readInApp); });
 $("#keepBrowser").addEventListener("change", e => {
   state.keepInBrowser = e.target.checked; store.set("tl.keepbrowser", state.keepInBrowser);
   const h = $("#keepBrowserHint");
@@ -2267,6 +2311,156 @@ setInterval(renderStatus, 60000);
 setInterval(() => { if (document.visibilityState === "visible" && soonestCheck() <= Date.now()) refreshAll(); }, 60000);
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && soonestCheck() <= Date.now()) refreshAll(); });
 
+/* ---------- podcast player ---------- */
+// One player for the whole app: it keeps playing while you scroll, switch feeds or open other pages.
+const pod = {audio: new Audio(), item: null, open: null, speed: store.get("tl.podSpeed", 1), pos: store.get("tl.podPos", {})};
+pod.audio.preload = "metadata";
+const SPEEDS = [0.8, 1, 1.25, 1.5, 1.75, 2];
+const BACK_S = 15, FWD_S = 30;
+const fmtTime = t => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`; };
+const ICONS = {
+  play: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>',
+  pause: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" fill="currentColor"/></svg>',
+  back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">15</text></svg>',
+  fwd: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><text x="12" y="15.5" text-anchor="middle" font-size="7.5" font-weight="700" fill="currentColor" stroke="none">30</text></svg>',
+  close: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+function savePos(){
+  if (!pod.item) return;
+  const t = pod.audio.currentTime || 0, d = pod.audio.duration || 0;
+  if (d && t > d - 15) delete pod.pos[pod.item.id]; else if (t > 5) pod.pos[pod.item.id] = Math.floor(t);
+  const keys = Object.keys(pod.pos); if (keys.length > 200) keys.slice(0, keys.length - 200).forEach(k => delete pod.pos[k]);
+  store.set("tl.podPos", pod.pos);
+}
+function playEpisode(it){
+  if (pod.item && pod.item.id === it.id){ pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); return; }
+  savePos();
+  pod.item = it;
+  pod.audio.src = it.audioUrl;
+  pod.audio.playbackRate = pod.speed;
+  const resume = pod.pos[it.id] || 0;
+  if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
+  pod.audio.play().catch(() => {});
+  state.read.add(it.id); save(); renderChips();
+  const card = cardFor(it.id); if (card) card.classList.add("read");
+  setMediaSession(it);
+  syncPod();
+}
+const skip = s => { if (!pod.item) return; pod.audio.currentTime = Math.max(0, Math.min((pod.audio.duration || 1e9) - 1, pod.audio.currentTime + s)); syncPod(); };
+function cycleSpeed(){
+  pod.speed = SPEEDS.at((SPEEDS.indexOf(pod.speed) + 1) % SPEEDS.length) || 1;
+  pod.audio.playbackRate = pod.speed; store.set("tl.podSpeed", pod.speed); syncPod();
+}
+function stopPod(){
+  savePos(); pod.audio.pause(); pod.audio.removeAttribute("src"); pod.audio.load(); pod.item = null;
+  if ("mediaSession" in navigator) navigator.mediaSession.metadata = null;
+  syncPod();
+}
+function setMediaSession(it){
+  if (!("mediaSession" in navigator)) return;
+  const f = feedById(it.feedId) || {};
+  try{
+    navigator.mediaSession.metadata = new MediaMetadata({title: it.title, artist: f.title || "", album: "tick/rss",
+      artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
+    navigator.mediaSession.setActionHandler("play", () => pod.audio.play());
+    navigator.mediaSession.setActionHandler("pause", () => pod.audio.pause());
+    navigator.mediaSession.setActionHandler("seekbackward", () => skip(-BACK_S));
+    navigator.mediaSession.setActionHandler("seekforward", () => skip(FWD_S));
+    navigator.mediaSession.setActionHandler("seekto", d => { if (d.seekTime != null) pod.audio.currentTime = d.seekTime; syncPod(); });
+  }catch{}
+}
+// Controls for one episode: used under the card in the feed and on the description page
+function podControls(it, withDescription){
+  const box = el("div", "pod-panel"); box.dataset.podFor = it.id;
+  const row = el("div", "pod-row");
+  const mk = (cls, label, html, fn) => { const b = el("button", "pod-btn " + cls); b.type = "button"; b.setAttribute("aria-label", label); b.innerHTML = html; b.onclick = e => { e.stopPropagation(); fn(); }; return b; };
+  row.append(
+    mk("back", `Back ${BACK_S} seconds`, ICONS.back, () => { if (pod.item && pod.item.id === it.id) skip(-BACK_S); }),
+    mk("main", "Play", ICONS.play, () => playEpisode(it)),
+    mk("fwd", `Forward ${FWD_S} seconds`, ICONS.fwd, () => { if (pod.item && pod.item.id === it.id) skip(FWD_S); }),
+    mk("speed", "Playback speed", "", cycleSpeed)
+  );
+  const bar = el("div", "pod-bar");
+  const t1 = el("span", "pod-t cur", fmtTime(pod.pos[it.id] || 0)), t2 = el("span", "pod-t dur", "");
+  const range = el("input", "pod-range"); range.type = "range"; range.min = 0; range.max = 1000; range.value = 0; range.step = 1;
+  range.setAttribute("aria-label", "Position in episode");
+  range.oninput = () => { if (pod.item && pod.item.id === it.id && pod.audio.duration) pod.audio.currentTime = range.value / 1000 * pod.audio.duration; };
+  bar.append(t1, range, t2);
+  box.append(row, bar);
+  if (withDescription){
+    const more = el("button", "pod-more", "Read description"); more.type = "button";
+    more.onclick = e => { e.stopPropagation(); openArticle(it); };
+    box.append(more);
+  }
+  return box;
+}
+function togglePodPanel(it){
+  pod.open = pod.open === it.id ? null : it.id;
+  document.querySelectorAll("#list .card.pod").forEach(c => c.setAttribute("aria-expanded", String(c.dataset.id === pod.open)));
+  placePodPanel();
+  if (pod.open && (!pod.item || pod.item.id !== it.id)) playEpisode(it);
+}
+function placePodPanel(){
+  document.querySelectorAll("#list .pod-panel").forEach(n => n.remove());
+  if (!pod.open) return;
+  const card = cardFor(pod.open), it = itemById(pod.open);
+  if (!card || !it) return;
+  card.after(podControls(it, true));
+  syncPod();
+}
+// Mini player along the bottom, on every page while an episode is loaded
+function renderMini(){
+  const m = $("#mini");
+  if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
+  m.hidden = false; document.body.classList.add("has-mini");
+  const f = feedById(pod.item.feedId) || {};
+  $("#miniTitle").textContent = pod.item.title;
+  $("#miniSrc").textContent = f.title || "";
+  const art = $("#miniArt"); art.textContent = "";
+  if (pod.item.image){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = pod.item.image; im.onerror = () => im.remove(); art.append(im); }
+}
+let lastPosSave = 0;
+function syncPod(){
+  renderMini();
+  const a = pod.audio, cur = pod.item && pod.item.id, playing = !!cur && !a.paused;
+  const d = a.duration, t = a.currentTime;
+  document.querySelectorAll("[data-pod-for]").forEach(box => {
+    const mine = box.dataset.podFor === cur;
+    const main = box.querySelector(".pod-btn.main");
+    main.innerHTML = mine && playing ? ICONS.pause : ICONS.play;
+    main.setAttribute("aria-label", mine && playing ? "Pause" : (mine ? "Play" : (pod.pos[box.dataset.podFor] ? "Resume" : "Play")));
+    box.querySelectorAll(".pod-btn.back, .pod-btn.fwd").forEach(b => b.disabled = !mine);
+    box.querySelector(".pod-btn.speed").textContent = pod.speed + "×";
+    const range = box.querySelector(".pod-range");
+    if (mine && d){ range.value = Math.round(t / d * 1000); box.querySelector(".cur").textContent = fmtTime(t); box.querySelector(".dur").textContent = "-" + fmtTime(d - t); range.setAttribute("aria-valuetext", `${fmtTime(t)} of ${fmtTime(d)}`); }
+  });
+  const mini = $("#mini");
+  if (pod.item){
+    $("#miniPlay").innerHTML = playing ? ICONS.pause : ICONS.play;
+    $("#miniPlay").setAttribute("aria-label", playing ? "Pause" : "Play");
+    $("#miniSpeed").textContent = pod.speed + "×";
+    $("#miniProg").style.width = d ? (t / d * 100) + "%" : "0%";
+    $("#miniTime").textContent = d ? `${fmtTime(t)} / ${fmtTime(d)}` : (a.readyState ? "" : "Loading…");
+    mini.classList.toggle("playing", playing);
+  }
+  if ("mediaSession" in navigator && pod.item){
+    try{ navigator.mediaSession.playbackState = playing ? "playing" : "paused";
+      if (d && isFinite(d)) navigator.mediaSession.setPositionState({duration: d, position: Math.min(t, d), playbackRate: a.playbackRate}); }catch{}
+  }
+  if (Date.now() - lastPosSave > 5000){ lastPosSave = Date.now(); savePos(); }
+}
+["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "ratechange", "waiting", "playing"].forEach(ev => pod.audio.addEventListener(ev, syncPod));
+pod.audio.addEventListener("ended", () => { if (pod.item) delete pod.pos[pod.item.id]; store.set("tl.podPos", pod.pos); syncPod(); });
+pod.audio.addEventListener("pause", savePos);
+addEventListener("pagehide", savePos);
+$("#miniPlay").onclick = () => { if (pod.item) pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); };
+$("#miniBack").onclick = () => skip(-BACK_S);
+$("#miniFwd").onclick = () => skip(FWD_S);
+$("#miniSpeed").onclick = cycleSpeed;
+$("#miniClose").onclick = stopPod;
+$("#miniInfo").onclick = () => { if (pod.item) openArticle(pod.item); };
+$("#miniBack").innerHTML = ICONS.back; $("#miniFwd").innerHTML = ICONS.fwd; $("#miniClose").innerHTML = ICONS.close;
+
 /* ---------- reading a story in tick/rss ---------- */
 function articleFragment(html, base){
   // Make image and link addresses absolute, bring in lazy-loaded images, then keep only safe article markup
@@ -2296,18 +2490,16 @@ async function openArticle(it){
   kick.append(el("span", null, f.title || ""));
   if (it.date) kick.append(el("span", null, "· " + new Date(it.date).toLocaleString(undefined, {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})));
   r.append(kick, el("h1", null, it.title));
-  if (it.audioUrl){
-    const au = document.createElement("audio"); au.controls = true; au.preload = "none"; au.src = it.audioUrl; au.className = "art-audio";
-    r.append(au);
-  }
+  if (it.audioUrl) r.append(podControls(it, false));
   body.append(r);
   if (!page.open) page.showModal();
+  syncPod();
   body.scrollTop = 0;
   const saved = it.full ? await artDB.get(it.id) : null;
   if (saved && saved.html){
     const content = articleFragment(saved.html, saved.base || it.link);
     const words = content.textContent.trim().split(/\s+/).length;
-    kick.append(el("span", null, "· " + Math.max(1, Math.round(words / 230)) + " min read"));
+    if (!it.audioUrl) kick.append(el("span", null, "· " + Math.max(1, Math.round(words / 230)) + " min read"));
     const firstImgEl = content.querySelector("img");
     if (it.image && !it.audioUrl && (!firstImgEl || content.firstElementChild !== firstImgEl.closest("p,figure,div") && content.firstElementChild !== firstImgEl)){
       const hero = el("img", "art-hero"); hero.alt = ""; hero.referrerPolicy = "no-referrer"; hero.src = hiRes(it.image); hero.onerror = () => hero.remove();
@@ -2322,7 +2514,7 @@ async function openArticle(it){
   }
 }
 $("#artBack").onclick = () => $("#articlePage").close();
-$("#articlePage").addEventListener("close", () => { const au = $("#artBody audio"); if (au) au.pause(); });
+$("#articlePage").addEventListener("close", () => { $("#artBody").textContent = ""; });   // the episode keeps playing in the mini player
 
 /* ---------- set-up link: …/#relay=<address> saves your relay ---------- */
 (() => {
