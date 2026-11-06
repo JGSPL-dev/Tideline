@@ -2896,6 +2896,11 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 // One player for the whole app: it keeps playing while you scroll, switch feeds or open other pages.
 const pod = {audio: new Audio(), item: null, open: null, speed: store.get("tl.podSpeed", 1), pos: store.get("tl.podPos", {})};
 pod.audio.preload = "metadata";
+// In the Android app, a native media session runs a foreground service while an episode plays.
+// Without it Android freezes the app in the background after a few minutes and the audio just stops.
+const NativeMS = IS_APP && window.Capacitor ? ((window.Capacitor.Plugins && window.Capacitor.Plugins.MediaSession) || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("MediaSession")) || null) : null;
+const nms = (fn, ...args) => { try{ const r = NativeMS && NativeMS[fn] && NativeMS[fn](...args); if (r && r.catch) r.catch(() => {}); }catch{} };
+let nmsState = "none", nmsPosAt = 0;
 const SPEEDS = [0.8, 1, 1.25, 1.5, 1.75, 2];
 const BACK_S = 15, FWD_S = 30;
 const fmtTime = t => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`; };
@@ -2922,6 +2927,7 @@ function playEpisode(it){
   const resume = pod.pos[it.id] || 0;
   if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
   pod.audio.play().catch(() => {});
+  pod.lastT = -1; pod.lastMove = Date.now(); pod.retries = 0;
   state.read.add(it.id); save(); renderChips();
   const card = cardFor(it.id); if (card) card.classList.add("read");
   setMediaSession(it);
@@ -2935,11 +2941,13 @@ function cycleSpeed(){
 function stopPod(){
   savePos(); pod.audio.pause(); pod.audio.removeAttribute("src"); pod.audio.load(); pod.item = null;
   if ("mediaSession" in navigator) navigator.mediaSession.metadata = null;
+  nms("setPlaybackState", {playbackState: "none"}); nmsState = "none";
   syncPod();
 }
 function setMediaSession(it){
-  if (!("mediaSession" in navigator)) return;
   const f = feedById(it.feedId) || {};
+  nms("setMetadata", {title: it.title || "", artist: f.title || "", album: "tick/rss", artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
+  if (!("mediaSession" in navigator)) return;
   try{
     navigator.mediaSession.metadata = new MediaMetadata({title: it.title, artist: f.title || "", album: "tick/rss",
       artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
@@ -3028,8 +3036,43 @@ function syncPod(){
     try{ navigator.mediaSession.playbackState = playing ? "playing" : "paused";
       if (d && isFinite(d)) navigator.mediaSession.setPositionState({duration: d, position: Math.min(t, d), playbackRate: a.playbackRate}); }catch{}
   }
+  if (NativeMS && pod.item){
+    const st = playing ? "playing" : "paused";
+    if (st !== nmsState){ nmsState = st; nms("setPlaybackState", {playbackState: st}); nmsPosAt = 0; }
+    if (d && isFinite(d) && Date.now() - nmsPosAt > 10000){ nmsPosAt = Date.now(); nms("setPositionState", {duration: d, position: Math.min(t, d), playbackRate: a.playbackRate || 1}); }
+  }
   if (Date.now() - lastPosSave > 5000){ lastPosSave = Date.now(); savePos(); }
 }
+// Native notification and lock-screen buttons
+if (NativeMS){
+  const on = (action, fn) => nms("setActionHandler", {action}, d => { fn(d || {}); syncPod(); });
+  on("play", () => { if (pod.item) pod.audio.play().catch(() => {}); });
+  on("pause", () => pod.audio.pause());
+  on("seekbackward", () => skip(-BACK_S));
+  on("seekforward", () => skip(FWD_S));
+  on("seekto", d => { if (d.seekTime != null) pod.audio.currentTime = d.seekTime; });
+  on("stop", () => stopPod());
+}
+// Stall guard: if an episode is meant to be playing but the clock hasn't moved (the stream
+// dropped, or the phone froze the app), reconnect and carry on from the same spot.
+function recoverPod(why){
+  if (!pod.item || (pod.retries || 0) >= 5) return;
+  pod.retries = (pod.retries || 0) + 1;
+  const a = pod.audio, t = a.currentTime || pod.pos[pod.item.id] || 0, src = pod.item.audioUrl;
+  a.addEventListener("loadedmetadata", () => { try{ a.currentTime = t; }catch{} }, {once: true});
+  a.src = src; a.playbackRate = pod.speed;
+  a.play().catch(() => {});
+  pod.lastMove = Date.now();
+}
+function checkPod(){
+  const a = pod.audio;
+  if (!pod.item || a.paused || a.ended) return;
+  if (a.currentTime !== pod.lastT){ pod.lastT = a.currentTime; pod.lastMove = Date.now(); if (a.currentTime > 0) pod.retries = 0; return; }
+  if (Date.now() - (pod.lastMove || 0) > 20000) recoverPod("stalled");
+}
+setInterval(checkPod, 5000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkPod(); });
+pod.audio.addEventListener("error", () => { if (pod.item && pod.audio.getAttribute("src")) setTimeout(() => recoverPod("error"), 2000); });
 ["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "ratechange", "waiting", "playing"].forEach(ev => pod.audio.addEventListener(ev, syncPod));
 pod.audio.addEventListener("ended", () => { if (pod.item) delete pod.pos[pod.item.id]; store.set("tl.podPos", pod.pos); syncPod(); });
 pod.audio.addEventListener("pause", savePos);

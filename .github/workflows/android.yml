@@ -24,7 +24,7 @@ jobs:
       - name: Build the app
         working-directory: app
         run: |
-          npm install --no-audit --no-fund
+          npm install --no-audit --no-fund --legacy-peer-deps
           mkdir -p www
           cp ../index.html ../icon.svg ../icon-192.png ../icon-512.png ../apple-touch-icon.png ../manifest.webmanifest www/
           sed -i "s|__APP_BUILD__|0.1.${{ github.run_number }} · $(date -u +'%-d %b %Y %H:%M') UTC · ${GITHUB_SHA::7}|" www/index.html
@@ -32,6 +32,10 @@ jobs:
           npx cap add android
           npx cap sync android
           cp -r res/* android/app/src/main/res/
+          # Podcasts keep playing in the background: the media-session plugin runs a foreground service,
+          # which Android 14+ only allows with this permission
+          sed -i 's|<uses-permission android:name="android.permission.INTERNET" />|&\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />|' android/app/src/main/AndroidManifest.xml
+          grep -q FOREGROUND_SERVICE_MEDIA_PLAYBACK android/app/src/main/AndroidManifest.xml
           sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"0.1.${{ github.run_number }}\"/" android/app/build.gradle
           grep -q "versionCode ${{ github.run_number }}" android/app/build.gradle
           # Sign every test build with the same key (app/debug.keystore) so each one installs over the last
