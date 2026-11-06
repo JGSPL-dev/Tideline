@@ -523,11 +523,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       </section>
       <section class="set-sec" aria-labelledby="sh-io">
         <h3 id="sh-io">Your sources</h3>
-        <p class="hint">Move your sources between devices, or add lots at once. Files are OPML, the standard format other feed readers use. You can also import a text file with one address per line.</p>
+        <p class="hint">Move your sources between devices, or add lots at once. Import works with OPML (the standard format other feed readers use), YouTube's subscriptions.csv from Google Takeout, or a text file with one address, @handle, r/name or "youtube: Channel name" per line.</p>
         <div class="iorow">
           <button class="btn" type="button" id="importBtn">Import sources</button>
           <button class="btn" type="button" id="exportBtn">Export sources</button>
-          <input type="file" id="importFile" accept=".opml,.xml,.txt,text/xml,application/xml,text/x-opml,text/plain" hidden>
+          <input type="file" id="importFile" hidden>
         </div>
         <p class="msg" id="ioMsg" aria-live="polite"></p>
       </section>
@@ -3174,8 +3174,22 @@ function parseSourcesFile(text){
       const parent = o.parentElement && o.parentElement.tagName.toLowerCase() === "outline" && !o.parentElement.getAttribute("xmlUrl") ? o.parentElement : null;
       out.push({url, title: o.getAttribute("title") || o.getAttribute("text") || "", folder: parent ? (parent.getAttribute("title") || parent.getAttribute("text") || "") : ""});
     });
+  } else if (/^\s*Channel Id\s*,/i.test(text)){
+    // Google Takeout: YouTube → subscriptions.csv (Channel Id, Channel Url, Channel Title)
+    text.split(/\r?\n/).slice(1).forEach(l => {
+      const m = l.match(/^\s*(UC[\w-]{22})\s*,[^,]*,(.*)$/);
+      if (m) out.push({url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + m[1], title: m[2].replace(/^"|"$/g, "").replace(/""/g, '"').trim(), folder: ""});
+    });
   } else {
-    text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#")).forEach(l => out.push({url: l, title: "", folder: "", raw: true}));
+    // A plain list: one address, @handle, r/name or "youtube: Channel name" per line; "[Folder]" starts a folder
+    let folder = "";
+    text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#")).forEach(l => {
+      const f = l.match(/^\[(.{1,40})\]$/);
+      if (f){ folder = f[1].trim(); return; }
+      const yt = l.match(/^(?:youtube|yt)\s*:\s*(.+)$/i);
+      if (yt) out.push({ytName: yt[1].trim(), title: yt[1].trim(), folder});
+      else out.push({url: l, title: "", folder, raw: true});
+    });
   }
   return out;
 }
@@ -3185,8 +3199,22 @@ async function importSources(text){
   if (!list.length){ m.className = "msg err"; m.textContent = "No sources found in that file."; return; }
   let added = 0, have = 0, bad = 0;
   m.textContent = `Adding ${list.length} sources…`;
+  const missing = [];
+  const norm = t => (t || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+  let n = 0;
   for (const s of list){
+    n++;
     let url = safeUrl(s.url) || "";
+    if (s.ytName){
+      // Find the channel whose name matches exactly
+      m.textContent = `Finding YouTube channels… ${n} of ${list.length}`;
+      try{
+        const res = await searchYouTube(s.ytName);
+        const hit = res.find(r => r.id && norm(r.title) === norm(s.ytName)) || res.find(r => r.exact && r.id);
+        if (!hit){ missing.push(s.ytName); continue; }
+        url = "https://www.youtube.com/feeds/videos.xml?channel_id=" + hit.id;
+      }catch{ missing.push(s.ytName); continue; }
+    }
     if (s.raw){ try{ url = (await resolveInput(s.url)).url; }catch{ bad++; continue; } }
     if (!/^https?:\/\//.test(url)){ bad++; continue; }
     if (state.feeds.some(f => f.url === url)){ have++; continue; }
@@ -3196,7 +3224,8 @@ async function importSources(text){
     if (s.raw) m.textContent = `Adding sources… ${added} added`;
   }
   save(); renderFeedList(); renderChips(); renderStatus();
-  m.textContent = [`Added ${added} source${added === 1 ? "" : "s"}.`, have ? `${have} you already follow.` : "", bad ? `${bad} couldn't be read.` : ""].filter(Boolean).join(" ") + (added ? " Loading their stories…" : "");
+  m.textContent = [`Added ${added} source${added === 1 ? "" : "s"}.`, have ? `${have} you already follow.` : "", bad ? `${bad} couldn't be read.` : "",
+    missing.length ? `Couldn't find on YouTube: ${missing.join(", ")}. Search for these in the menu to add them.` : ""].filter(Boolean).join(" ") + (added ? " Loading their stories…" : "");
   if (added){ await refreshAll(); m.textContent = m.textContent.replace(" Loading their stories…", " Done."); }
 }
 $("#exportBtn").onclick = async () => {
