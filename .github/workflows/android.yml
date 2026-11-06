@@ -21,7 +21,7 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - name: Signing key
+      - name: Signing key (private release key from Actions secrets)
         env:
           KS_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
           KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
