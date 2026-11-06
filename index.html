@@ -915,8 +915,8 @@ async function loadOneFeed(url, feed, logOut){
   });
   const direct = take("direct", feedDirect(url, 12000));
   const hasService = !!serviceBase();
-  const gate = IS_APP ? direct.then(r => { if (r.items.length) throw new Error("skip"); }, () => {}) : Promise.resolve();
-  const service = hasService ? take("service", gate.then(() => feedViaService(url, 14000))) : null;
+  const gate = () => IS_APP ? direct.then(r => { if (r.items.length) throw new Error("skip"); }, () => {}) : Promise.resolve();
+  const service = hasService ? take("service", gate().then(() => feedViaService(url, 14000))) : null;
   const routes = service ? [direct, service] : [direct];
   const keep = () => { const r = ["direct", ...(hasService ? ["service"] : [])].map(k => ({k, ...(log[k] || {slow: true})})); if (logOut) logOut.routes = r; else feed.routes = r; };
   const settled = await Promise.allSettled(routes);
@@ -1121,10 +1121,67 @@ async function findChannel(page){
 async function findChannelId(page){ const c = await findChannel(page); return c && c.id; }
 // Find a website's feed: from its page's feed links, else common feed addresses
 async function discoverFeed(u){
-  let found = null;
-  try{ found = await discoverFeed(u); }catch(e){ if (!/No feed found/.test(e.message)) throw e; }
+  const GUESSES = ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"];
+  if (IS_APP){
+    try{
+      const t = await pageDirect(u.href, 12000);
+      if (looksLikeFeed(t)) return {url: u.href, text: t};
+      const d = new DOMParser().parseFromString(t, "text/html");
+      const l = d.querySelector('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]');
+      if (l && l.getAttribute("href")) return {url: new URL(l.getAttribute("href"), u.href).href};
+    }catch{}
+    try{ return await Promise.any(GUESSES.map(g => { const f = new URL(g, u.origin).href; return feedDirect(f, 10000).then(t => ({url: f, text: t})); })); }catch{}
+  } else {
+    // A feed address pasted straight in can work from the browser
+    try{ const t = await feedDirect(u.href, 8000); return {url: u.href, text: t}; }catch{}
+  }
+  if (serviceBase()){
+    try{
+      const j = JSON.parse(await viaService("/discover", {url: u.href}, 20000));
+      if (j.feeds && j.feeds[0]) return {url: j.feeds[0]};
+    }catch(e){ if (!/No feed found/.test(e.message)) throw e; }
+  }
+  return null;
+}
+async function resolveInput(raw){
+  let s = raw.trim();
+  if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
+  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/.rss"};                       // r/subreddit
+  if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
+  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
+  let u;
+  try{ u = new URL(s); }catch{ throw new Error("That doesn't look like a web address"); }
+  const host = u.hostname.replace(/^(www|m|music)\./, "");
+  // Reddit links: subreddit or user → their own feed, never a guess
+  if (/(^|\.)reddit\.com$/.test(u.hostname)){
+    const sub = u.pathname.match(/^\/r\/(\w+)/i), usr = u.pathname.match(/^\/(?:u|user)\/([\w-]+)/i);
+    if (sub) return {url: `https://www.reddit.com/r/${sub[1]}/.rss`};
+    if (usr) return {url: `https://www.reddit.com/user/${usr[1]}/.rss`};
+    throw new Error("Paste a subreddit link (reddit.com/r/name) or type r/name");
+  }
+  if ((host === "youtube.com" && !u.pathname.startsWith("/feeds/")) || host === "youtu.be"){
+    let id = u.searchParams.get("channel_id") || (u.pathname.match(/\/channel\/(UC[\w-]{22})/) || [])[1];
+    if (!id){
+      let page;
+      if (host === "youtu.be" || u.searchParams.get("v") || /^\/(shorts|live)\//.test(u.pathname)){
+        const vid = ytId(u.href); if (!vid) throw new Error("Couldn't read that YouTube link");
+        page = "https://www.youtube.com/watch?v=" + vid;                                       // a video: find its channel
+      } else {
+        const seg = u.pathname.split("/").filter(Boolean);
+        page = "https://www.youtube.com/" + (seg[0] && seg[0].startsWith("@") ? seg[0] : seg.slice(0, 2).join("/"));
+      }
+      id = await findChannelId(page);
+    }
+    if (!id) throw new Error(IS_APP || serviceBase()
+      ? "Couldn't find that YouTube channel. On the channel page, tap Share, then Copy channel ID, and paste the ID here"
+      : "Finding YouTube channels on the website needs the YourFeed service. Use the app, or paste the channel ID");
+    return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + id};
+  }
+  const found = await discoverFeed(u);
   if (found) return found;
-  throw new Error("Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead");
+  throw new Error(IS_APP || serviceBase()
+    ? "Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead"
+    : "Finding a site's feed on the website needs the YourFeed service. Use the app, or paste the feed's own link");
 }
 
 /* ---------- helpers ---------- */
