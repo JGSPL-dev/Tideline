@@ -59,4 +59,4 @@ Phase 1 (high risk, do first):
 4. Private release signing key in GitHub secrets; delete app/debug.keystore (it is burned: it stays in the public git history).
 5. Rotate the personal relay key now; retire that relay once the service is live.
 Phase 2: release build (cleartext off, WebView debugging off, media service not exported), Content Security Policy, own domain, pin CI/npm deps by hash, fork and review @jofr/capacitor-media-session, privacy policy.
-Open: domain name; whether the website ships at launch (it needs the service) or the app goes first.
+Name/domain chosen 6 Nov: "YourFeed" (domain availability not yet checked; similar names exist: "Your News Feed", "Your News", "MyFeed"). Still open: does YourFeed replace the tick/rss brand, and does the website ship at launch or the app go first?
