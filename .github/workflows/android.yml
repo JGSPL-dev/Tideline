@@ -27,6 +27,7 @@ jobs:
           npm install --no-audit --no-fund --legacy-peer-deps
           mkdir -p www
           cp ../index.html ../icon.svg ../icon-192.png ../icon-512.png ../apple-touch-icon.png ../manifest.webmanifest www/
+          cp -r ../fonts www/
           sed -i "s|__APP_BUILD__|0.1.${{ github.run_number }} · $(date -u +'%-d %b %Y %H:%M') UTC · ${GITHUB_SHA::7}|" www/index.html
           grep -q "0.1.${{ github.run_number }}" www/index.html
           npx cap add android
