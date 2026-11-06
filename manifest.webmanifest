@@ -1,6 +1,6 @@
 {
-  "name": "tick/rss",
-  "short_name": "tick/rss",
+  "name": "YourFeed",
+  "short_name": "YourFeed",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -24,5 +24,6 @@
       "sizes": "any",
       "type": "image/svg+xml"
     }
-  ]
+  ],
+  "description": "Everything you follow, in one feed. By Apps For Us."
 }

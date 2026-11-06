@@ -1,13 +1,16 @@
 {
-  "name": "tickrss-app",
+  "name": "yourfeed-app",
   "private": true,
   "version": "0.1.0",
-  "description": "tick/rss as an Android app (Capacitor wrapper around ../index.html)",
+  "description": "YourFeed (by Apps For Us) as an Android app: a Capacitor wrapper around ../index.html",
   "dependencies": {
     "@capacitor/android": "^7.0.0",
     "@capacitor/cli": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/browser": "^7.0.0",
-    "@jofr/capacitor-media-session": "^4.0.0"
+    "yourfeed-media-session": "file:plugins/media-session",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/share": "^7.0.0",
+    "@capacitor/filesystem": "^7.0.0"
   }
 }

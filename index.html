@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="tick/rss">
+<meta name="apple-mobile-web-app-title" content="YourFeed">
 <meta name="theme-color" content="#edf0f3">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<title>tick/rss</title>
+<title>YourFeed</title>
 <!-- Reader view is switched off (READER_ENABLED in the script). Restore these three libraries when turning it back on:
 -->
 <style>
@@ -68,7 +68,33 @@ button,input{font:inherit;color:inherit}
 .app.solo .top{position:sticky;top:0;z-index:5}
 .app.solo .list{overflow:visible}
 html:has(.app.solo),body:has(.app.solo){height:auto}
-a.card{color:inherit;text-decoration:none}
+.card{position:relative}
+.cardlink{color:inherit;text-decoration:none}
+.cardlink::after{content:"";position:absolute;inset:0;border-radius:inherit;z-index:1}
+.cardlink:focus-visible{outline:none}
+.card:has(.cardlink:focus-visible){outline:2px solid var(--accent);outline-offset:0}
+.title .cardlink{display:block}
+.cacts{margin-left:auto;display:flex;gap:2px;position:relative;z-index:2;flex:none}
+.cact{width:32px;height:28px;border:0;background:none;border-radius:7px;display:grid;place-items:center;color:var(--muted);cursor:pointer;padding:0}
+.cact:hover{background:var(--sunk);color:var(--ink)}
+.cact[aria-pressed="true"]{color:var(--brand)}
+.cact svg{width:17px;height:17px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
+body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+.iorow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.empty.welcome{text-align:left;padding:28px 12px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+.empty.welcome h3{font:800 30px/1.1 "Bricolage Grotesque",var(--ui);letter-spacing:-.02em;margin:0;color:var(--ink)}
+.empty.welcome .accent{color:var(--brand)}
+.empty.welcome p{margin:0;font-size:16px;line-height:1.5;max-width:46ch}
+.onboard{padding:0}
+.ob-inner{max-width:520px;margin:0 auto;padding:28px 18px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
+.ob-inner h2{font:800 28px/1.1 "Bricolage Grotesque",var(--ui);margin:0}
+.ob-chips .chip{font-size:15px;padding:9px 14px}
+.ob-next{align-self:stretch;justify-content:center;height:48px;font-size:16px;margin-top:6px}
+.spot{position:fixed;border-radius:12px;box-shadow:0 0 0 9999px rgba(10,14,18,.66);z-index:90;pointer-events:none;transition:all .2s}
+.spot-tip{position:fixed;z-index:91;background:var(--surface);color:var(--ink);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.3);display:flex;flex-direction:column;gap:8px}
+.spot-tip b{font-size:16px}
+.spot-tip p{margin:0;color:var(--muted);font-size:14px;line-height:1.45}
 /* Settings-driven variations */
 :root[data-sum="off"] .sum{display:none}
 :root[data-sum="full"] .sum{display:block;-webkit-line-clamp:unset;overflow:visible;white-space:pre-line}
@@ -96,7 +122,6 @@ a.card{color:inherit;text-decoration:none}
 .accents{display:flex;gap:8px;flex-wrap:wrap}
 .preview{border:1px dashed var(--line);border-radius:10px;padding:2px;background:var(--bg)}
 .preview .card{pointer-events:none}
-a.card:focus-visible{outline:2px solid var(--accent);outline-offset:0}
 .app{display:grid;grid-template-columns:minmax(360px,440px) minmax(0,1fr);height:100dvh}
 .feedcol{display:flex;flex-direction:column;min-height:0;min-width:0;border-right:1px solid var(--line)}
 
@@ -439,7 +464,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <button class="btn icon" id="manage" aria-label="Open menu" aria-controls="dlg" aria-expanded="false" title="Menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <h1 class="brand" aria-label="tick/rss"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">tick<svg class="slash" viewBox="0 0 60 90" aria-hidden="true"><path d="M6 58L20 82L54 6" fill="none" stroke="var(--brand)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="rss">rss</span></span></h1>
+        <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">Your<span class="rss">Feed</span></span></h1>
         <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
         </button>
@@ -452,7 +477,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       </div>
       <div class="filterbox" id="filterBox" role="dialog" aria-label="Filter your feed" hidden></div>
     </div>
-    <div class="list" id="list"><div class="empty"><h3>TickRSS isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
+    <div class="list" id="list"><div class="empty"><h3>YourFeed isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
   </section>
   <section class="pane" id="pane" aria-label="Reading pane"></section>
 </div>
@@ -460,7 +485,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 <dialog id="dlg" class="drawer" aria-label="Menu">
   <div class="dlg">
     <header>
-      <h2 class="brand" aria-label="tick/rss"><svg class="logo" width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">tick<svg class="slash" viewBox="0 0 60 90" aria-hidden="true"><path d="M6 58L20 82L54 6" fill="none" stroke="var(--brand)" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="rss">rss</span></span></h2>
+      <h2 class="brand" aria-label="YourFeed"><svg class="logo" width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">Your<span class="rss">Feed</span></span></h2>
       <button class="btn icon" id="dlgClose" aria-label="Close menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -496,21 +521,23 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
       </label>
       </section>
+      <section class="set-sec" aria-labelledby="sh-io">
+        <h3 id="sh-io">Your sources</h3>
+        <p class="hint">Move your sources between devices, or add lots at once. Files are OPML, the standard format other feed readers use. You can also import a text file with one address per line.</p>
+        <div class="iorow">
+          <button class="btn" type="button" id="importBtn">Import sources</button>
+          <button class="btn" type="button" id="exportBtn">Export sources</button>
+          <input type="file" id="importFile" accept=".opml,.xml,.txt,text/xml,application/xml,text/x-opml,text/plain" hidden>
+        </div>
+        <p class="msg" id="ioMsg" aria-live="polite"></p>
+      </section>
       <section class="set-sec" aria-labelledby="sh-svc">
         <h3 id="sh-svc">Feed service</h3>
-      <details id="moreBox">
-        <summary>Get more than 10 stories per feed</summary>
-        <div class="field">
-          <p class="hint">The free feed service returns 10 stories per feed unless you give it a key. Make a free account at <b>rss2json.com</b>, copy your API key from its dashboard, and paste it here. TickRSS will then ask for up to 100 stories per feed.</p>
-          <input id="rssKeyInput" type="text" placeholder="rss2json API key" aria-label="rss2json API key" autocomplete="off" spellcheck="false">
-          <p class="msg" id="rssKeyMsg"></p>
-        </div>
-      </details>
       <div class="field">
-        <label class="lbl-strong" for="proxyInput">Your own relay</label>
-        <p class="hint">Browsers can't read most feeds directly, so tick/rss borrows free services that are often slow or blocked. A free Cloudflare relay of your own fixes this. Paste its address here, including the key.</p>
+        <label class="lbl-strong" for="proxyInput">YourFeed service</label>
+        <p class="hint" id="serviceHint">The app reads feeds straight from your phone. The website also needs the YourFeed service, our own secure helper, because browsers block reading other sites. Leave this as it is unless you've been given a different address.</p>
         <div class="addrow">
-          <input id="proxyInput" type="url" placeholder="https://tickrss-relay.yourname.workers.dev/?key=…" aria-label="Your relay address" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <input id="proxyInput" type="url" placeholder="https://service address" aria-label="YourFeed service address" autocapitalize="off" autocorrect="off" spellcheck="false">
           <button class="btn" type="button" id="proxyTest">Test</button>
         </div>
         <p class="msg" id="proxyMsg" aria-live="polite"></p>
@@ -523,7 +550,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       </div>
       </section>
       <section class="about" aria-label="About this version">
-        <p><b>tick/rss</b> <span id="appVersion"></span></p>
+        <p><b>YourFeed</b> by Apps For Us · <span id="appVersion"></span></p>
       </section>
     </div>
   </div>
@@ -612,7 +639,7 @@ if (IS_APP){
     });
   };
   document.documentElement.classList.add("is-app");
-  // Links open in an in-app browser tab (Android Custom Tab) on top of tick/rss: back returns to the feed
+  // Links open in an in-app browser tab (Android Custom Tab) on top of YourFeed: back returns to the feed
   document.addEventListener("click", e => {
     if (e.defaultPrevented || e.button) return;
     const a = e.target.closest && e.target.closest("a[href]");
@@ -643,7 +670,7 @@ const READER_ENABLED = false;   // Reader view is off for now: stories show the 
 const KEEP_DAYS = 7, MAX_PER_FEED = 300, MIN_PER_FEED = 20, MIN_MAX_AGE_DAYS = 180;   // story history kept per feed
 
 const state = {
-  feeds: store.get("tl.feeds", null) || DEFAULT_FEEDS.map(f => ({...f})),
+  feeds: store.get("tl.feeds", null) || [],
   items: mergeHistory(store.get("tl.items", []), []),
   read: new Set(store.get("tl.read", [])),
   filter: "all",
@@ -655,8 +682,7 @@ const state = {
   // It moves to the previous update time when the app opens, and to "now" when you tap refresh.
   baseline: store.get("tl.updated", 0),
   busy: false,
-  proxy: store.get("tl.proxy", ""),
-  rssKey: store.get("tl.rsskey", ""),
+  service: store.get("yf.service", ""),
   keepInBrowser: store.get("tl.keepbrowser", false),
   readInApp: store.get("tl.readinapp", true)
 };
@@ -664,6 +690,10 @@ state.folders = store.get("tl.folders", []);
 state.organise = store.get("tl.organise", "category");
 state.collapsed = new Set(store.get("tl.collapsed", []));
 state.stackShown = {};
+// Saved posts are kept whole, so they stay after the story drops out of the feed's history
+state.saved = store.get("yf.saved", []);
+const saveSaved = () => store.set("yf.saved", state.saved);
+const isSaved = id => state.saved.some(x => x.id === id);
 const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest"};
 const view = {...VIEW_DEFAULT, ...store.get("tl.view", {})};
 const saveView = () => store.set("tl.view", view);
@@ -671,105 +701,71 @@ const readerCache = new Map();
 state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
 
 /* ---------- fetching ---------- */
-// Each relay: build(url) -> request URL; json:true means the page text is wrapped in {contents}
-const PROXIES = [
-  {build: u => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u)},
-  {build: u => "https://api.allorigins.win/get?url=" + encodeURIComponent(u), json: true},
-  {build: u => "https://api.codetabs.com/v1/proxy/?quest=" + encodeURIComponent(u)},
-  {build: u => "https://whateverorigin.org/get?url=" + encodeURIComponent(u), json: true},
-  {build: u => "https://corsproxy.io/?url=" + encodeURIComponent(u)},
-  {build: u => "https://api.cors.lol/?url=" + encodeURIComponent(u)}
-];
+// Only two kinds of route, both trusted: the publisher itself (direct from the phone or browser),
+// and the YourFeed service, our own locked-down Cloudflare Worker (service/worker.js). No third-party relays.
+// The app (IS_APP) goes direct first and only falls back to the service; the website needs the service
+// for most feeds, because browsers block reading other sites unless they allow it.
+const SERVICE_DEFAULT = "";   // set to the YourFeed service address once it's deployed, e.g. "https://service.appsforus.co.uk"
+const ACCEPT_FEED = {"Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, application/json;q=0.9, */*;q=0.5"};
 async function fetchWithTimeout(url, ms, headers){
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), ms);
   try{ return await fetch(url, headers ? {signal: ctrl.signal, headers} : {signal: ctrl.signal}); } finally { clearTimeout(t); }
 }
-// Ask every relay at once and use whichever answers first; cancel the rest.
-// Your own relay address → a prefix the page address can be added to
-function relayPrefix(){
-  const p = (state.proxy || "").trim(); if (!p) return "";
-  if (/[?&]url=$/.test(p)) return p;
-  return p + (p.includes("?") ? "&url=" : (p.endsWith("/") ? "?url=" : "/?url="));
-}
-async function fetchViaRelay(url, ms = 12000){
-  const r = await fetchWithTimeout(relayPrefix() + encodeURIComponent(url), ms);
-  if (!r.ok) throw new Error("Your relay answered with error " + r.status);
-  return r.text();
-}
-async function fetchText(url, ms = 10000, opts = {}){
-  // In the app, ask the site directly first: it usually just works
-  if (IS_APP){
-    try{
-      const r = await fetchWithTimeout(url, ms, {"Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, text/html;q=0.9, */*;q=0.8"});
-      if (r.ok){ const t = await r.text(); if (t.trim().length >= 40 && (!opts.needFeed || looksLikeFeed(t))) return t; }
-    }catch{}
-  }
-  // Your own relay is the dependable route: when it works, use it alone
-  if (relayPrefix() && !opts.skipRelay){
-    try{ const t = await fetchViaRelay(url, ms + 2000); if (t.trim().length >= 40 && (!opts.needFeed || looksLikeFeed(t))) return t; }catch{}
-  }
-  const tries = [{build: u => u}];            // direct: works for feeds that allow it
-  PROXIES.forEach(p => tries.push(p));
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), ms);
-  try{
-    return await Promise.any(tries.map(async p => {
-      const r = await fetch(p.build(url), {signal: ctrl.signal});
-      if (!r.ok) throw new Error("The site answered with error " + r.status);
-      let t = await r.text();
-      if (p.json){ const j = JSON.parse(t); t = j.contents || ""; if (j.status && j.status.http_code >= 400) throw new Error("The site answered with error " + j.status.http_code); }
-      if (t.trim().length < 40) throw new Error("The site sent back an empty page");
-      if (opts.needFeed && !looksLikeFeed(t)) throw new Error(notFeedReason(t));
-      return t;
-    }));
-  }catch(agg){
-    const errs = (agg.errors || []);
-    if (errs.some(e => e.name === "AbortError")) throw new Error("The site took too long to answer");
-    const http = errs.find(e => /error \d|bot protection|web page/.test(e.message));
-    throw new Error(http ? http.message : "Couldn't reach that address");
-  }finally{
-    clearTimeout(timer);
-    ctrl.abort();
-  }
-}
-// Dedicated feed service: returns parsed JSON with CORS. Used first for feeds.
-async function fetchViaRss2json(url, feed){
-  const key = state.rssKey ? "&api_key=" + encodeURIComponent(state.rssKey) + "&count=100" : "";
-  const r = await fetchWithTimeout("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(url) + key, 12000);
-  const j = await r.json();
-  if (j.status !== "ok" || !Array.isArray(j.items)) throw new Error(j.message || "Feed service couldn't read it");
-  const items = j.items.map(it => makeItem(feed, {
-    html: (it.content || "").length > (it.description || "").length ? it.content : it.description,
-    audioUrl: it.enclosure && /audio/.test(it.enclosure.type || "") ? it.enclosure.link : "",
-    audio: !!(it.enclosure && /audio/.test(it.enclosure.type || "")),
-    title: htmlToText(it.title),
-    link: it.link || it.guid,
-    date: Date.parse((it.pubDate || "").replace(" ", "T") + "Z") || 0,
-    summary: htmlToText(it.description || it.content),
-    image: it.thumbnail || (it.enclosure && /image/.test(it.enclosure.type || "") && it.enclosure.link) || firstImg(it.content) || firstImg(it.description)
-  })).sort((a, b) => b.date - a.date);
-  return {title: htmlToText((j.feed && j.feed.title) || ""), items};
-}
-// Get a feed by any route that works
-// Feedly keeps a public copy of most feeds and returns up to 100 stories as JSON, no key needed
 const parseJsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a < 0 || b < a) throw new Error("No data"); return JSON.parse(t.slice(a, b + 1)); };
-async function fetchViaFeedly(url, feed){
-  const t = await fetchAny("https://cloud.feedly.com/v3/streams/contents?count=100&streamId=" + encodeURIComponent("feed/" + url), 12000);
-  const j = parseJsonIn(t);
-  if (!Array.isArray(j.items) || (!j.items.length && !j.title)) throw new Error("Feedly doesn't have that feed");
-  const items = j.items.map(it => {
-    const link = (it.alternate && it.alternate[0] && it.alternate[0].href) || it.canonicalUrl || (/^https?:/.test(it.originId || "") ? it.originId : "");
-    const html = (it.content && it.content.content) || (it.summary && it.summary.content) || "";
-    const enc = (it.enclosure || []).find(x => /audio/.test(x.type || ""));
-    const vis = it.visual && it.visual.url && it.visual.url !== "none" ? it.visual.url : null;
-    return makeItem(feed, {
-      html, audio: !!enc, audioUrl: enc && enc.href,
-      title: htmlToText(it.title || ""), link, date: it.published || it.crawled || 0,
-      summary: htmlToText(html), image: vis || (it.thumbnail && it.thumbnail[0] && it.thumbnail[0].url) || firstImg(html)
-    });
-  }).sort((a, b) => b.date - a.date);
-  return {title: htmlToText(j.title || ""), items};
+function serviceBase(){
+  const s = (state.service || SERVICE_DEFAULT || "").trim().replace(/\/+$/, "");
+  return /^https:\/\//.test(s) ? s : "";
+}
+// Ask the YourFeed service. Errors come back as {error} with a plain-English reason.
+async function viaService(path, params, ms = 14000){
+  const base = serviceBase();
+  if (!base) throw new Error(IS_APP ? "Not available from your phone" : "The website needs the YourFeed service for this");
+  const r = await fetchWithTimeout(base + path + "?" + new URLSearchParams(params), ms);
+  const t = await r.text();
+  if (!r.ok){ let m = ""; try{ m = JSON.parse(t).error; }catch{} throw new Error(m || "The YourFeed service answered with error " + r.status); }
+  return t;
+}
+const friendlyNetErr = e => e && e.name === "AbortError" ? new Error("Took too long")
+  : /Failed to fetch|NetworkError|Load failed/i.test(String(e && e.message)) ? new Error(IS_APP ? "Couldn't connect" : "Blocked by the browser (normal on the website)") : e;
+// A feed's text, straight from the publisher
+async function feedDirect(url, ms = 12000){
+  let r;
+  try{ r = await fetchWithTimeout(url, ms, ACCEPT_FEED); }catch(e){ throw friendlyNetErr(e); }
+  if (!r.ok) throw new Error("The site answered with error " + r.status);
+  const t = await r.text();
+  if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
+  return t;
+}
+const feedViaService = (url, ms) => viaService("/feed", {url}, ms);
+// A feed's text by whichever trusted route works
+async function fetchFeedText(url, ms = 12000){
+  if (IS_APP){
+    try{ return await feedDirect(url, ms); }
+    catch(e){ if (!serviceBase()) throw e; return feedViaService(url, ms + 2000).catch(() => { throw e; }); }
+  }
+  return Promise.any([feedDirect(url, ms), feedViaService(url, ms + 2000)]).catch(agg => {
+    const errs = agg.errors || [];
+    throw errs.find(e => e && !/Blocked by the browser|needs the YourFeed service/.test(e.message)) || errs[1] || errs[0] || new Error("Couldn't reach that feed");
+  });
+}
+// JSON from a public API (Apple Podcasts, Reddit, Bluesky, Mastodon): direct, then the service
+async function getJSON(url, ms = 10000){
+  try{
+    const r = await fetchWithTimeout(url, ms, {"Accept": "application/json"});
+    if (!r.ok) throw new Error("error " + r.status);
+    return await r.json();
+  }catch(e){
+    if (!serviceBase()) throw friendlyNetErr(e);
+    return JSON.parse(await viaService("/json", {url}, ms + 2000));
+  }
+}
+// A web page's HTML: only ever read directly from the app (the service never relays pages)
+async function pageDirect(url, ms = 12000){
+  if (!IS_APP) throw new Error("Pages can only be read from the app");
+  const r = await fetchWithTimeout(url, ms, {"Accept": "text/html,application/xhtml+xml"});
+  if (!r.ok) throw new Error("The site answered with error " + r.status);
+  return r.text();
 }
 /* ---------- saved articles ---------- */
 const artDB = (() => {
@@ -834,8 +830,8 @@ async function fetchViaRedditJson(url, feed){
     if (!r.ok) throw new Error("Reddit answered with error " + r.status);
     j = await r.json();
   }catch(e){
-    if (!relayPrefix()) throw e.name === "AbortError" ? new Error("Took too long") : e;
-    j = parseJsonIn(await fetchViaRelay(api, 12000));
+    if (!serviceBase()) throw friendlyNetErr(e);
+    j = JSON.parse(await viaService("/json", {url: api}, 14000));
   }
   const kids = j && j.data && j.data.children;
   if (!Array.isArray(kids)) throw new Error("Reddit sent no posts");
@@ -904,47 +900,35 @@ function notFeedReason(t){
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
-const ROUTE_NAMES = {phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", relay: "Your relay", open: "Direct and free relays", rss2json: "Feed service", feedly: "Feedly"};
+const ROUTE_NAMES = {phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
 async function loadOneFeed(url, feed, logOut){
-  // Ask every route at once. An answer with no stories never wins the race (a service that
-  // doesn't know the feed yet often answers instantly with nothing); wait for one with stories,
-  // then give the others a few seconds and combine them. What each route said is kept on the
-  // feed (feed.routes) so the menu can show why a source isn't updating.
-  const got = [], empties = [], log = {};
-  const take = (key, p) => p.then(r => {
-    const newest = Math.max(0, ...r.items.map(i => i.date || 0));
-    log[key] = {ok: true, n: r.items.length, newest};
-    if (r.items.length){ got.push(r); return r; }
-    empties.push(r); throw new Error("empty");
+  // Direct from the publisher, and the YourFeed service (in the app only if direct fails).
+  // What each route said is kept on the feed (feed.routes) so the menu can show why a source isn't updating.
+  const log = {};
+  const take = (key, p) => p.then(t => {
+    const r = parseFeed(t, feed);
+    log[key] = {ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))};
+    return r;
   }, e => {
-    if (e && e.message === "skip") log[key] = {skip: true};
-    else log[key] = {ok: false, err: e && e.name === "AbortError" ? "Took too long" : String(e && e.message || "Failed").replace(/\.$/, "")};
+    log[key] = e && e.message === "skip" ? {skip: true} : {ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")};
     throw e;
   });
-  const routes = [];
-  let relayP = null;
-  if (relayPrefix()){
-    relayP = fetchViaRelay(url, 12000).then(t => { if (!looksLikeFeed(t)) throw new Error(notFeedReason(t)); return parseFeed(t, feed); });
-    routes.push(take("relay", relayP));
-  }
-  // The free relays only run when your relay didn't bring stories, to stay inside their limits
-  const openGate = relayP ? relayP.then(r => { if (r.items.length) throw new Error("skip"); }, () => {}) : Promise.resolve();
-  routes.push(take("open", openGate.then(() => fetchText(url, 10000, {skipRelay: true, needFeed: true})).then(t => parseFeed(t, feed))));
-  routes.push(take("rss2json", fetchViaRss2json(url, feed)));
-  routes.push(take("feedly", fetchViaFeedly(url, feed)));
-  const keep = () => { const r = ["relay", "open", "rss2json", "feedly"].filter(k => k !== "relay" || relayP).map(k => ({k, ...(log[k] || {slow: true})})); if (logOut) logOut.routes = r; else feed.routes = r; };
-  let first;
-  try{ first = await Promise.any(routes); }
-  catch(agg){
-    keep();
-    if (empties.length) throw new Error("Every route answered with no stories");
-    const errs = agg.errors || [];
-    const real = errs.find(e => e && !/^skip$|empty|Couldn't reach|took too long|Feed service|Feedly|No data|Failed to fetch|NetworkError|Load failed|aborted|^\d+$|JSON|All promises|Unexpected token/i.test(e.message));
-    throw real || new Error("Couldn't reach that feed");
-  }
-  await Promise.race([Promise.allSettled(routes), new Promise(r => setTimeout(r, 4000))]);
+  const direct = take("direct", feedDirect(url, 12000));
+  const hasService = !!serviceBase();
+  const gate = IS_APP ? direct.then(r => { if (r.items.length) throw new Error("skip"); }, () => {}) : Promise.resolve();
+  const service = hasService ? take("service", gate.then(() => feedViaService(url, 14000))) : null;
+  const routes = service ? [direct, service] : [direct];
+  const keep = () => { const r = ["direct", ...(hasService ? ["service"] : [])].map(k => ({k, ...(log[k] || {slow: true})})); if (logOut) logOut.routes = r; else feed.routes = r; };
+  const settled = await Promise.allSettled(routes);
   keep();
-  const title = (got.find(g => g.title) || first).title;
+  const got = settled.filter(x => x.status === "fulfilled").map(x => x.value);
+  if (!got.length){
+    const errs = settled.map(x => x.reason).filter(e => e && e.message !== "skip");
+    if (!IS_APP && !hasService) throw new Error("This feed can't be read in a browser without the YourFeed service");
+    throw errs.find(e => !/Blocked by the browser/.test(e.message)) || errs[0] || new Error("Couldn't reach that feed");
+  }
+  if (!got.some(g => g.items.length)) throw new Error("The feed has no stories");
+  const title = (got.find(g => g.title) || got[0]).title;
   const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
   return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin};
 }
@@ -1005,13 +989,21 @@ function ytId(u){
   }catch{}
   return null;
 }
+// Social posts (Bluesky, Mastodon) come without titles: use the opening words of the post
+function postTitle(text){
+  const t = (text || "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+  const first = t.split(/(?<=[.!?])\s/)[0];
+  const pick = first.length >= 20 && first.length <= 140 ? first : t;
+  return pick.length > 120 ? pick.slice(0, 117).replace(/\s+\S*$/, "") + "…" : pick;
+}
 function makeItem(feed, o){
   const link = safeUrl(o.link) || "";
   const videoId = o.videoId || ytId(link);
   return {
     id: feed.id + "|" + (link || o.title),
     feedId: feed.id,
-    title: o.title || "Untitled",
+    title: o.title || postTitle(o.summary || htmlToText(o.html || "")) || "Untitled",
     link,
     date: o.date || 0,
     summary: (o.summary || "").slice(0, 1000),
@@ -1105,96 +1097,34 @@ function channelAvatarIn(text){
             text.match(/(https:\/\/yt3\.(?:googleusercontent|ggpht)\.com\/[^\s"')\]]+)/);
   return m ? safeUrl(m[1].replace(/\\u0026/g, "&").replace(/^\/\//, "https://")) : null;
 }
-// Ask Feedly's search to find the feed for an address
-async function feedlyLookup(address){
-  const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=10&query=" + encodeURIComponent(address), 10000);
-  return (parseJsonIn(t).results || []).map(r => (r.feedId || "").replace(/^feed\//, "")).filter(u => /^https?:/.test(u));
-}
 // UK/EU visitors get a cookie-consent page instead of YouTube. ucbcb=1 skips it.
 function ytPage(url){
   try{ const u = new URL(url); u.searchParams.set("hl", "en"); u.searchParams.set("gl", "GB"); u.searchParams.set("ucbcb", "1"); return u.href; }catch{ return url; }
 }
-// The reader service, asked for the page's HTML (with consent cookies set) rather than a text summary
-function jinaHtml(url, ms = 15000){
-  return fetchWithTimeout("https://r.jina.ai/" + url, ms, {"X-Return-Format": "html", "X-Set-Cookie": "SOCS=CAI; CONSENT=YES+1"})
-    .then(r => { if (!r.ok) throw new Error("reader " + r.status); return r.text(); });
-}
-// Find a channel's ID (and picture, when the page gives it) from a channel or video page
+// Find a channel's ID (and picture) from a channel, @handle or video page: read directly in the app,
+// or asked of the YourFeed service on the website
 async function findChannel(page){
   const isVideo = /watch\?v=/.test(page);
-  const need = t => { const id = channelIdIn(t, isVideo); if (!id) throw new Error("no id"); return {id, avatar: isVideo ? null : channelAvatarIn(t)}; };
-  const routes = [
-    fetchText(ytPage(page), 12000).then(need),
-    jinaHtml(ytPage(page)).then(need),
-    fetchWithTimeout("https://r.jina.ai/" + ytPage(page), 15000).then(r => { if (!r.ok) throw new Error("jina " + r.status); return r.text(); }).then(need),
-    feedlyLookup(page).then(list => { for (const u of list){ const m = u.match(/channel_id=(UC[\w-]{22})/); if (m) return {id: m[1], avatar: null}; } throw new Error("no id"); })
-  ];
+  if (IS_APP){
+    try{
+      const t = await pageDirect(ytPage(page), 12000);
+      const id = channelIdIn(t, isVideo);
+      if (id) return {id, avatar: isVideo ? null : channelAvatarIn(t)};
+    }catch{}
+  }
+  if (!serviceBase()) return null;
   try{
-    const first = await Promise.any(routes);
-    if (first.avatar) return first;
-    // Got the ID without a picture: give the page routes a moment longer to supply one
-    const withPic = await Promise.race([Promise.any(routes.slice(0, 3).map(r => r.then(x => x.avatar ? x : Promise.reject()))), new Promise(r => setTimeout(() => r(null), 3000))]).catch(() => null);
-    return withPic || first;
+    const j = JSON.parse(await viaService("/youtube/channel", {url: page}, 15000));
+    return j && /^UC[\w-]{22}$/.test(j.id || "") ? {id: j.id, avatar: safeUrl(j.avatar || "") || null, title: j.title || null} : null;
   }catch{ return null; }
 }
 async function findChannelId(page){ const c = await findChannel(page); return c && c.id; }
-async function resolveInput(raw){
-  let s = raw.trim();
-  if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
-  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/.rss"};                       // r/subreddit
-  if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
-  if (!/^https?:\/\//i.test(s)) s = "https://" + s;
-  let u;
-  try{ u = new URL(s); }catch{ throw new Error("That doesn't look like a web address"); }
-  const host = u.hostname.replace(/^(www|m|music)\./, "");
-  // Reddit links: subreddit or user → their own feed, never a guess
-  if (/(^|\.)reddit\.com$/.test(u.hostname)){
-    const sub = u.pathname.match(/^\/r\/(\w+)/i), usr = u.pathname.match(/^\/(?:u|user)\/([\w-]+)/i);
-    if (sub) return {url: `https://www.reddit.com/r/${sub[1]}/.rss`};
-    if (usr) return {url: `https://www.reddit.com/user/${usr[1]}/.rss`};
-    throw new Error("Paste a subreddit link (reddit.com/r/name) or type r/name");
-  }
-  if ((host === "youtube.com" && !u.pathname.startsWith("/feeds/")) || host === "youtu.be"){
-    let id = u.searchParams.get("channel_id") || (u.pathname.match(/\/channel\/(UC[\w-]{22})/) || [])[1];
-    if (!id){
-      let page;
-      if (host === "youtu.be" || u.searchParams.get("v") || /^\/(shorts|live)\//.test(u.pathname)){
-        const vid = ytId(u.href); if (!vid) throw new Error("Couldn't read that YouTube link");
-        page = "https://www.youtube.com/watch?v=" + vid;                                       // a video: find its channel
-      } else {
-        const seg = u.pathname.split("/").filter(Boolean);
-        page = "https://www.youtube.com/" + (seg[0] && seg[0].startsWith("@") ? seg[0] : seg.slice(0, 2).join("/"));
-      }
-      id = await findChannelId(page, u);
-    }
-    if (!id) throw new Error("Couldn't find that YouTube channel. On the channel page, tap Share, then Copy channel ID, and paste the ID here");
-    return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + id};
-  }
-  const GUESSES = ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"];
-  const candidates = [u.href, ...GUESSES.map(p => new URL(p, u.origin).href)];
-  // Route A: read the page and look for its feed link. Route B: ask the feed service about likely feed addresses.
-  // All run at once; the first one that finds a feed wins.
-  const routeA = fetchText(u.href).then(t => {
-    if (looksLikeFeed(t)) return {url: u.href, text: t};
-    const d = new DOMParser().parseFromString(t, "text/html");
-    const l = d.querySelector('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]');
-    if (l && l.getAttribute("href")) return {url: new URL(l.getAttribute("href"), u.href).href};
-    throw new Error("no feed link");
-  });
-  const routeB = candidates.map(g => fetchViaRss2json(g, {id: "probe"}).then(() => ({url: g})));
-  const site = u.hostname.replace(/^www\./, "");
-  const routeC = feedlyLookup(u.href).then(list => {
-    const seg = u.pathname.split("/").filter(Boolean)[0] || "";
-    const hit = list.find(f => { try{
-      const fu = new URL(f);
-      if (!fu.hostname.replace(/^www\./, "").endsWith(site.split(".").slice(-2).join("."))) return false;
-      // A link to a section of a site must match a feed for that section
-      return !seg || fu.pathname.toLowerCase().includes("/" + seg.toLowerCase()) || fu.search.toLowerCase().includes(seg.toLowerCase());
-    }catch{ return false; } });
-    if (!hit) throw new Error("not found"); return {url: hit};
-  });
-  try{ return await Promise.any([routeA, routeC, ...routeB]); }
-  catch{ throw new Error("Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead"); }
+// Find a website's feed: from its page's feed links, else common feed addresses
+async function discoverFeed(u){
+  let found = null;
+  try{ found = await discoverFeed(u); }catch(e){ if (!/No feed found/.test(e.message)) throw e; }
+  if (found) return found;
+  throw new Error("Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead");
 }
 
 /* ---------- helpers ---------- */
@@ -1254,7 +1184,7 @@ function platformOf(f){
 const folderOf = f => f.folder && state.folders.includes(f.folder) ? f.folder : UNSORTED;
 const byName = (a, b) => (a.title || "").localeCompare(b.title || "", undefined, {sensitivity: "base", numeric: true});
 const saveFolders = () => { store.set("tl.folders", state.folders); };
-const TYPES = [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["reddit", "Reddit"], ["podcasts", "Podcasts"], ["social", "Social"]];
+const TYPES = [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["reddit", "Reddit"], ["podcasts", "Podcasts"], ["social", "Social"], ["saved", "Saved"]];
 function typeOf(it){
   if (it.videoId) return "videos";
   if (it.audioUrl) return "podcasts";
@@ -1301,6 +1231,7 @@ function baseItems(){
   return state.items.filter(i => sourceMatch(i.feedId) && (!view.unread || !state.read.has(i.id)) && (!cut || (i.date || i.seen || 0) >= cut));
 }
 function visibleItems(){
+  if (view.type === "saved") return [...state.saved].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
   const base = baseItems();
   const list = view.type === "all" ? base : base.filter(i => typeOf(i) === view.type);
   if (view.sort === "source"){
@@ -1321,6 +1252,7 @@ function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
 // Show one source, folder or platform ("all" for everything)
 function selectFeed(src){
   view.source = src === "all" || /^(feed|folder|platform):/.test(src) ? src : "feed:" + src;
+  view.type = "all";
   saveView(); state.shown = PAGE;
   renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
 }
@@ -1330,6 +1262,15 @@ function renderChips(){
   const base = baseItems();
   const present = new Set(state.items.map(typeOf));
   TYPES.forEach(([k, label]) => {
+    if (k === "saved"){
+      if (!state.saved.length && view.type !== k) return;
+      const b = el("button", "chip saved-tab"); b.type = "button";
+      b.setAttribute("aria-pressed", String(view.type === k));
+      b.setAttribute("aria-label", `Saved, ${state.saved.length}`);
+      b.append(document.createTextNode(label), el("span", "count zero", String(state.saved.length)));
+      b.onclick = () => setView("type", k);
+      c.append(b); return;
+    }
     if (k !== "all" && !present.has(k) && view.type !== k) return;
     const its = k === "all" ? base : base.filter(i => typeOf(i) === k);
     const n = its.filter(isNew).length;
@@ -1497,16 +1438,64 @@ function imageCandidates(it){
   if (it.videoId) list.push(`https://i.ytimg.com/vi/${it.videoId}/mqdefault.jpg`);
   return [...new Set(list)];
 }
+const ICON_SAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>';
+const ICON_SAVED = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>';
+const ICON_SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
+let toastTimer;
+function toast(msg){
+  let t = $(".toast");
+  if (!t){ t = el("div", "toast"); t.setAttribute("role", "status"); document.body.append(t); }
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+}
+function toggleSave(it, btn){
+  if (isSaved(it.id)) state.saved = state.saved.filter(x => x.id !== it.id);
+  else state.saved.unshift({...it, savedAt: Date.now(), feedTitle: (feedById(it.feedId) || {}).title || ""});
+  saveSaved();
+  const on = isSaved(it.id);
+  if (btn){ btn.setAttribute("aria-pressed", String(on)); btn.innerHTML = on ? ICON_SAVED : ICON_SAVE; btn.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); }
+  toast(on ? "Saved for later" : "Removed from Saved");
+  renderChips();
+  if (view.type === "saved" && !on) renderList();
+}
+async function sharePost(it){
+  const data = {title: it.title, text: it.title, url: it.link};
+  const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+  try{
+    if (S && S.share){ await S.share({...data, dialogTitle: "Share"}); return; }
+    if (navigator.share){ await navigator.share(data); return; }
+  }catch(e){ if (e && /cancel|abort/i.test(String(e.message || e.name))) return; }
+  try{ await navigator.clipboard.writeText(it.link); toast("Link copied"); }catch{ toast("Couldn't share this link"); }
+}
 function cardEl(it){
-  // Tapping a story opens it on its website (or the YouTube app/site for videos)
-  const a = el(it.link ? "a" : "article", "card");
-  if (it.link){ a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer"; }
+  // The whole card is one link (a "stretched" link over the card); Save and Share sit above it
+  const a = el("article", "card");
   if (state.read.has(it.id)) a.classList.add("read");
   a.dataset.id = it.id;
-  if (it.audioUrl && !it.videoId){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); a.setAttribute("aria-label", it.title + ", podcast episode, show player"); }
+  const isPod = it.audioUrl && !it.videoId;
+  const link = el(it.link ? "a" : "span", "cardlink");
+  if (it.link){ link.href = it.link; link.target = "_blank"; link.rel = "noopener noreferrer"; }
+  link.textContent = it.title;
+  if (isPod){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); link.setAttribute("aria-label", it.title + ", podcast episode, show player"); }
   const body = el("div");
   body.style.minWidth = "0";
-  body.append(metaRow(it), el("h2", "title", it.title));
+  const meta = metaRow(it);
+  if (!feedById(it.feedId) && it.feedTitle){ const src = meta.querySelector(".src"); if (src) src.textContent = it.feedTitle; }
+  if (it.link){
+    const acts = el("span", "cacts");
+    const sv = el("button", "cact"); sv.type = "button";
+    const on = isSaved(it.id);
+    sv.setAttribute("aria-pressed", String(on)); sv.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); sv.title = "Save for later";
+    sv.innerHTML = on ? ICON_SAVED : ICON_SAVE;
+    sv.onclick = e => { e.preventDefault(); e.stopPropagation(); toggleSave(it, sv); };
+    const sh = el("button", "cact"); sh.type = "button"; sh.setAttribute("aria-label", "Share " + it.title); sh.title = "Share";
+    sh.innerHTML = ICON_SHARE;
+    sh.onclick = e => { e.preventDefault(); e.stopPropagation(); sharePost(it); };
+    acts.append(sv, sh);
+    meta.append(acts);
+  }
+  const h = el("h2", "title"); h.append(link);
+  body.append(meta, h);
   if (it.summary) body.append(el("p", "sum", it.summary));
   a.append(body);
   if (it.image){
@@ -1520,9 +1509,9 @@ function cardEl(it){
     img.src = tries[0];
     th.append(img); a.append(th);
   }
-  a.addEventListener("click", e => {
+  link.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
-    if (it.audioUrl && !it.videoId){ e.preventDefault(); togglePodPanel(it); return; }
+    if (isPod){ e.preventDefault(); togglePodPanel(it); return; }
     if (state.keepInBrowser && it.link){
       const intent = browserIntent(it.link);
       if (intent){ e.preventDefault(); location.href = intent; }
@@ -1578,7 +1567,14 @@ function renderList(){
   if (!all.length){
     const e = el("div", "empty");
     if (state.busy && !state.items.length){ e.append(el("h3", null, "Loading your feeds…"), el("p", null, "This takes a few seconds the first time.")); }
-    else if (!state.feeds.length){ e.append(el("h3", null, "No feeds yet"), el("p", null, "Open the menu to search for websites, YouTube channels, subreddits and podcasts.")); }
+    else if (!state.feeds.length){
+      e.classList.add("welcome");
+      const h = el("h3"); h.append(document.createTextNode("Everything you follow, "), el("span", "accent", "in one feed."));
+      e.append(h, el("p", null, "Websites, YouTube channels, subreddits, podcasts, news topics, Bluesky and Mastodon, side by side in one simple feed. No account, no ads, no tracking: your list stays on your device."));
+      const go = el("button", "btn primary", "Get started"); go.type = "button"; go.onclick = startOnboarding;
+      const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); setTimeout(() => $("#importBtn").focus(), 250); };
+      const row = el("div", "iorow"); row.append(go, imp); e.append(row);
+    }
     else if (state.items.length){
       e.append(el("h3", null, "Nothing matches"), el("p", null, view.unread ? "You've read everything here. Turn off Unread only, or pick another type or source." : "No stories match this type or filter."));
       const b = el("button", "btn", "Clear filters"); b.type = "button";
@@ -1715,7 +1711,7 @@ function renderBody(it, body){
   loadReader(it, body);
 }
 async function readerViaRelay(link){
-  const html = await fetchText(link, 15000);
+  const html = await pageDirect(link, 15000);
   if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
   return extractArticle(html, link);
 }
@@ -1784,40 +1780,8 @@ function miniMarkdown(md){
 }
 // Jina's reader service. First ask for the page's HTML with menus, comments and similar already removed,
 // so the same article extraction can run on real page structure. Fall back to its Markdown version.
-const JINA_REMOVE = "nav, header, footer, aside, form, [role=navigation], [role=complementary], [class*=comment], [id*=comment], [class*=related], [class*=share], [class*=newsletter], [class*=promo], [class*=sidebar]";
-async function readerViaJina(link){
-  try{
-    const r = await fetchWithTimeout("https://r.jina.ai/" + link, 20000, {"X-Return-Format": "html", "X-Remove-Selector": JINA_REMOVE});
-    if (!r.ok) throw new Error("Reader service answered with error " + r.status);
-    const html = await r.text();
-    if (/<(p|article|div)[\s>]/i.test(html)) return extractArticle(html, link);
-    throw new Error("not html");
-  }catch(e){
-    if (/readable article|reader tool/.test(e.message)) throw e;
-  }
-  const r = await fetchWithTimeout("https://r.jina.ai/" + link, 20000, {"X-Remove-Selector": JINA_REMOVE});
-  if (!r.ok) throw new Error("Reader service answered with error " + r.status);
-  let md = await r.text();
-  const i = md.indexOf("Markdown Content:");
-  if (BLOCK_PAGE.test(md.slice(0, i > 0 ? i : 300))) throw blocked();
-  if (i >= 0) md = md.slice(i + 17);
-  md = md.trim().replace(/^#{1,2} [^\n]*\n+/, "").replace(/^=+\n+/, "");
-  if (md.length < 200) throw new Error("This page doesn't have a readable article");
-  const html = window.marked ? marked.parse(md) : miniMarkdown(md);
-  if (typeof Readability === "function"){
-    try{ return extractArticle("<!doctype html><html><head><title></title></head><body>" + html + "</body></html>", link); }catch{}
-  }
-  return {content: html, textContent: md.replace(/[#*_>\[\]()!`-]/g, " "), byline: null};
-}
-// Prefer extraction from the original page; if Jina answers first, give the relays 3 more seconds.
-async function getArticle(link){
-  const relayP = readerViaRelay(link), jinaP = readerViaJina(link);
-  relayP.catch(() => {}); jinaP.catch(() => {});
-  const first = await Promise.any([relayP.then(a => ({a, own: true})), jinaP.then(a => ({a, own: false}))]);
-  if (first.own) return first.a;
-  try{ return await Promise.race([relayP, new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 3000))]); }
-  catch{ return first.a; }
-}
+async function readerViaJina(){ throw new Error("The reader is off"); }
+async function getArticle(){ throw new Error("The reader is off"); }
 // Remove leftovers that aren't the article: menus, share bars, comments, "related" blocks.
 const JUNK_HEAD = /^\s*(\d+\s+)?(comments?|responses?|replies|discussion|join the conversation|leave a (reply|comment)|related( stories| articles| content| reading| topics)?|more (from|on|stories|like this|to explore)|read more|read next|you (may|might) (also )?like|recommended|top stories|most (read|popular|viewed)|trending|latest (news|stories)|sign up|newsletter|subscribe|share this|follow us|about the author|tags?|topics?)\b/i;
 const JUNK_TEXT = /^(share|tweet|email|copy link|print|advertisement|skip to (main )?content|sign in|log in|subscribe|menu|close|search)$/i;
@@ -2269,7 +2233,9 @@ function showFolderPrompt(feed){
   box.append(el("span", "fb-lbl", `Put ${feed.title} in`));
   const chips = el("div", "fb-chips");
   const done = name => { setFolder(feed, name); box.hidden = true; renderFeedList(); setMsg(`${feed.title} is in ${name}.`); };
-  [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"})).forEach(n => {
+  const guess = suggestFolder(feed);
+  if (guess){ const g = el("button", "btn primary", `Put in ${guess}`); g.type = "button"; g.onclick = () => done(guess); chips.append(g); }
+  [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"})).filter(n => n !== guess).forEach(n => {
     const b = el("button", "chip", n); b.type = "button"; b.onclick = () => done(n); chips.append(b);
   });
   const skip = el("button", "chip", "Leave unsorted"); skip.type = "button"; skip.onclick = () => { box.hidden = true; };
@@ -2282,7 +2248,7 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.proxy; $("#rssKeyInput").value = state.rssKey; }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
@@ -2308,22 +2274,23 @@ $("#keepBrowser").addEventListener("change", e => {
   if (state.keepInBrowser && !browserPackage()) h.textContent = "Saved, but this device or browser doesn't support it. It works in Chrome, Edge, Samsung Internet, Firefox and Opera on Android.";
   else h.textContent = "Stops apps like YouTube opening when you tap a story. Works on Android phones.";
 });
-$("#rssKeyInput").addEventListener("change", e => {
-  state.rssKey = e.target.value.trim(); store.set("tl.rsskey", state.rssKey);
-  $("#rssKeyMsg").textContent = state.rssKey ? "Key saved. Refreshing your feeds…" : "Key removed.";
-  if (state.rssKey) refreshAll().then(() => { $("#rssKeyMsg").textContent = "Key saved. Feeds refreshed."; });
-});
-$("#proxyInput").addEventListener("change", e => { state.proxy = e.target.value.trim(); store.set("tl.proxy", state.proxy); $("#proxyMsg").textContent = state.proxy ? "Saved." : "Removed."; });
+function saveService(v){
+  v = (v || "").trim().replace(/\/+$/, "");
+  state.service = v && v !== SERVICE_DEFAULT ? v : "";
+  store.set("yf.service", state.service);
+}
+$("#proxyInput").addEventListener("change", e => { saveService(e.target.value); $("#proxyMsg").textContent = "Saved."; });
 $("#proxyTest").onclick = async () => {
-  state.proxy = $("#proxyInput").value.trim(); store.set("tl.proxy", state.proxy);
+  saveService($("#proxyInput").value);
   const m = $("#proxyMsg"); m.className = "msg";
-  if (!state.proxy){ m.textContent = "Paste your relay's address first."; return; }
+  if (!serviceBase()){ m.textContent = "Add the service address first (it starts with https://)."; return; }
   m.textContent = "Testing…";
   try{
-    const t = await fetchViaRelay("https://feeds.bbci.co.uk/news/rss.xml", 12000);
-    if (!looksLikeFeed(t)) throw new Error("It answered, but not with a feed. Check the address and key");
-    m.textContent = "Working. Refreshing your feeds through it…";
-    await refreshAll(); m.textContent = "Working. Your feeds now load through your relay.";
+    const t = await feedViaService("https://feeds.bbci.co.uk/news/rss.xml", 14000);
+    if (!looksLikeFeed(t)) throw new Error("It answered, but not with a feed. Check the address");
+    m.textContent = "Working. Refreshing your feeds…";
+    state.feeds.forEach(f => { if (f.error) f.lastFetched = 0; });
+    await refreshAll(); m.textContent = "Working.";
   }catch(e){ m.className = "msg err"; m.textContent = (e.name === "AbortError" ? "No answer. Check the address" : e.message.replace(/\.$/, "")) + "."; }
 };
 // Try each service once from this device and show what works
@@ -2331,12 +2298,8 @@ $("#connCheck").onclick = async () => {
   const ul = $("#connResults"); ul.hidden = false; ul.textContent = "";
   const feed = "https://feeds.bbci.co.uk/news/rss.xml";
   const checks = [
-    ["Your relay", () => relayPrefix() ? fetchViaRelay(feed).then(t => { if (!looksLikeFeed(t)) throw 0; }) : Promise.reject(new Error("not set up"))],
     ["Direct from this device", () => fetchWithTimeout(feed, 8000).then(r => r.text()).then(t => { if (!looksLikeFeed(t)) throw 0; })],
-    ["Feed service (rss2json)", () => fetchViaRss2json(feed, {id: "probe"})],
-    ["Feedly", () => fetchWithTimeout("https://cloud.feedly.com/v3/streams/contents?count=1&streamId=" + encodeURIComponent("feed/" + feed), 9000).then(r => r.json()).then(j => { if (!j.items) throw 0; })],
-    ["Reader service (Jina)", () => fetchWithTimeout("https://r.jina.ai/https://example.com", 12000).then(r => { if (!r.ok) throw new Error(r.status); })],
-    ...PROXIES.map((p, i) => ["Free relay " + (i + 1) + " (" + new URL(p.build("x")).hostname + ")", () => fetchWithTimeout(p.build(feed), 9000).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }).then(t => { if (p.json) t = JSON.parse(t).contents || ""; if (!looksLikeFeed(t)) throw 0; })]),
+    ["YourFeed service", () => serviceBase() ? feedViaService(feed).then(t => { if (!looksLikeFeed(t)) throw 0; }) : Promise.reject(new Error("not set up"))],
     ["Reddit search", () => fetchWithTimeout("https://www.reddit.com/subreddits/search.json?limit=1&q=football", 9000).then(r => r.json()).then(j => { if (!j.data) throw 0; })],
     ["Apple podcasts", () => fetchWithTimeout("https://itunes.apple.com/search?media=podcast&limit=1&term=news", 9000).then(r => r.json())],
     ["Bluesky", () => fetchWithTimeout("https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?limit=1&q=news", 9000).then(r => r.json())],
@@ -2430,72 +2393,46 @@ function searchDirectory(q){
   return DIRECTORY.filter(([t, , tags]) => { const hay = (t + " " + tags).toLowerCase(); return words.every(w => hay.includes(w)); })
     .map(([title, url]) => ({title, url, site: new URL(url).hostname.replace(/^www\./, "")}));
 }
-// Get JSON or text from a URL by whichever route works: direct, the relays, or the reader service
-async function fetchAny(url, ms = 10000){
-  return Promise.any([
-    fetchWithTimeout(url, ms).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); }),
-    fetchText(url, ms),
-    fetchWithTimeout("https://r.jina.ai/" + url, ms + 4000).then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-  ]).catch(() => { throw new Error("Couldn't reach that address"); });
-}
-const jsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); return JSON.parse(t.slice(a, b + 1)); };
+// Website search: the built-in directory, plus "looks like a site address" → find its feed.
+// (No outside search service sees what people type.)
 async function searchWeb(q){
-  const t = await fetchAny("https://cloud.feedly.com/v3/search/feeds?count=12&query=" + encodeURIComponent(q));
-  const j = jsonIn(t);
-  return (j.results || []).filter(r => /^feed\/https?:/.test(r.feedId || "") && !/youtube\.com\/feeds/.test(r.feedId)).map(r => ({
-    title: htmlToText(r.title || ""), url: r.feedId.slice(5), website: safeUrl(r.website || ""), site: (r.website || r.feedId.slice(5)).replace(/^https?:\/\/(www\.)?/, "").replace(/\/.*$/, ""),
-    desc: htmlToText(r.description || ""), followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")
-  }));
+  const s = q.trim();
+  if (!/^[\w-]+(\.[\w-]+)+(\/\S*)?$/i.test(s) && !/^https?:\/\//i.test(s)) return [];
+  const u = new URL(/^https?:\/\//i.test(s) ? s : "https://" + s);
+  const f = await discoverFeed(u);
+  if (!f) return [];
+  return [{title: u.hostname.replace(/^www\./, ""), url: f.url, website: u.origin, site: u.hostname.replace(/^www\./, ""), desc: "Feed found on this site", exact: true}];
 }
+// YouTube channel search: read YouTube's results page in the app, or ask the YourFeed service
 async function searchYouTube(q){
   const seen = new Set(), out = [];
   const add = r => { const k = (r.id || r.url).toLowerCase(); if (seen.has(k)) return; seen.add(k); out.push(r); };
   const page = ytPage("https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q));   // channels only
-  const parseHtml = t => {
+  const fromPage = IS_APP ? pageDirect(page, 12000).then(t => {
     for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g)){
       const pic = (t.slice(m.index, m.index + 3000).match(/"thumbnails":\[\{"url":"([^"]+)"/) || [])[1];
       add({title: m[2], url: m[1], id: m[1], site: "YouTube channel", yt: true, icon: pic ? safeUrl(pic.replace(/^\/\//, "https://")) : null});
     }
-    // Rendered channel results: <a href="/@handle" …> with the channel name in a following title element
-    for (const m of t.matchAll(/href="(?:https:\/\/www\.youtube\.com)?\/(@[\w.-]+)"[^>]*>[\s\S]{0,600}?(?:id="(?:channel-title|text)"[^>]*>|title=")\s*([^<"]{2,80})/g)){
-      const near = t.slice(m.index, m.index + m[0].length).match(/src="(https:\/\/yt3\.[^"]+)"/);
-      add({title: htmlToText(m[2]).trim(), url: m[1], site: "youtube.com/" + m[1], yt: true, icon: near ? safeUrl(near[1].replace(/&amp;/g, "&")) : null});
-    }
-  };
-  const fromHtml = jinaHtml(page, 16000).then(parseHtml);
-  const fromYT = fetchAny(page, 12000).then(t => {
-    for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g))
-      add({title: m[2], url: m[1], id: m[1], site: "YouTube channel", yt: true});
-    // Reader-service text: prefer /channel/UC… links (ready to add), then @handles
-    for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/channel\/(UC[\w-]{22})\)/g))
-      add({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], id: m[2], site: "YouTube channel", yt: true});
-    for (const m of t.matchAll(/\[([^\]\n]{2,80})\]\(https:\/\/www\.youtube\.com\/(@[\w.-]+)\)/g))
-      add({title: m[1].replace(/[*_#]/g, "").trim(), url: m[2], site: "youtube.com/" + m[2], yt: true});
-  });
-  const feedlyYT = query => fetchAny("https://cloud.feedly.com/v3/search/feeds?count=20&query=" + encodeURIComponent(query), 10000).then(t => {
-    for (const r of parseJsonIn(t).results || []){
-      const m = (r.feedId || "").match(/youtube\.com\/feeds\/videos\.xml\?channel_id=(UC[\w-]{22})/);
-      if (m) add({title: htmlToText((r.title || "").replace(/ - YouTube$/, "")), url: m[1], id: m[1], site: "YouTube channel", yt: true,
-        followers: r.subscribers || 0, icon: safeUrl(r.iconUrl || r.visualUrl || "")});
-    }
-  });
-  const fromFeedly = Promise.any([feedlyYT(q + " youtube"), feedlyYT(q)]);
+  }) : Promise.reject(new Error("app only"));
+  const fromService = (IS_APP ? fromPage.then(() => { if (out.length) throw new Error("not needed"); }) : Promise.resolve())
+    .then(() => viaService("/youtube/search", {q}, 15000)).then(t => {
+      for (const c of JSON.parse(t).channels || []) if (/^UC[\w-]{22}$/.test(c.id || ""))
+        add({title: c.title || c.id, url: c.id, id: c.id, site: "YouTube channel", yt: true, icon: safeUrl(c.avatar || "") || null});
+    });
   // Exact handle: "the retro future" → youtube.com/@theretrofuture, if that channel exists
   const handle = q.toLowerCase().replace(/^@/, "").replace(/[^a-z0-9._-]/g, "");
   let exact = null;
   const fromHandle = handle.length >= 3 ? findChannel("https://www.youtube.com/@" + handle).then(async ch => {
     if (!ch) return;
-    const id = ch.id;
-    let title = "";
-    const feedUrl = "https://www.youtube.com/feeds/videos.xml?channel_id=" + id;
-    try{ title = (await Promise.race([loadFeed(feedUrl, {id: "probe"}), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 6000))])).title; }catch{}
-    exact = {title: title || "@" + handle, url: id, id, site: "youtube.com/@" + handle, yt: true, exact: true, icon: ch.avatar};
+    let title = ch.title || "";
+    if (!title){
+      try{ title = (await Promise.race([loadFeed("https://www.youtube.com/feeds/videos.xml?channel_id=" + ch.id, {id: "probe"}), new Promise((_, rej) => setTimeout(() => rej(new Error("slow")), 6000))])).title; }catch{}
+    }
+    exact = {title: title || "@" + handle, url: ch.id, id: ch.id, site: "youtube.com/@" + handle, yt: true, exact: true, icon: ch.avatar};
   }) : Promise.resolve();
-  const res = await Promise.allSettled([fromYT, fromHtml, fromFeedly, fromHandle]);
+  const res = await Promise.allSettled([fromPage, fromService, fromHandle]);
   if (!out.length && !exact && res.every(r => r.status === "rejected")) throw new Error("unreachable");
-  // Exact handle match first, then results that are ready to add (with a channel ID)
-  const rest = out.filter(r => !exact || (r.id !== exact.id && r.url.toLowerCase() !== "@" + handle))
-    .sort((a, b) => (b.id ? 1 : 0) - (a.id ? 1 : 0));
+  const rest = out.filter(r => !exact || r.id !== exact.id);
   return (exact ? [exact, ...rest] : rest).slice(0, 20);
 }
 /* ---------- search across sources ---------- */
@@ -2508,7 +2445,6 @@ const SOURCES = [
   {key: "social",   label: "Bluesky & Mastodon"}
 ];
 const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "Google News", bluesky: "Bluesky", mastodon: "Mastodon"};
-const getJSON = async (url, ms = 10000) => parseJsonIn(await fetchAny(url, ms));
 const decodeAmp = u => (u || "").replace(/&amp;/g, "&");
 
 async function searchWebAll(q){
@@ -2543,14 +2479,7 @@ async function searchReddit(q){
   return ex ? [ex, ...rest] : rest;
 }
 async function searchRedditList(q){
-  try{ const r = await searchRedditDirect(q); if (r.length) return r; }catch{}
-  // Fallback: subreddit feeds that Feedly knows about
-  const ask = query => fetchAny("https://cloud.feedly.com/v3/search/feeds?count=40&query=" + encodeURIComponent(query), 10000).then(t => parseJsonIn(t).results || []).catch(() => []);
-  const all = (await Promise.all([ask(q + " reddit"), ask("reddit " + q), ask("r/" + q.replace(/\s+/g, ""))])).flat();
-  return all.map(r => (r.feedId || "").replace(/^feed\//, "")).map(u => (u.match(/reddit\.com\/r\/([\w]+)/i) || [])[1]).filter(Boolean)
-    .filter((n, i, a) => a.indexOf(n) === i)
-    .map(n => ({kind: "reddit", title: "r/" + n, url: `https://www.reddit.com/r/${n}/.rss`, website: `https://www.reddit.com/r/${n}/`, site: "Subreddit",
-      exact: n.toLowerCase() === q.replace(/\s+/g, "").toLowerCase()}));
+  try{ return await searchRedditDirect(q); }catch{ return []; }
 }
 async function searchRedditDirect(q){
   const out = [];
@@ -2867,10 +2796,10 @@ document.addEventListener("keydown", e => {
   if (dlg.open || $("#articlePage").open || !$("#filterBox").hidden || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k !== "j" && k !== "k") return;
-  const cards = [...document.querySelectorAll(".card")]; if (!cards.length) return;
-  let i = cards.indexOf(document.activeElement);
+  const cards = [...document.querySelectorAll("#list .card")]; if (!cards.length) return;
+  let i = cards.indexOf(document.activeElement && document.activeElement.closest(".card"));
   i = i < 0 ? 0 : Math.min(cards.length - 1, Math.max(0, i + (k === "j" ? 1 : -1)));
-  cards[i].focus(); cards[i].scrollIntoView({block: "nearest"});
+  const l = cards[i].querySelector(".cardlink"); if (l) l.focus(); cards[i].scrollIntoView({block: "nearest"});
 });
 let wasWide = isWide();
 matchMedia("(min-width:900px)").addEventListener("change", () => {
@@ -2947,10 +2876,10 @@ function stopPod(){
 }
 function setMediaSession(it){
   const f = feedById(it.feedId) || {};
-  nms("setMetadata", {title: it.title || "", artist: f.title || "", album: "tick/rss", artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
+  nms("setMetadata", {title: it.title || "", artist: f.title || "", album: "YourFeed", artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
   if (!("mediaSession" in navigator)) return;
   try{
-    navigator.mediaSession.metadata = new MediaMetadata({title: it.title, artist: f.title || "", album: "tick/rss",
+    navigator.mediaSession.metadata = new MediaMetadata({title: it.title, artist: f.title || "", album: "YourFeed",
       artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
     navigator.mediaSession.setActionHandler("play", () => pod.audio.play());
     navigator.mediaSession.setActionHandler("pause", () => pod.audio.pause());
@@ -3086,7 +3015,7 @@ $("#miniClose").onclick = stopPod;
 $("#miniInfo").onclick = () => { if (pod.item) openArticle(pod.item); };
 $("#miniBack").innerHTML = ICONS.back; $("#miniFwd").innerHTML = ICONS.fwd; $("#miniClose").innerHTML = ICONS.close;
 
-/* ---------- reading a story in tick/rss ---------- */
+/* ---------- reading a story in YourFeed ---------- */
 function articleFragment(html, base){
   // Make image and link addresses absolute, bring in lazy-loaded images, then keep only safe article markup
   const d = new DOMParser().parseFromString(`<!doctype html><html><head><base href="${(base || "").replace(/"/g, "")}"></head><body>${html}</body></html>`, "text/html");
@@ -3141,23 +3070,194 @@ async function openArticle(it){
 $("#artBack").onclick = () => $("#articlePage").close();
 $("#articlePage").addEventListener("close", () => { $("#artBody").textContent = ""; });   // the episode keeps playing in the mini player
 
-/* ---------- set-up link: …/#relay=<address> saves your relay ---------- */
+/* ---------- set-up link: …/#service=<address> saves the YourFeed service address ---------- */
 (() => {
-  const m = location.hash.match(/^#relay=(.+)$/);
+  const m = location.hash.match(/^#service=(.+)$/);
   if (!m) return;
   let addr = ""; try{ addr = decodeURIComponent(m[1]); }catch{}
   history.replaceState(null, "", location.pathname + location.search);
   if (!/^https:\/\//.test(addr)) return;
-  state.proxy = addr; store.set("tl.proxy", addr); state.forceRefresh = true;
-  const s = $("#status");
-  setTimeout(async () => {
-    try{
-      const t = await fetchViaRelay("https://feeds.bbci.co.uk/news/rss.xml", 12000);
-      if (!looksLikeFeed(t)) throw new Error("bad");
-      s.textContent = "Your relay is set up and working.";
-    }catch{ s.textContent = ""; s.append(el("b", null, "Relay saved, but it didn't answer. ")); s.append(document.createTextNode("Check it under Menu → Settings → Your own relay.")); }
-  }, 0);
+  saveService(addr); state.forceRefresh = true;
 })();
+// The old personal relay (with its key) is retired: forget it on this device
+try{ localStorage.removeItem("tl.proxy"); localStorage.removeItem("tl.rsskey"); }catch{}
+
+/* ---------- import / export (OPML) ---------- */
+const xmlEsc = t => String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+function exportOpml(){
+  const line = f => `      <outline type="rss" text="${xmlEsc(f.title)}" title="${xmlEsc(f.title)}" xmlUrl="${xmlEsc(f.url)}"/>`;
+  const groups = {};
+  state.feeds.forEach(f => { const g = folderOf(f); (groups[g] = groups[g] || []).push(f); });
+  const body = Object.keys(groups).sort((a, b) => a === UNSORTED ? 1 : b === UNSORTED ? -1 : a.localeCompare(b)).map(g => {
+    const rows = groups[g].sort(byName).map(line);
+    if (g === UNSORTED) return rows.map(r => r.slice(2)).join("\n");
+    return `    <outline text="${xmlEsc(g)}" title="${xmlEsc(g)}">\n${rows.join("\n")}\n    </outline>`;
+  }).join("\n");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head>\n    <title>YourFeed sources</title>\n    <dateCreated>${new Date().toUTCString()}</dateCreated>\n  </head>\n  <body>\n${body}\n  </body>\n</opml>\n`;
+}
+async function deliverFile(name, text, mime){
+  const FS = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
+  const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+  if (FS && S){
+    const w = await FS.writeFile({path: name, data: text, directory: "CACHE", encoding: "utf8"});
+    await S.share({title: name, files: [w.uri], dialogTitle: "Save or send your sources"});
+    return "shared";
+  }
+  const url = URL.createObjectURL(new Blob([text], {type: mime}));
+  const a = el("a"); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  return "downloaded";
+}
+function parseSourcesFile(text){
+  const out = [];
+  if (/<opml[\s>]/i.test(text)){
+    const d = new DOMParser().parseFromString(text, "text/xml");
+    d.querySelectorAll("outline[xmlUrl], outline[xmlurl]").forEach(o => {
+      const url = o.getAttribute("xmlUrl") || o.getAttribute("xmlurl");
+      const parent = o.parentElement && o.parentElement.tagName.toLowerCase() === "outline" && !o.parentElement.getAttribute("xmlUrl") ? o.parentElement : null;
+      out.push({url, title: o.getAttribute("title") || o.getAttribute("text") || "", folder: parent ? (parent.getAttribute("title") || parent.getAttribute("text") || "") : ""});
+    });
+  } else {
+    text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#")).forEach(l => out.push({url: l, title: "", folder: "", raw: true}));
+  }
+  return out;
+}
+async function importSources(text){
+  const m = $("#ioMsg"); m.className = "msg";
+  const list = parseSourcesFile(text);
+  if (!list.length){ m.className = "msg err"; m.textContent = "No sources found in that file."; return; }
+  let added = 0, have = 0, bad = 0;
+  m.textContent = `Adding ${list.length} sources…`;
+  for (const s of list){
+    let url = safeUrl(s.url) || "";
+    if (s.raw){ try{ url = (await resolveInput(s.url)).url; }catch{ bad++; continue; } }
+    if (!/^https?:\/\//.test(url)){ bad++; continue; }
+    if (state.feeds.some(f => f.url === url)){ have++; continue; }
+    const folder = s.folder ? makeFolder(s.folder) : "";
+    state.feeds.push({id: uid(), url, title: s.title || new URL(url).hostname.replace(/^www\./, ""), color: nextColor(), folder: folder && folder !== UNSORTED ? folder : "", lastFetched: 0});
+    added++;
+    if (s.raw) m.textContent = `Adding sources… ${added} added`;
+  }
+  save(); renderFeedList(); renderChips(); renderStatus();
+  m.textContent = [`Added ${added} source${added === 1 ? "" : "s"}.`, have ? `${have} you already follow.` : "", bad ? `${bad} couldn't be read.` : ""].filter(Boolean).join(" ") + (added ? " Loading their stories…" : "");
+  if (added){ await refreshAll(); m.textContent = m.textContent.replace(" Loading their stories…", " Done."); }
+}
+$("#exportBtn").onclick = async () => {
+  const m = $("#ioMsg"); m.className = "msg";
+  if (!state.feeds.length){ m.textContent = "You don't follow any sources yet."; return; }
+  try{ const how = await deliverFile("yourfeed-sources.opml", exportOpml(), "text/x-opml"); m.textContent = `${state.feeds.length} sources ${how === "shared" ? "ready to save or send" : "saved to your downloads"}.`; }
+  catch(e){ if (!/cancel/i.test(String(e && e.message))){ m.className = "msg err"; m.textContent = "Couldn't export: " + (e && e.message || "unknown error"); } }
+};
+$("#importBtn").onclick = () => $("#importFile").click();
+$("#importFile").addEventListener("change", async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  if (f.size > 2 * 1024 * 1024){ $("#ioMsg").textContent = "That file is too big for a sources list."; return; }
+  importSources(await f.text());
+});
+
+/* ---------- onboarding: interests → folders, then a quick spotlight tour ---------- */
+const INTERESTS = [
+  ["News", "news headlines bbc guardian times reuters politics world uk"],
+  ["Sport", "sport sports espn sky bbc sport cricket rugby tennis f1 formula golf nfl nba"],
+  ["Football", "football soccer premier league arsenal gunners chelsea liverpool united city spurs tottenham fc"],
+  ["Tech", "tech technology verge wired gadgets android apple google software ai computing"],
+  ["Gaming", "gaming games game nintendo playstation xbox ign eurogamer retro steam switch"],
+  ["Science", "science space nasa physics veritasium nature research"],
+  ["Business", "business finance money markets economy investing ft bloomberg"],
+  ["Music", "music album band songs pitchfork guitar"],
+  ["Film & TV", "film movies tv television cinema netflix series trailer"],
+  ["Food", "food recipes cooking kitchen chef baking"],
+  ["Cars", "cars car motoring auto ev top gear"],
+  ["Comedy", "comedy funny humour humor sketch podcast comedians"]
+];
+// Suggest a folder for a new source from its name and address
+function suggestFolder(feed){
+  const hay = ((feed.title || "") + " " + (feed.url || "")).toLowerCase();
+  let best = null, score = 0;
+  state.folders.forEach(name => {
+    const words = (INTERESTS.find(([n]) => n === name) || [name, name])[1].split(/\s+/).concat(name.toLowerCase());
+    const sc = words.filter(w => w.length > 2 && hay.includes(w)).length;
+    if (sc > score){ score = sc; best = name; }
+  });
+  return best;
+}
+function startOnboarding(){
+  const dlgO = el("dialog", "fullpage onboard"); dlgO.setAttribute("aria-labelledby", "obTitle");
+  const inner = el("div", "ob-inner");
+  const h = el("h2", null, "What are you into?"); h.id = "obTitle";
+  inner.append(h, el("p", "hint", "Pick a few. We'll make a folder for each, and suggest the right one when you add something. You can change these any time."));
+  const chips = el("div", "fb-chips ob-chips");
+  const picked = new Set(state.folders);
+  INTERESTS.forEach(([name]) => {
+    const b = el("button", "chip", name); b.type = "button"; b.setAttribute("aria-pressed", String(picked.has(name)));
+    b.onclick = () => { picked.has(name) ? picked.delete(name) : picked.add(name); b.setAttribute("aria-pressed", String(picked.has(name))); next.textContent = picked.size ? `Continue with ${picked.size}` : "Skip"; };
+    chips.append(b);
+  });
+  const next = el("button", "btn primary ob-next", picked.size ? `Continue with ${picked.size}` : "Skip"); next.type = "button";
+  next.onclick = () => {
+    picked.forEach(n => makeFolder(n));
+    store.set("yf.onboarded", true);
+    dlgO.close(); dlgO.remove();
+    renderFeedList();
+    startTour();
+  };
+  inner.append(chips, next); dlgO.append(inner);
+  document.body.append(dlgO); dlgO.showModal();
+  const first = chips.querySelector("button"); if (first) first.focus();
+}
+const TOUR = [
+  ["#manage", "Add your sources here", "Search for websites, YouTube channels, subreddits, podcasts and more, or paste a link."],
+  ["#chips", "Switch what you're seeing", "Everything in one feed, or just articles, videos, Reddit or podcasts."],
+  ["#filterBtn", "Filter your feed", "Show one folder or source, unread only, or just today."],
+  ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now."]
+];
+function startTour(step = 0){
+  document.querySelectorAll(".spot,.spot-tip").forEach(n => n.remove());
+  if (step >= TOUR.length){ openMenu("feeds"); setTimeout(() => $("#addInput").focus(), 250); return; }
+  const [sel, title, text] = TOUR[step];
+  const target = $(sel);
+  if (!target || !target.getBoundingClientRect().width){ startTour(step + 1); return; }
+  target.scrollIntoView({block: "nearest"});
+  const r = target.getBoundingClientRect(), pad = 6;
+  const spot = el("div", "spot"); spot.setAttribute("aria-hidden", "true");
+  Object.assign(spot.style, {left: (r.left - pad) + "px", top: (r.top - pad) + "px", width: (r.width + pad * 2) + "px", height: (r.height + pad * 2) + "px"});
+  const tip = el("div", "spot-tip"); tip.setAttribute("role", "dialog"); tip.setAttribute("aria-label", title);
+  tip.append(el("b", null, title), el("p", null, text));
+  const row = el("div", "iorow");
+  const skip = el("button", "btn", "Skip tour"); skip.type = "button"; skip.onclick = () => startTour(TOUR.length);
+  const nx = el("button", "btn primary", step === TOUR.length - 1 ? "Add my first source" : "Next"); nx.type = "button"; nx.onclick = () => startTour(step + 1);
+  row.append(skip, nx); tip.append(el("span", "hint", `${step + 1} of ${TOUR.length}`), row);
+  document.body.append(spot, tip);
+  const below = r.bottom + 14, w = Math.min(320, innerWidth - 24);
+  tip.style.width = w + "px";
+  tip.style.left = Math.max(12, Math.min(innerWidth - w - 12, r.left + r.width / 2 - w / 2)) + "px";
+  tip.style.top = (below + 180 < innerHeight ? below : Math.max(12, r.top - 194)) + "px";
+  nx.focus();
+}
+
+/* ---------- Android back button: close what's open, then go back to the main feed ---------- */
+function goBack(){
+  if (document.querySelector(".spot-tip")){ document.querySelectorAll(".spot,.spot-tip").forEach(n => n.remove()); return true; }
+  const ob = document.querySelector("dialog.onboard[open]"); if (ob){ ob.close(); ob.remove(); return true; }
+  if (!$("#filterBox").hidden){ closeFilterBox(true); return true; }
+  if ($("#articlePage").open){ $("#articlePage").close(); return true; }
+  if ($("#searchPage").open){ $("#searchPage").close(); return true; }
+  if (dlg.open){
+    if (editingId){ editingId = null; renderFeedList(); return true; }
+    closeMenu(); return true;
+  }
+  if (state.activeId){ closeViewer(); return true; }
+  if (view.source !== "all" || view.type !== "all"){ view.source = "all"; view.type = "all"; saveView(); state.shown = PAGE; renderChips(); renderList(); scrollFeedTop(); return true; }
+  return false;
+}
+if (IS_APP){
+  const AppP = window.Capacitor.Plugins && window.Capacitor.Plugins.App;
+  if (AppP && AppP.addListener){
+    // At the main feed, Back sends the app to the background (a podcast keeps playing) rather than closing it
+    AppP.addListener("backButton", () => { if (!goBack() && AppP.minimizeApp) AppP.minimizeApp(); });
+  }
+}
 
 /* ---------- start ---------- */
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();

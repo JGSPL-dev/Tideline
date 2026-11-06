@@ -1,0 +1,8 @@
+{
+  "name": "yourfeed-media-session",
+  "version": "4.0.0-yourfeed.1",
+  "description": "Fork of @jofr/capacitor-media-session 4.0.0 (MIT, commit c6042078) for YourFeed: back/forward as Android 13+ system media controls, service not exported.",
+  "license": "MIT",
+  "main": "index.js",
+  "capacitor": { "android": { "src": "android" } }
+}

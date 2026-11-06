@@ -1,62 +1,40 @@
-# tick/rss (TickRSS, formerly Tideline)
+# YourFeed (by Apps For Us), formerly tick/rss and Tideline
 
-Brand: wordmark "tick" + orange tick-shaped slash + "rss", all the same size (Bricolage Grotesque 800); two colours only, ink and orange (`--brand`: #d9480f light, #ff8a4c dark). Icon: Feed Check (two lines and a tick on an orange rounded square). Concepts live on the "TickRSS logo concepts" design canvas.
+"Everything you follow, in one feed." One feed for websites, YouTube, Reddit, podcasts, Google News topics, Bluesky and Mastodon. No account, no ads, no tracking; data stays on the device.
 
-Single-file RSS and YouTube feed reader. Everything lives in `index.html` and is served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ (the path is case-sensitive). Every push to `main` goes live.
+Brand: wordmark "Your" + "Feed" in orange (`--brand`: #d9480f light, #ff8a4c dark), Bricolage Grotesque 800. Icon: Feed Check (two lines and a tick on an orange rounded square).
+
+Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ (planned: yourfeed.appsforus.co.uk; add a `CNAME` file only once the DNS record exists, or the site will break). The same file is the Android app (`app/`, Capacitor 7, app ID `uk.co.appsforus.yourfeed`).
+
+## Privacy and security rules (agreed Nov 2026)
+- Only two kinds of network route: the publisher itself (direct from the device) and our own **YourFeed service** (`service/worker.js`). Never add third-party relays, readers or feed services (removed: allorigins, codetabs, whateverorigin, corsproxy.io, cors.lol, rss2json, Feedly, Jina).
+- The service never relays web pages: feeds (validated), allowlisted JSON APIs, or extracted facts only. Sandbox CSP + nosniff on every reply, 5 MB cap, public-address check, CORS limited to our origins, per-IP limits. Its address: `SERVICE_DEFAULT` in index.html (empty until deployed) or Settings → YourFeed service (`yf.service`).
+- The app fetches directly (`IS_APP`, CapacitorHttp) and only falls back to the service. The website needs the service for most feeds.
+- No third-party loads at startup: fonts self-hosted in `fonts/`, no CDN scripts.
+- Android release builds are signed with the private key in Actions secrets `ANDROID_KEYSTORE_B64` / `ANDROID_KEYSTORE_PASSWORD` (alias `yourfeed`). Never commit a keystore. HTTPS only (no cleartext), WebView debugging off.
+- Saved posts, folders and sources are local only; export/import via OPML (Settings → Your sources).
 
 ## How it works
-- Feeds are fetched in the browser. Three routes run at once and their results are combined: Feedly's public stream API (`fetchViaFeedly`, up to 100 items, no key), the rss2json service (10 items without a key, up to 100 with the user's key) and a set of free CORS relays (often failing).
-- Finding a feed from a site or YouTube channel also runs several routes at once, including Feedly's feed search (`feedlyLookup`). Search results add their feed address directly (`addFeed(url, true)`).
-- Publisher pills at the top scroll sideways and show how many unopened stories arrived since the last update (`newCount`, `state.baseline`: set to the previous update time on load and to now on a manual refresh). Pills with 0 are greyed out. Tapping a feed in the menu filters to it; "All feeds" is the first row.
-- Search (menu and the full "Add to your feed" page) covers Websites (built-in list + Feedly), YouTube, Reddit (subreddit search JSON), Podcasts (Apple iTunes Search API), News topics (Google News RSS search) and Bluesky/Mastodon (public search APIs). `SEARCHERS`, `startSearch`, `mixed` (top 10, exact matches first then round-robin), `renderFullResults`.
-- Stories are kept for 7 days per feed (`KEEP_DAYS`, `mergeHistory`), stored in the browser's localStorage.
-- Articles always open on the website (the in-app full-story reader was removed: feeds often only carry a blurb).
-- Podcasts: tapping an episode expands controls under its card (back 15 s, play/pause, forward 30 s, speed, scrubber, Read description) and starts playback. One shared player (`pod`) keeps playing across pages, with a mini player fixed at the bottom, lock-screen controls (Media Session) and resume positions (`tl.podPos`). Show notes live in IndexedDB (`artDB`) and open on the description page (`openArticle`).
-- Tapping a story opens it on the website. The in-app viewer and Reader view are switched off (`READER_ENABLED = false`); their code is kept for later.
-- The hamburger button (top left) opens a left-hand drawer with two tabs: Your feeds (search/add, edit, remove) and Settings (look options, "Keep links in the browser" (Android intent trick), the rss2json key and a custom proxy).
-- Browser storage keys still use the old `tl.` prefix so existing feeds and settings carry over; keep them.
-
-## Fetching
-- Order: the user's own relay (Settings → Your own relay; Cloudflare Worker in `relay/worker.js`, key kept out of the repo) → direct → free relays / rss2json / Feedly / Jina. Settings has a Connection check that tests each route from the device.
-- Each feed has its own schedule (`everyMin`, `nextCheck`, `isDue`): the feed's <ttl> or sy:updatePeriod/Frequency when given, else 15 min (podcasts 60), clamped 10 min–6 h. Failed feeds back off 5→60 min. Opening the app, the refresh button and the 1-minute timer only fetch feeds that are due.
-- Each feed always keeps its 20 newest stories (`MIN_PER_FEED`) regardless of age, so weekly podcasts and quiet channels show up.
+- Fetch layer: `feedDirect`, `feedViaService`, `fetchFeedText`, `getJSON` (direct then service `/json`), `pageDirect` (app only), `discoverFeed`, `findChannel`. `loadOneFeed` records each route's answer in `feed.routes` (shown in the source's edit form with Check now). Reddit: in the app, one `/new/.rss` request from the phone, spaced 1.1 s apart, browser user agent.
+- Each feed has its own schedule (`everyMin`, `nextCheck`, `isDue`): feed ttl / sy:update hints, else 15 min (podcasts 60), clamped 10 min–6 h; failures back off 5→60 min.
+- History: 7 days per feed, at least the 20 newest (`KEEP_DAYS`, `MIN_PER_FEED`, max age 180 days).
+- Top bar: type tabs (Everything, Articles, Videos, Reddit, Podcasts, Social, Saved) with new counts; status line with source health; Filter box (Unread, Sources, From, Sort). Picking a source or folder resets to Everything.
+- Menu: Needs attention, Everything, Organise by Category (folders) or Platform, channels A–Z. Settings: look, stacking, Your sources (import/export), YourFeed service, connection check, version.
+- Cards: one stretched link per card (`.cardlink`), Save and Share buttons above it. Saved posts in `yf.saved`.
+- Onboarding: welcome screen when there are no sources, interest picker → folders (`INTERESTS`), spotlight tour (`TOUR`). `suggestFolder` proposes a folder when adding.
+- Podcasts: shared player `pod`, mini player, Media Session; in the app a forked media-session plugin (`app/plugins/media-session`) runs a foreground service, with back/forward as Android 13+ system media controls. Stall guard `checkPod`.
+- Android back button (`goBack`): closes the open layer, then returns to Everything, then minimises the app.
+- Storage keys keep the old `tl.` prefix (new ones use `yf.`); keep them.
 
 ## When checking or adding a publisher
-The user wants every publisher checked for the same issues that came up with BBC, the Guardian and Time Extension:
-1. **Image sharpness.** Feeds usually send small thumbnails, which look blurry in Magazine layout. Look at the image addresses in the publisher's feed and, if there's a bigger version, add a rule to `IMAGE_RULES` (or a special case in `imageCandidates` when the address is signed, as with the Guardian). Every rewrite must keep the fallback to the feed's own image.
-2. **Feed discovery.** Make sure pasting the site address, the feed link and (for YouTube) @handle, channel link or a video link all add the feed.
-3. **Story count.** Check how many items the feed holds versus what Tideline shows.
-4. **Links opening apps.** Note if the site's own pages push visitors to an app.
+1. Image sharpness: add `IMAGE_RULES` for bigger images, always keeping the feed's own image as a fallback.
+2. Feed discovery: site address, feed link and (YouTube) @handle, channel and video links must all work.
+3. Story count vs what the feed holds.
+4. Links that push visitors to an app.
 
 ## Testing
-- The cloud sandbox can't reach outside sites, so test with Playwright against mocked responses (route the relay, rss2json and image hosts).
-- After pushing, the live site can be checked in the Claude desktop app's built-in browser when that is available.
+- The sandbox can't reach outside sites: test with Playwright against mocked routes (direct publisher URLs with CORS headers, or a mocked service). `service/worker.js` can be unit-tested in Node with a stubbed `fetch`.
+- Android builds run in GitHub Actions (`.github/workflows/android.yml`) and publish the `test-build` release (`yourfeed.apk`). Settings shows the build number.
 
-## Organising and filtering (Nov 2026)
-- Top bar: story-type tabs (Everything, Articles, Videos, Reddit, Podcasts, Social) with new counts; `typeOf(item)`.
-- Filter box (`#filterBox`, `view` in `tl.view`): Unread only, Sources (folder/platform/one feed), From (Today/Week/Any), Sort (Newest/Source).
-- Menu: Needs attention (failing or quiet sources), Everything, Organise by Category (folders, `f.folder`, `tl.folders`) or Platform (`platformOf`); channels A–Z in each group.
-- Settings → "Stack stories from the same source" (`design.stack`) groups the feed into one card per source.
-- Each check records what every route said in `feed.routes` (relay, direct/free relays, rss2json, Feedly); the edit form shows it with a "Check now" button (`refreshOne`).
-- A route only counts if it returns a real feed (`looksLikeFeed`); bot-check pages from the relay no longer stop the other routes.
-- "Nothing new" warnings scale with each source's usual gap between stories (3× the median gap, at least 3 days, 30 for podcasts).
-- Reddit: besides the RSS routes, `fetchViaRedditJson` reads `/r/X/new.json` (or `/user/X/submitted.json`) straight from the device, because Reddit often refuses cloud servers. Its links match the RSS permalinks, so the lists merge without duplicates.
-
-## Android app (test builds)
-- `app/` wraps `index.html` with Capacitor 7. `CapacitorHttp` sends every fetch natively from the phone, so no cross-site limits and sites see a normal phone connection. `IS_APP` in the script turns on direct-first fetching.
-- `.github/workflows/android.yml` builds a debug APK on every push to main and publishes it as the `test-build` release: https://github.com/JGSPL-dev/Tideline/releases/download/test-build/tickrss.apk
-- `app/debug.keystore` is a throwaway test signing key (password "android") so each test build installs over the last. Make a real, private key before any Play Store release.
-- Podcasts in the app: `@jofr/capacitor-media-session` (built for Capacitor 6, installed with --legacy-peer-deps) gives a native media notification and a foreground service so Android doesn't freeze playback. The workflow adds FOREGROUND_SERVICE_MEDIA_PLAYBACK to the manifest. `checkPod` reconnects a stream whose clock stops moving.
-- No third-party loads at startup: fonts are self-hosted in `fonts/` (woff2 from Fontsource, SIL OFL licences alongside); the old reader libraries (Readability, DOMPurify, marked) are no longer loaded from CDNs. Show notes use the built-in allowlist cleaner `basicSanitize`.
-
-## Plan to make tick/rss public-ready (agreed 6 Nov 2026)
-Full review: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU
-Rule: keep only what could work for a public release; build our own versions of anything the app needs to run.
-Phase 1 (high risk, do first):
-1. Remove the free relays (allorigins, codetabs, whateverorigin, corsproxy.io, cors.lol), rss2json, Jina and Feedly from the build. The app fetches directly from the phone.
-2. Build the "tick/rss service" (our Cloudflare Worker): feed fetching for the website and as the app's fallback, finding a site's feed, YouTube @handle → channel ID, and search.
-3. Lock it down: feed/JSON content types only, 5 MB cap, `Content-Security-Policy: sandbox` + nosniff on every reply, rate limits, no shared key.
-4. Private release signing key in GitHub secrets; delete app/debug.keystore (it is burned: it stays in the public git history).
-5. Rotate the personal relay key now; retire that relay once the service is live.
-Phase 2: release build (cleartext off, WebView debugging off, media service not exported), Content Security Policy, own domain, pin CI/npm deps by hash, fork and review @jofr/capacitor-media-session, privacy policy.
-Name/domain chosen 6 Nov: "YourFeed" (domain availability not yet checked; similar names exist: "Your News Feed", "Your News", "MyFeed"). Still open: does YourFeed replace the tick/rss brand, and does the website ship at launch or the app go first?
+## Open items
+Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data and security review). Still to do: deploy the service and set `SERVICE_DEFAULT`; custom domain; Content Security Policy; pin CI dependencies by hash; privacy policy; Trending topic page; live-ish discussion (newest Reddit/Bluesky/Mastodon posts for a topic); X API review; commercial options.

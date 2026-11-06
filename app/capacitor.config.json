@@ -1,16 +1,15 @@
 {
-  "appId": "dev.jgspl.tickrss",
-  "appName": "tick/rss",
+  "appId": "uk.co.appsforus.yourfeed",
+  "appName": "YourFeed",
   "webDir": "www",
   "android": {
-    "adjustMarginsForEdgeToEdge": "auto"
+    "adjustMarginsForEdgeToEdge": "auto",
+    "webContentsDebuggingEnabled": false,
+    "allowMixedContent": false
   },
   "plugins": {
     "CapacitorHttp": {
       "enabled": true
     }
-  },
-  "server": {
-    "cleartext": true
   }
 }
