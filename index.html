@@ -530,6 +530,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <input type="file" id="importFile" hidden>
         </div>
         <p class="msg" id="ioMsg" aria-live="polite"></p>
+        <div class="fb-chips" id="ioMissing" hidden></div>
       </section>
       <section class="set-sec" aria-labelledby="sh-svc">
         <h3 id="sh-svc">Feed service</h3>
@@ -763,7 +764,15 @@ async function getJSON(url, ms = 10000){
 // A web page's HTML: only ever read directly from the app (the service never relays pages)
 async function pageDirect(url, ms = 12000){
   if (!IS_APP) throw new Error("Pages can only be read from the app");
-  const r = await fetchWithTimeout(url, ms, {"Accept": "text/html,application/xhtml+xml"});
+  const h = {"Accept": "text/html,application/xhtml+xml"};
+  // YouTube: ask for the desktop page (its data is what the parsers expect; phones get redirected to
+  // m.youtube.com) and skip the cookie-consent page
+  if (/^https:\/\/(www\.|m\.)?youtube\.com\//.test(url)){
+    h["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
+    h["Cookie"] = "SOCS=CAI; CONSENT=YES+1";
+    url = url.replace("://m.youtube.com/", "://www.youtube.com/");
+  }
+  const r = await fetchWithTimeout(url, ms, h);
   if (!r.ok) throw new Error("The site answered with error " + r.status);
   return r.text();
 }
@@ -1092,6 +1101,25 @@ function channelIdIn(text, isVideo){
   return null;
 }
 // Channel picture from a channel page's HTML or text
+function channelTitleIn(text){
+  const m = text.match(/<meta property="og:title" content="([^"]+)"/) || text.match(/"channelMetadataRenderer":\{"title":"((?:[^"\\]|\\.)+)"/);
+  return m ? htmlToText(m[1].replace(/\\u0026/g, "&").replace(/\\"/g, '"')) : null;
+}
+// Every channel in a YouTube page's data, whatever layout YouTube used (desktop, mobile or the newer view models)
+function ytChannelsIn(t){
+  const out = [], seen = new Set();
+  const unesc = x => x.replace(/\\u0026/g, "&").replace(/\\"/g, '"').replace(/\\\//g, "/");
+  for (const m of t.matchAll(/"(?:channelRenderer|compactChannelRenderer|gridChannelRenderer)":\{"channelId":"(UC[\w-]{22})"/g)){
+    const near = t.slice(m.index, m.index + 4000);
+    const title = (near.match(/"(?:title|displayName)":\{"simpleText":"((?:[^"\\]|\\.)+)"/) || near.match(/"(?:title|displayName)":\{"runs":\[\{"text":"((?:[^"\\]|\\.)+)"/) || [])[1];
+    const handle = (near.match(/"canonicalBaseUrl":"\/(@[^"]+)"/) || [])[1];
+    const pic = (near.match(/"thumbnails":\[\{"url":"([^"]+)"/) || [])[1];
+    if (!title || seen.has(m[1])) continue;
+    seen.add(m[1]);
+    out.push({id: m[1], title: unesc(title), handle: handle || null, avatar: pic ? safeUrl(unesc(pic).replace(/^\/\//, "https://")) : null});
+  }
+  return out;
+}
 function channelAvatarIn(text){
   const m = text.match(/<meta property="og:image" content="([^"]+)"/) || text.match(/"avatar":\{"thumbnails":\[\{"url":"([^"]+)"/) ||
             text.match(/(https:\/\/yt3\.(?:googleusercontent|ggpht)\.com\/[^\s"')\]]+)/);
@@ -1109,7 +1137,7 @@ async function findChannel(page){
     try{
       const t = await pageDirect(ytPage(page), 12000);
       const id = channelIdIn(t, isVideo);
-      if (id) return {id, avatar: isVideo ? null : channelAvatarIn(t)};
+      if (id) return {id, avatar: isVideo ? null : channelAvatarIn(t), title: isVideo ? null : channelTitleIn(t)};
     }catch{}
   }
   if (!serviceBase()) return null;
@@ -2466,10 +2494,7 @@ async function searchYouTube(q){
   const add = r => { const k = (r.id || r.url).toLowerCase(); if (seen.has(k)) return; seen.add(k); out.push(r); };
   const page = ytPage("https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q));   // channels only
   const fromPage = IS_APP ? pageDirect(page, 12000).then(t => {
-    for (const m of t.matchAll(/"channelRenderer":\{"channelId":"(UC[\w-]{22})","title":\{"simpleText":"([^"]+)"/g)){
-      const pic = (t.slice(m.index, m.index + 3000).match(/"thumbnails":\[\{"url":"([^"]+)"/) || [])[1];
-      add({title: m[2], url: m[1], id: m[1], site: "YouTube channel", yt: true, icon: pic ? safeUrl(pic.replace(/^\/\//, "https://")) : null});
-    }
+    for (const c of ytChannelsIn(t)) add({title: c.title, url: c.id, id: c.id, site: c.handle ? "youtube.com/" + c.handle : "YouTube channel", yt: true, icon: c.avatar});
   }) : Promise.reject(new Error("app only"));
   const fromService = (IS_APP ? fromPage.then(() => { if (out.length) throw new Error("not needed"); }) : Promise.resolve())
     .then(() => viaService("/youtube/search", {q}, 15000)).then(t => {
@@ -3140,6 +3165,30 @@ $("#articlePage").addEventListener("close", () => { $("#artBody").textContent = 
 try{ localStorage.removeItem("tl.proxy"); localStorage.removeItem("tl.rsskey"); }catch{}
 
 /* ---------- import / export (OPML) ---------- */
+// Find a channel from its name: likely @handles first (checked against the channel's real name), then search
+const loose = t => (t || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
+const looser = t => loose(t).replace(/(official|channel|tv|hq|youtube|yt)$/g, "").replace(/^the/, "");
+async function ytIdForName(name){
+  const base = name.replace(/[’']/g, "").replace(/&/g, "and");
+  const words = base.toLowerCase().match(/[a-z0-9]+/g) || [];
+  const handles = [...new Set([words.join(""), words.filter(w => w !== "the").join(""), words.join("_"), words.join("-"), words.join(".")])].filter(h => h.length >= 3);
+  const same = t => t && (loose(t) === loose(name) || looser(t) === looser(name));
+  for (const h of handles.slice(0, 3)){
+    try{
+      const ch = await findChannel("https://www.youtube.com/@" + h);
+      if (ch && ch.id){
+        let title = ch.title;
+        if (!title){ try{ title = (await loadFeed("https://www.youtube.com/feeds/videos.xml?channel_id=" + ch.id, {id: "probe"})).title; }catch{} }
+        if (same(title)) return ch.id;
+      }
+    }catch{}
+  }
+  try{
+    const res = await searchYouTube(name);
+    const hit = res.find(r => r.id && loose(r.title) === loose(name)) || res.find(r => r.id && looser(r.title) === looser(name));
+    return hit ? hit.id : null;
+  }catch{ return null; }
+}
 const xmlEsc = t => String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 function exportOpml(){
   const line = f => `      <outline type="rss" text="${xmlEsc(f.title)}" title="${xmlEsc(f.title)}" xmlUrl="${xmlEsc(f.url)}"/>`;
@@ -3200,20 +3249,19 @@ async function importSources(text){
   let added = 0, have = 0, bad = 0;
   m.textContent = `Adding ${list.length} sources…`;
   const missing = [];
-  const norm = t => (t || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
-  let n = 0;
+  // Look up YouTube channels by name, a few at a time
+  const yt = list.filter(x => x.ytName);
+  let looked = 0;
+  if (yt.length){
+    m.textContent = `Finding YouTube channels… 0 of ${yt.length}`;
+    await pool(yt, 4, async x => { x.id = await ytIdForName(x.ytName).catch(() => null); looked++; m.textContent = `Finding YouTube channels… ${looked} of ${yt.length}`; });
+  }
   for (const s of list){
-    n++;
     let url = safeUrl(s.url) || "";
     if (s.ytName){
-      // Find the channel whose name matches exactly
-      m.textContent = `Finding YouTube channels… ${n} of ${list.length}`;
-      try{
-        const res = await searchYouTube(s.ytName);
-        const hit = res.find(r => r.id && norm(r.title) === norm(s.ytName)) || res.find(r => r.exact && r.id);
-        if (!hit){ missing.push(s.ytName); continue; }
-        url = "https://www.youtube.com/feeds/videos.xml?channel_id=" + hit.id;
-      }catch{ missing.push(s.ytName); continue; }
+      const id = s.id;
+      if (!id){ missing.push(s.ytName); continue; }
+      url = "https://www.youtube.com/feeds/videos.xml?channel_id=" + id;
     }
     if (s.raw){ try{ url = (await resolveInput(s.url)).url; }catch{ bad++; continue; } }
     if (!/^https?:\/\//.test(url)){ bad++; continue; }
@@ -3225,7 +3273,13 @@ async function importSources(text){
   }
   save(); renderFeedList(); renderChips(); renderStatus();
   m.textContent = [`Added ${added} source${added === 1 ? "" : "s"}.`, have ? `${have} you already follow.` : "", bad ? `${bad} couldn't be read.` : "",
-    missing.length ? `Couldn't find on YouTube: ${missing.join(", ")}. Search for these in the menu to add them.` : ""].filter(Boolean).join(" ") + (added ? " Loading their stories…" : "");
+    missing.length ? `${missing.length} channel${missing.length === 1 ? "" : "s"} couldn't be matched exactly: tap one to search for it.` : ""].filter(Boolean).join(" ") + (added ? " Loading their stories…" : "");
+  const box = $("#ioMissing"); box.textContent = ""; box.hidden = !missing.length;
+  missing.forEach(name => {
+    const b = el("button", "chip", name); b.type = "button";
+    b.onclick = () => { b.remove(); if (!box.children.length) box.hidden = true; showTab("feeds"); $("#addInput").value = name; search.filter = "youtube"; renderFilterChips($("#searchFilters"), renderAllResults); startSearch(name); };
+    box.append(b);
+  });
   if (added){ await refreshAll(); m.textContent = m.textContent.replace(" Loading their stories…", " Done."); }
 }
 $("#exportBtn").onclick = async () => {
