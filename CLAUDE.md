@@ -48,3 +48,15 @@ The user wants every publisher checked for the same issues that came up with BBC
 - `app/debug.keystore` is a throwaway test signing key (password "android") so each test build installs over the last. Make a real, private key before any Play Store release.
 - Podcasts in the app: `@jofr/capacitor-media-session` (built for Capacitor 6, installed with --legacy-peer-deps) gives a native media notification and a foreground service so Android doesn't freeze playback. The workflow adds FOREGROUND_SERVICE_MEDIA_PLAYBACK to the manifest. `checkPod` reconnects a stream whose clock stops moving.
 - No third-party loads at startup: fonts are self-hosted in `fonts/` (woff2 from Fontsource, SIL OFL licences alongside); the old reader libraries (Readability, DOMPurify, marked) are no longer loaded from CDNs. Show notes use the built-in allowlist cleaner `basicSanitize`.
+
+## Plan to make tick/rss public-ready (agreed 6 Nov 2026)
+Full review: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU
+Rule: keep only what could work for a public release; build our own versions of anything the app needs to run.
+Phase 1 (high risk, do first):
+1. Remove the free relays (allorigins, codetabs, whateverorigin, corsproxy.io, cors.lol), rss2json, Jina and Feedly from the build. The app fetches directly from the phone.
+2. Build the "tick/rss service" (our Cloudflare Worker): feed fetching for the website and as the app's fallback, finding a site's feed, YouTube @handle → channel ID, and search.
+3. Lock it down: feed/JSON content types only, 5 MB cap, `Content-Security-Policy: sandbox` + nosniff on every reply, rate limits, no shared key.
+4. Private release signing key in GitHub secrets; delete app/debug.keystore (it is burned: it stays in the public git history).
+5. Rotate the personal relay key now; retire that relay once the service is live.
+Phase 2: release build (cleartext off, WebView debugging off, media service not exported), Content Security Policy, own domain, pin CI/npm deps by hash, fork and review @jofr/capacitor-media-session, privacy policy.
+Open: domain name; whether the website ships at launch (it needs the service) or the app goes first.
