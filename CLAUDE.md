@@ -4,7 +4,7 @@
 
 Brand: wordmark "Your" + "Feed" in orange (`--brand`: #d9480f light, #ff8a4c dark), Bricolage Grotesque 800. Icon: Feed Check (two lines and a tick on an orange rounded square).
 
-Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ (planned: yourfeed.appsforus.co.uk; add a `CNAME` file only once the DNS record exists, or the site will break). The same file is the Android app (`app/`, Capacitor 7, app ID `uk.co.appsforus.yourfeed`).
+Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ now at https://yourfeed.appsforus.co.uk (CNAME file; DNS-only CNAME yourfeed → jgspl-dev.github.io on Cloudflare). The same file is the Android app (`app/`, Capacitor 7, app ID `uk.co.appsforus.yourfeed`).
 
 ## Privacy and security rules (agreed Nov 2026)
 - Only two kinds of network route: the publisher itself (direct from the device) and our own **YourFeed service** (`service/worker.js`). Never add third-party relays, readers or feed services (removed: allorigins, codetabs, whateverorigin, corsproxy.io, cors.lol, rss2json, Feedly, Jina).
