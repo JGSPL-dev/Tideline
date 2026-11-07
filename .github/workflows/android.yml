@@ -1,8 +1,6 @@
 name: Android build
+# Manual only: changes are batched and the app is rebuilt when Josh asks.
 on:
-  push:
-    branches: [main]
-    paths: ["index.html", "fonts/**", "app/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 permissions:
   contents: write
