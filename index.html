@@ -82,6 +82,23 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
 body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .iorow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.rp-sum{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.rp-sum div{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.rp-sum div + div{border-left:1px solid var(--line)}
+.rp-sum b{font-size:22px}
+.rp-sum span{font-size:12px;color:var(--muted)}
+.rp-h{font:700 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+.rp-causes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.rp-causes li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:baseline;font-size:14px}
+.rp-causes .n{font-weight:800;color:#e8590c;min-width:2ch;text-align:right}
+.rp-list{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.rp-list li{padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:13.5px}
+.rp-list li + li{border-top:1px solid var(--line)}
+.rp-list .t{display:flex;gap:8px;align-items:center;font-weight:700;font-size:14.5px}
+.rp-list .t span:not(.hdot){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rp-causes .n.good{color:#2b8a3e}
+.rp-list .d{color:var(--muted)}
+.rp-list .e{color:var(--danger,#c92a2a)}
 .empty.welcome{text-align:left;padding:28px 12px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .empty.welcome h3{font:800 30px/1.1 "Bricolage Grotesque",var(--ui);letter-spacing:-.02em;margin:0;color:var(--ink)}
 .empty.welcome .accent{color:var(--brand)}
@@ -521,6 +538,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
       </label>
       </section>
+      <section class="set-sec" aria-labelledby="sh-rep">
+        <h3 id="sh-rep">Source report</h3>
+        <p class="hint">How every source is doing: what's failing and why. Share it to get help. It stays on your device unless you share it.</p>
+        <div class="iorow"><button class="btn" type="button" id="reportBtn">Open source report</button></div>
+      </section>
       <section class="set-sec" aria-labelledby="sh-io">
         <h3 id="sh-io">Your sources</h3>
         <p class="hint">Move your sources between devices, or add lots at once. Import works with OPML (the standard format other feed readers use), YouTube's subscriptions.csv from Google Takeout, or a text file with one address, @handle, r/name or "youtube: Channel name" per line.</p>
@@ -587,6 +609,17 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
   </div>
 </dialog>
 
+<dialog id="reportPage" class="fullpage" aria-labelledby="rpTitle">
+  <div class="dlg">
+    <header>
+      <button class="btn icon" id="rpBack" aria-label="Close the report">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      </button>
+      <h2 id="rpTitle">Source report</h2>
+    </header>
+    <div class="inner" id="rpBody"></div>
+  </div>
+</dialog>
 <dialog id="searchPage" class="fullpage" aria-labelledby="spTitle">
   <div class="dlg">
     <header>
@@ -933,7 +966,8 @@ async function loadOneFeed(url, feed, logOut){
   const got = settled.filter(x => x.status === "fulfilled").map(x => x.value);
   if (!got.length){
     const errs = settled.map(x => x.reason).filter(e => e && e.message !== "skip");
-    if (!IS_APP && !hasService) throw new Error("This feed can't be read in a browser without the YourFeed service");
+    const real = errs.find(e => !/Blocked by the browser/.test(friendlyNetErr(e).message));
+    if (!IS_APP && !hasService && !real) throw new Error("This feed can't be read in a browser without the YourFeed service");
     throw errs.find(e => !/Blocked by the browser/.test(e.message)) || errs[0] || new Error("Couldn't reach that feed");
   }
   if (!got.some(g => g.items.length)) throw new Error("The feed has no stories");
@@ -2119,7 +2153,9 @@ function renderFeedList(){
       b.onclick = () => checkNow(f);
       row.append(who, b); sec.append(row);
     });
-    if (attn.length > 4) sec.append(el("span", "hint", `and ${attn.length - 4} more below`));
+    const more = el("button", "linkbtn", attn.length > 4 ? `See all ${attn.length} in the source report` : "Open the source report"); more.type = "button";
+    more.onclick = () => { closeMenu(); openReport(); };
+    sec.append(more);
     box.append(sec);
   }
   // Everything
@@ -3164,6 +3200,91 @@ $("#articlePage").addEventListener("close", () => { $("#artBody").textContent = 
 // The old personal relay (with its key) is retired: forget it on this device
 try{ localStorage.removeItem("tl.proxy"); localStorage.removeItem("tl.rsskey"); }catch{}
 
+/* ---------- source report: what every source is doing, to read or share ---------- */
+function sourceState(f){
+  const its = state.items.filter(i => i.feedId === f.id);
+  const newest = Math.max(0, ...its.map(i => i.date || 0));
+  let status = "ok";
+  if (f.error) status = "failing";
+  else if (!f.lastFetched) status = "not checked";
+  else if (!its.length) status = "empty";
+  else if (attentionList().some(a => a.f === f)) status = "quiet";
+  return {f, its: its.length, newest, status};
+}
+// Group similar errors ("…error 404", "…error 429") so the causes stand out
+const errorKind = e => String(e || "Unknown").replace(/\.$/, "").replace(/(https?:\/\/)\S+/g, "$1…");
+function buildReport(){
+  const rows = state.feeds.map(sourceState);
+  const failing = rows.filter(r => r.status === "failing");
+  const causes = {};
+  failing.forEach(r => { const k = errorKind(r.f.error); (causes[k] = causes[k] || []).push(r); });
+  const byPlatform = {};
+  rows.forEach(r => { const p = platformOf(r.f); const b = byPlatform[p] = byPlatform[p] || {all: 0, bad: 0}; b.all++; if (r.status === "failing") b.bad++; });
+  const routeLine = f => (f.routes || []).map(r => `${ROUTE_NAMES[r.k] || r.k}: ${r.ok ? `ok ${r.n}` : r.skip ? "not needed" : r.slow ? "no answer" : r.err}`).join("; ");
+  const lines = [
+    `YourFeed source report · ${new Date().toLocaleString("en-GB")}`,
+    `Build: ${IS_APP ? "Android app " + (APP_BUILD.startsWith("__") ? "dev" : APP_BUILD) : "website"} · service: ${serviceBase() ? "on" : "off"}`,
+    `Sources: ${rows.length} · working ${rows.filter(r => r.status === "ok").length} · failing ${failing.length} · quiet/empty ${rows.filter(r => r.status === "quiet" || r.status === "empty").length} · not checked ${rows.filter(r => r.status === "not checked").length}`,
+    "", "By platform: " + Object.entries(byPlatform).map(([p, b]) => `${p} ${b.all - b.bad}/${b.all} ok`).join(" · "),
+    "", "Failing, by cause:",
+    ...Object.entries(causes).sort((a, b) => b[1].length - a[1].length).map(([k, rs]) => `  ${rs.length} × ${k}: ${rs.map(r => r.f.title).join(", ")}`),
+    "", "Every source:",
+    ...rows.sort((a, b) => ["failing", "empty", "quiet", "not checked", "ok"].indexOf(a.status) - ["failing", "empty", "quiet", "not checked", "ok"].indexOf(b.status) || byName(a.f, b.f))
+      .map(r => `- ${r.f.title} [${platformOf(r.f)}] ${r.status.toUpperCase()}${r.f.error ? ": " + r.f.error : ""}\n    ${r.its} stories${r.newest ? ", newest " + ago(r.newest) : ""}${r.f.lastFetched ? ", checked " + ago(r.f.lastFetched) : ""}${r.f.fails ? `, ${r.f.fails} failed checks in a row` : ""}\n    ${r.f.url}${routeLine(r.f) ? "\n    routes: " + routeLine(r.f) : ""}`)
+  ];
+  return {rows, failing, causes, byPlatform, text: lines.join("\n")};
+}
+function openReport(){
+  const R = buildReport(), body = $("#rpBody"); body.textContent = "";
+  const sum = el("div", "rp-sum");
+  [[R.rows.filter(r => r.status === "ok").length, "working"], [R.failing.length, "failing"], [R.rows.filter(r => r.status === "quiet" || r.status === "empty").length, "quiet or empty"]]
+    .forEach(([n, t]) => { const d = el("div"); d.append(el("b", null, String(n)), el("span", null, t)); sum.append(d); });
+  body.append(sum);
+  const acts = el("div", "iorow");
+  const share = el("button", "btn primary", "Share report"); share.type = "button";
+  share.onclick = async () => {
+    const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+    try{
+      if (S && S.share){ await S.share({title: "YourFeed source report", text: R.text, dialogTitle: "Share the report"}); return; }
+      if (navigator.share){ await navigator.share({title: "YourFeed source report", text: R.text}); return; }
+    }catch(e){ if (/cancel|abort/i.test(String(e && (e.message || e.name)))) return; }
+    try{ await navigator.clipboard.writeText(R.text); toast("Report copied"); }catch{ toast("Couldn't share the report"); }
+  };
+  const copy = el("button", "btn", "Copy"); copy.type = "button";
+  copy.onclick = async () => { try{ await navigator.clipboard.writeText(R.text); toast("Report copied"); }catch{ toast("Couldn't copy"); } };
+  const retry = el("button", "btn", "Retry failing"); retry.type = "button"; retry.disabled = !R.failing.length;
+  retry.onclick = async () => {
+    retry.disabled = true; retry.textContent = "Checking…";
+    await pool(R.failing.map(r => r.f), 3, f => refreshOne(f));
+    openReport();
+  };
+  acts.append(share, copy, retry); body.append(acts);
+  if (R.failing.length){
+    body.append(el("h3", "rp-h", "Why sources are failing"));
+    const ul = el("ul", "rp-causes");
+    Object.entries(R.causes).sort((a, b) => b[1].length - a[1].length).forEach(([k, rs]) => {
+      const li = el("li"); li.append(el("span", "n", String(rs.length)), el("span", null, `${k} · ${rs.slice(0, 4).map(r => r.f.title).join(", ")}${rs.length > 4 ? ` and ${rs.length - 4} more` : ""}`)); ul.append(li);
+    });
+    body.append(ul);
+  }
+  body.append(el("h3", "rp-h", "By platform"));
+  const pl = el("ul", "rp-causes");
+  Object.entries(R.byPlatform).forEach(([p, b]) => { const li = el("li"); li.append(el("span", "n" + (b.bad ? "" : " good"), `${b.all - b.bad}/${b.all}`), el("span", null, `${p} working`)); pl.append(li); });
+  body.append(pl, el("h3", "rp-h", "Every source"));
+  const list = el("ul", "rp-list");
+  R.rows.forEach(r => {
+    const li = el("li");
+    const t = el("div", "t"); t.append(el("span", "hdot" + (r.status === "ok" ? "" : r.status === "not checked" ? " idle" : " warn")), el("span", null, r.f.title || r.f.url));
+    li.append(t, el("span", "d", `${platformOf(r.f)} · ${r.status} · ${r.its} stories${r.newest ? ", newest " + ago(r.newest) : ""}${r.f.lastFetched ? " · checked " + ago(r.f.lastFetched) : ""}`));
+    if (r.f.error) li.append(el("span", "e", r.f.error));
+    list.append(li);
+  });
+  body.append(list);
+  if (!$("#reportPage").open) $("#reportPage").showModal();
+}
+$("#reportBtn").onclick = () => { closeMenu(); openReport(); };
+$("#rpBack").onclick = () => $("#reportPage").close();
+
 /* ---------- import / export (OPML) ---------- */
 // Find a channel from its name: likely @handles first (checked against the channel's real name), then search
 const loose = t => (t || "").toLowerCase().replace(/&/g, "and").replace(/[^a-z0-9]/g, "");
@@ -3382,6 +3503,7 @@ function goBack(){
   const ob = document.querySelector("dialog.onboard[open]"); if (ob){ ob.close(); ob.remove(); return true; }
   if (!$("#filterBox").hidden){ closeFilterBox(true); return true; }
   if ($("#articlePage").open){ $("#articlePage").close(); return true; }
+  if ($("#reportPage").open){ $("#reportPage").close(); return true; }
   if ($("#searchPage").open){ $("#searchPage").close(); return true; }
   if (dlg.open){
     if (editingId){ editingId = null; renderFeedList(); return true; }
