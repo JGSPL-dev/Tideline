@@ -654,6 +654,8 @@ if (IS_APP){
   const browserUA = navigator.userAgent.replace(/; wv\)/, ")").replace(/\s*Version\/[\d.]+/, "");
   let redditGate = Promise.resolve();
   const REDDIT_GAP = 1100;
+  let ytGate = Promise.resolve();
+  const YT_GAP = 1500;
   window.fetch = (u, init = {}) => {
     const url = String(u && u.url || u);
     init = {...init, headers: {"User-Agent": browserUA, "Accept-Language": navigator.language || "en-GB", ...(init.headers || {})}};
@@ -661,6 +663,11 @@ if (IS_APP){
     if (/^https:\/\/(www\.|old\.)?reddit\.com\//.test(url)){
       const turn = redditGate.then(() => nativeFetch(u, init));
       redditGate = turn.catch(() => {}).then(() => new Promise(r => setTimeout(r, REDDIT_GAP)));
+      p = turn;
+    } else if (/^https:\/\/(www\.|m\.)?youtube\.com\//.test(url)){
+      // YouTube treats bursts from one connection as automated and blocks it for a while: one request at a time, spaced out
+      const turn = ytGate.then(() => nativeFetch(u, init));
+      ytGate = turn.catch(() => {}).then(() => new Promise(r => setTimeout(r, YT_GAP)));
       p = turn;
     } else p = nativeFetch(u, init);
     const sig = init.signal;
@@ -936,34 +943,49 @@ async function ytChannelPage(channelId, feed){
   // A channel page is ~1 MB (a feed is ~30 KB), so while we depend on it, check hourly to spare mobile data
   return {title, items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: ""})), everyMin: 60};
 }
+// If YouTube starts refusing many channels in a row, it is limiting this connection: stop asking for a
+// while (30 min, doubling to 6 h) instead of making it worse. Remembered across restarts.
+function ytCooling(){ return Date.now() < (store.get("yf.ytCoolUntil", 0) || 0); }
+function ytRefused(){
+  state.ytStreak = (state.ytStreak || 0) + 1;
+  if (state.ytStreak >= 4 && !ytCooling()){
+    const trips = Math.min(4, (store.get("yf.ytTrips", 0) || 0) + 1);
+    store.set("yf.ytTrips", trips);
+    store.set("yf.ytCoolUntil", Date.now() + 30 * 60000 * Math.pow(2, trips - 1));
+  }
+}
+function ytAnswered(){ state.ytStreak = 0; store.set("yf.ytTrips", 0); }
 async function loadYouTube(url, feed){
   const channelId = ytChannelOf(url);
+  if (ytCooling()){
+    const at = new Date(store.get("yf.ytCoolUntil", 0)).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"});
+    feed.routes = [{k: "ytfeed", ok: false, err: "Paused until " + at}];
+    throw new Error(`YouTube is limiting requests from this connection. Paused until ${at} so it can recover`);
+  }
   const routes = [];
   const note = (k, fn) => fn().then(r => { routes.push({k, ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))}); return r; },
     e => { routes.push({k, ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")}); throw e; });
-  // While YouTube's feeds are known to be down, skip straight to the channel page (fewer requests)
-  const down = Date.now() < (state.ytFeedsDownUntil || 0);
   try{
-    if (down) throw new Error("YouTube's feeds are down");
     const r = await note("ytfeed", () => loadOneFeed(url, feed, {}));
-    feed.routes = routes; return r;
+    ytAnswered(); feed.routes = routes; return r;
   }catch(first){
-    if (!down){
+    const refused = /error (40[0-9]|429|50\d)/.test(first.message);
+    if (refused) ytRefused();
+    // One channel failing on its own: try the other ways. Many failing: YouTube is limiting us, so stop.
+    if (!ytCooling() && (state.ytStreak || 0) < 2){
       try{
         const pl = "https://www.youtube.com/feeds/videos.xml?playlist_id=UU" + channelId.slice(2);
         const r = await note("ytplaylist", () => loadOneFeed(pl, feed, {}));
-        feed.routes = routes; return r;
-      }catch(e2){
-        if (/error (40[34]|50\d)/.test(first.message) && /error (40[34]|50\d)/.test(e2.message)) state.ytFeedsDownUntil = Date.now() + 30 * 60000;
-      }
+        ytAnswered(); feed.routes = routes; return r;
+      }catch{}
+      try{
+        const r = await note("ytpage", () => ytChannelPage(channelId, feed));
+        ytAnswered(); feed.routes = routes;
+        return {...r, items: stashArticles(r.items)};
+      }catch{}
     }
-    try{
-      const r = await note("ytpage", () => ytChannelPage(channelId, feed));
-      feed.routes = routes;
-      return {...r, items: stashArticles(r.items)};
-    }catch{}
     feed.routes = routes;
-    throw new Error(/40[34]|50\d/.test(first.message) ? "YouTube's feeds aren't answering right now (YouTube problem, usually fixed within a day)" : first.message);
+    throw new Error(refused && ytCooling() ? "YouTube is limiting requests from this connection. Paused so it can recover" : first.message);
   }
 }
 async function loadFeed(url, feed){
@@ -3370,7 +3392,7 @@ async function ytIdForName(name){
   const words = base.toLowerCase().match(/[a-z0-9]+/g) || [];
   const handles = [...new Set([words.join(""), words.filter(w => w !== "the").join(""), words.join("_"), words.join("-"), words.join(".")])].filter(h => h.length >= 3);
   const same = t => t && (loose(t) === loose(name) || looser(t) === looser(name));
-  for (const h of handles.slice(0, 3)){
+  for (const h of handles.slice(0, 1)){
     try{
       const ch = await findChannel("https://www.youtube.com/@" + h);
       if (ch && ch.id){
@@ -3451,7 +3473,7 @@ async function importSources(text){
   let looked = 0;
   if (yt.length){
     m.textContent = `Finding YouTube channels… 0 of ${yt.length}`;
-    await pool(yt, 4, async x => { x.id = await ytIdForName(x.ytName).catch(() => null); looked++; m.textContent = `Finding YouTube channels… ${looked} of ${yt.length}`; });
+    await pool(yt, 1, async x => { x.id = await ytIdForName(x.ytName).catch(() => null); looked++; m.textContent = `Finding YouTube channels… ${looked} of ${yt.length}`; });
   }
   for (const s of list){
     let url = safeUrl(s.url) || "";
