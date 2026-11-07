@@ -9,6 +9,7 @@ Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.gi
 ## Privacy and security rules (agreed Nov 2026)
 - Only two kinds of network route: the publisher itself (direct from the device) and our own **YourFeed service** (`service/worker.js`). Never add third-party relays, readers or feed services (removed: allorigins, codetabs, whateverorigin, corsproxy.io, cors.lol, rss2json, Feedly, Jina).
 - The service never relays web pages: feeds (validated), allowlisted JSON APIs, or extracted facts only. Sandbox CSP + nosniff on every reply, 5 MB cap, public-address check, CORS limited to our origins, per-IP limits. Its address: `SERVICE_DEFAULT` in index.html (empty until deployed) or Settings → YourFeed service (`yf.service`).
+- The service keeps a shared store: edge cache per location plus KV (`YF_CACHE`, namespace yourfeed-cache) for YouTube API results (30 min fresh, written only on change or every 6 h, served stale if the API fails), channel lookups (30 days), searches (1 day), found feeds (7 days). The app asks the service first for YouTube lookups and search.
 - The app fetches directly (`IS_APP`, CapacitorHttp) and only falls back to the service. The website needs the service for most feeds.
 - No third-party loads at startup: fonts self-hosted in `fonts/`, no CDN scripts.
 - Android release builds are signed with the private key in Actions secrets `ANDROID_KEYSTORE_B64` / `ANDROID_KEYSTORE_PASSWORD` (alias `yourfeed`). Never commit a keystore. HTTPS only (no cleartext), WebView debugging off.

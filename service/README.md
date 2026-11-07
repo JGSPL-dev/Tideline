@@ -21,6 +21,14 @@ YouTube's own channel feeds have outages (all channels answer 404/500 for hours 
 5. Cloudflare → Workers & Pages → `yourfeed-service` → Settings → Variables and Secrets → Add → Type: Secret, Name: `YT_API_KEY`, Value: the key → Deploy.
 6. Check: open `<service address>/health`: it should say `"youtubeApi":true`.
 
+## Shared store (recommended)
+
+Remembers YouTube results, channel lookups and found feeds for everyone, so outside services are asked as rarely as possible.
+
+1. Cloudflare → Storage & Databases → KV: a namespace called `yourfeed-cache` (create it if missing).
+2. `yourfeed-service` → Settings → Bindings → Add → KV namespace → Variable name `YF_CACHE`, namespace `yourfeed-cache` → Deploy.
+3. `/health` should show `"sharedStore":true`.
+
 ## Endpoints
 
 | Path | Returns |

@@ -115,6 +115,26 @@ function channelFrom(html, isVideo){
   return {id, title, avatar};
 }
 
+// Shared store, so each outside service is asked as rarely as possible:
+//  - edge cache (caches.default): per Cloudflare location, free, unlimited, may be dropped early
+//  - KV (binding YF_CACHE, optional): one copy for every location; free plan allows 1,000 writes a day,
+//    so it is only written when something changed (or every 6 h)
+async function edgeGet(key){
+  try{ const r = await caches.default.match(new Request("https://cache.yourfeed/" + encodeURIComponent(key))); return r ? await r.text() : null; }catch{ return null; }
+}
+async function edgePut(key, text, seconds){
+  try{ await caches.default.put(new Request("https://cache.yourfeed/" + encodeURIComponent(key)), new Response(text, {headers: {"Cache-Control": "max-age=" + seconds}})); }catch{}
+}
+async function kvGet(env, key){
+  if (!env || !env.YF_CACHE) return null;
+  try{ return await env.YF_CACHE.get(key, {type: "json", cacheTtl: 300}); }catch{ return null; }
+}
+async function kvPut(env, key, value, seconds){
+  if (!env || !env.YF_CACHE) return;
+  try{ await env.YF_CACHE.put(key, JSON.stringify(value), {expirationTtl: seconds}); }catch{}
+}
+const sendJson = (origin, text, extra) => { const h = headers(origin, "application/json; charset=utf-8"); if (extra) for (const k in extra) h.set(k, extra[k]); return new Response(text, {headers: h}); };
+
 function agoToMs(t){
   const m = String(t || "").match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s+ago/i);
   if (!m) return 0;
@@ -142,31 +162,46 @@ function videosFrom(t){
 
 async function handle(req, url, origin, env){
   const p = url.pathname.replace(/\/+$/, "") || "/";
-  if (p === "/health") return json(origin, {ok: true, youtubeApi: !!(env && env.YT_API_KEY)});
+  if (p === "/health") return json(origin, {ok: true, youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE)});
 
   if (p === "/youtube/latest"){
     const id = url.searchParams.get("id") || "";
     if (!/^UC[\w-]{22}$/.test(id)) return fail(origin, 400, "Not a YouTube channel ID");
-    if (!env || !env.YT_API_KEY) return fail(origin, 501, "The YouTube Data API isn't set up on this service");
-    // Cached for 30 minutes per channel, shared by everyone, so each channel costs at most 48 units a day
-    const cache = caches.default, key = new Request("https://cache.yourfeed/yt-latest/" + id);
-    const hit = await cache.match(key);
-    if (hit){ const r = new Response(hit.body, hit); headers(origin, "application/json; charset=utf-8").forEach((v, k) => r.headers.set(k, v)); return r; }
+    const FRESH = 30 * 60000;
+    // 1. This location's copy (30 min)
+    const edge = await edgeGet("ytl:" + id);
+    if (edge) return sendJson(origin, edge, {"X-YourFeed-Cache": "edge"});
+    // 2. The shared copy, if it's recent enough
+    const kv = await kvGet(env, "ytl:" + id);
+    if (kv && Date.now() - kv.at < FRESH){
+      const text = JSON.stringify({title: kv.title, videos: kv.videos});
+      await edgePut("ytl:" + id, text, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000)));
+      return sendJson(origin, text, {"X-YourFeed-Cache": "shared"});
+    }
+    // 3. Ask YouTube's API (1 unit)
+    if (!env || !env.YT_API_KEY){
+      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: kv.videos, stale: true}), {"X-YourFeed-Cache": "stale"});
+      return fail(origin, 501, "The YouTube Data API isn't set up on this service");
+    }
     const api = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=20&playlistId=UU" + id.slice(2) + "&key=" + encodeURIComponent(env.YT_API_KEY);
-    const r = await fetchCapped(api, {accept: "application/json"});
-    let j; try{ j = JSON.parse(r.text); }catch{ return fail(origin, 502, "YouTube's API didn't send JSON"); }
-    if (!r.ok){
-      const reason = (j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason) || r.status;
-      return fail(origin, reason === "quotaExceeded" ? 429 : 502, reason === "quotaExceeded" ? "Today's YouTube API allowance is used up" : "YouTube's API answered: " + reason);
+    let r, j;
+    try{ r = await fetchCapped(api, {accept: "application/json"}); j = JSON.parse(r.text); }catch{ r = null; }
+    if (!r || !r.ok){
+      // API down or today's allowance used up: an older copy is better than nothing
+      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: kv.videos, stale: true}), {"X-YourFeed-Cache": "stale"});
+      const reason = j && j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
+      return fail(origin, reason === "quotaExceeded" ? 429 : 502, reason === "quotaExceeded" ? "Today's YouTube API allowance is used up" : "YouTube's API answered: " + (reason || (r ? r.status : "no answer")));
     }
     const items = j.items || [];
     const videos = items.map(i => i.snippet).filter(s => s && s.resourceId && s.resourceId.videoId)
       .map(s => ({id: s.resourceId.videoId, title: s.title, date: Date.parse(s.publishedAt) || 0}));
-    const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || null;
-    const out = new Response(JSON.stringify({title, videos}), {headers: {"Content-Type": "application/json; charset=utf-8", "Cache-Control": "max-age=1800"}});
-    await cache.put(key, out.clone());
-    const res = new Response(out.body, {headers: headers(origin, "application/json; charset=utf-8")});
-    return res;
+    const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || (kv && kv.title) || null;
+    const text = JSON.stringify({title, videos});
+    await edgePut("ytl:" + id, text, 1800);
+    // Write the shared copy only when there's a new video, or every 6 hours (KV writes are limited)
+    const top = videos[0] && videos[0].id;
+    if (!kv || kv.top !== top || Date.now() - kv.at > 6 * 3600000) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos}, 14 * 86400);
+    return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 
   if (p === "/feed"){
@@ -191,8 +226,11 @@ async function handle(req, url, origin, env){
   if (p === "/discover"){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target) return fail(origin, 400, "Not a public web address");
+    const dkey = "disc:" + target.href.toLowerCase();
+    const known = await kvGet(env, dkey);
+    if (known) return json(origin, known);
     const r = await fetchCapped(target.href, {ua: UA_BROWSER});
-    if (r.ok && looksLikeFeed(r.text)) return json(origin, {feeds: [r.url], title: null});
+    if (r.ok && looksLikeFeed(r.text)){ await kvPut(env, dkey, {feeds: [r.url], title: null}, 7 * 86400); return json(origin, {feeds: [r.url], title: null}); }
     const feeds = [];
     let title = null;
     if (r.ok){
@@ -210,6 +248,7 @@ async function handle(req, url, origin, env){
       }
     }
     if (!feeds.length) return fail(origin, 404, r.ok ? "No feed found on that site" : "The site answered with error " + r.status);
+    await kvPut(env, dkey, {feeds: feeds.slice(0, 5), title}, 7 * 86400);
     return json(origin, {feeds: feeds.slice(0, 5), title});
   }
 
@@ -217,15 +256,26 @@ async function handle(req, url, origin, env){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target || !/(^|\.)youtube\.com$/.test(target.hostname)) return fail(origin, 400, "Not a YouTube address");
     const isVideo = target.pathname === "/watch";
+    // Handles and channel pages rarely change: remember them for 30 days (videos: 7 days)
+    const key = "ytc:" + (target.pathname + (isVideo ? "?v=" + target.searchParams.get("v") : "")).toLowerCase();
+    let known = await edgeGet(key);
+    if (!known){ const k = await kvGet(env, key); if (k){ known = JSON.stringify(k); await edgePut(key, known, 86400); } }
+    if (known) return sendJson(origin, known, {"X-YourFeed-Cache": "hit"});
     const r = await fetchCapped(ytPage(target.href), {ua: UA_BROWSER, cookie: YT_COOKIE, accept: "text/html"});
     const c = r.ok ? channelFrom(r.text, isVideo) : null;
     if (!c) return fail(origin, 404, "Couldn't find that YouTube channel");
-    return json(origin, c);
+    const text = JSON.stringify(c);
+    await edgePut(key, text, 86400);
+    await kvPut(env, key, c, (isVideo ? 7 : 30) * 86400);
+    return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 
   if (p === "/youtube/search"){
     const q = (url.searchParams.get("q") || "").slice(0, 100).trim();
     if (!q) return fail(origin, 400, "Missing search words");
+    const skey = "yts:" + q.toLowerCase();
+    const cached = await edgeGet(skey);
+    if (cached) return sendJson(origin, cached, {"X-YourFeed-Cache": "edge"});
     const page = ytPage("https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q));
     const r = await fetchCapped(page, {ua: UA_BROWSER, cookie: YT_COOKIE, accept: "text/html"});
     if (!r.ok) return fail(origin, 502, "YouTube answered with error " + r.status);
@@ -236,18 +286,25 @@ async function handle(req, url, origin, env){
       channels.push({id: m[1], title: m[2], avatar: pic ? pic.replace(/^\/\//, "https://") : null});
       if (channels.length >= 20) break;
     }
-    return json(origin, {channels});
+    const stext = JSON.stringify({channels});
+    if (channels.length) await edgePut(skey, stext, 86400);
+    return sendJson(origin, stext, {"X-YourFeed-Cache": "fresh"});
   }
 
   if (p === "/youtube/videos"){
     const id = url.searchParams.get("id") || "";
     if (!/^UC[\w-]{22}$/.test(id)) return fail(origin, 400, "Not a YouTube channel ID");
+    const vkey = "ytv:" + id;
+    const cached = await edgeGet(vkey);
+    if (cached) return sendJson(origin, cached, {"X-YourFeed-Cache": "edge"});
     const r = await fetchCapped(ytPage(`https://www.youtube.com/channel/${id}/videos`), {ua: UA_BROWSER, cookie: YT_COOKIE, accept: "text/html"});
     if (!r.ok) return fail(origin, 502, "YouTube answered with error " + r.status);
     const videos = videosFrom(r.text);
     if (!videos.length) return fail(origin, 404, "No videos found on the channel page");
     const title = ((r.text.match(/<meta property="og:title" content="([^"]+)"/) || [])[1]) || null;
-    return json(origin, {title, videos});
+    const vtext = JSON.stringify({title, videos});
+    await edgePut(vkey, vtext, 1800);
+    return sendJson(origin, vtext, {"X-YourFeed-Cache": "fresh"});
   }
 
   return fail(origin, 404, "Unknown address");

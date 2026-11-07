@@ -1289,6 +1289,13 @@ function ytPage(url){
 // or asked of the YourFeed service on the website
 async function findChannel(page){
   const isVideo = /watch\?v=/.test(page);
+  // The YourFeed service remembers every channel anyone has looked up, so ask it first
+  if (serviceBase()){
+    try{
+      const j = JSON.parse(await viaService("/youtube/channel", {url: page}, 15000));
+      if (j && /^UC[\w-]{22}$/.test(j.id || "")) return {id: j.id, avatar: safeUrl(j.avatar || "") || null, title: j.title || null};
+    }catch(e){ if (/Couldn't find/.test(e.message)) return null; }
+  }
   if (IS_APP){
     try{
       const t = await pageDirect(ytPage(page), 12000);
@@ -1296,11 +1303,7 @@ async function findChannel(page){
       if (id) return {id, avatar: isVideo ? null : channelAvatarIn(t), title: isVideo ? null : channelTitleIn(t)};
     }catch{}
   }
-  if (!serviceBase()) return null;
-  try{
-    const j = JSON.parse(await viaService("/youtube/channel", {url: page}, 15000));
-    return j && /^UC[\w-]{22}$/.test(j.id || "") ? {id: j.id, avatar: safeUrl(j.avatar || "") || null, title: j.title || null} : null;
-  }catch{ return null; }
+  return null;
 }
 async function findChannelId(page){ const c = await findChannel(page); return c && c.id; }
 // Find a website's feed: from its page's feed links, else common feed addresses
@@ -2667,14 +2670,15 @@ async function searchYouTube(q){
   const seen = new Set(), out = [];
   const add = r => { const k = (r.id || r.url).toLowerCase(); if (seen.has(k)) return; seen.add(k); out.push(r); };
   const page = ytPage("https://www.youtube.com/results?sp=EgIQAg%3D%3D&search_query=" + encodeURIComponent(q));   // channels only
-  const fromPage = IS_APP ? pageDirect(page, 12000).then(t => {
+  // The YourFeed service keeps searches for a day, so ask it first; the phone reads YouTube itself only if needed
+  const fromService = viaService("/youtube/search", {q}, 15000).then(t => {
+    for (const c of JSON.parse(t).channels || []) if (/^UC[\w-]{22}$/.test(c.id || ""))
+      add({title: c.title || c.id, url: c.id, id: c.id, site: "YouTube channel", yt: true, icon: safeUrl(c.avatar || "") || null});
+    if (!out.length) throw new Error("none");
+  });
+  const fromPage = IS_APP ? fromService.catch(() => pageDirect(page, 12000).then(t => {
     for (const c of ytChannelsIn(t)) add({title: c.title, url: c.id, id: c.id, site: c.handle ? "youtube.com/" + c.handle : "YouTube channel", yt: true, icon: c.avatar});
-  }) : Promise.reject(new Error("app only"));
-  const fromService = (IS_APP ? fromPage.then(() => { if (out.length) throw new Error("not needed"); }) : Promise.resolve())
-    .then(() => viaService("/youtube/search", {q}, 15000)).then(t => {
-      for (const c of JSON.parse(t).channels || []) if (/^UC[\w-]{22}$/.test(c.id || ""))
-        add({title: c.title || c.id, url: c.id, id: c.id, site: "YouTube channel", yt: true, icon: safeUrl(c.avatar || "") || null});
-    });
+  })) : Promise.reject(new Error("app only"));
   // Exact handle: "the retro future" → youtube.com/@theretrofuture, if that channel exists
   const handle = q.toLowerCase().replace(/^@/, "").replace(/[^a-z0-9._-]/g, "");
   let exact = null;
