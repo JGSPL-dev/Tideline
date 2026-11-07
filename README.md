@@ -2,7 +2,7 @@
 
 **Everything you follow, in one feed.** By Apps For Us.
 
-Websites, YouTube channels, subreddits, podcasts, Google News topics, Bluesky and Mastodon, side by side in one simple feed. No account, no ads, no tracking: your list of sources stays on your device.
+Websites, YouTube channels, subreddits, podcasts, Google News topics, Bluesky and Mastodon, side by side in one simple feed. No account and no tracking: your list of sources stays on your device.
 
 - `index.html`: the whole app (website and Android app share it). Fonts ship in `fonts/`.
 - `app/`: the Android app (Capacitor). Built by GitHub Actions on every push.

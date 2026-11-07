@@ -1847,7 +1847,7 @@ function renderList(){
     else if (!state.feeds.length){
       e.classList.add("welcome");
       const h = el("h3"); h.append(document.createTextNode("Everything you follow, "), el("span", "accent", "in one feed."));
-      e.append(h, el("p", null, "Websites, YouTube channels, subreddits, podcasts, news topics, Bluesky and Mastodon, side by side in one simple feed. No account, no ads, no tracking: your list stays on your device."));
+      e.append(h, el("p", null, "Websites, YouTube channels, subreddits, podcasts, news topics, Bluesky and Mastodon, side by side in one simple feed. No account and no tracking: your list stays on your device."));
       const go = el("button", "btn primary", "Get started"); go.type = "button"; go.onclick = startOnboarding;
       const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); setTimeout(() => $("#importBtn").focus(), 250); };
       const row = el("div", "iorow"); row.append(go, imp); e.append(row);

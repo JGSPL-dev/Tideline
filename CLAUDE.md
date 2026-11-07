@@ -1,6 +1,6 @@
 # YourFeed (by Apps For Us), formerly tick/rss and Tideline
 
-"Everything you follow, in one feed." One feed for websites, YouTube, Reddit, podcasts, Google News topics, Bluesky and Mastodon. No account, no ads, no tracking; data stays on the device.
+"Everything you follow, in one feed." One feed for websites, YouTube, Reddit, podcasts, Google News topics, Bluesky and Mastodon. No account, no tracking; data stays on the device. Do not promise "no ads" anywhere (decided 7 Nov 2026: ads may be part of the business model).
 
 Brand: wordmark "Your" + "Feed" in orange (`--brand`: #d9480f light, #ff8a4c dark), Bricolage Grotesque 800. Icon: Feed Check (two lines and a tick on an orange rounded square).
 
