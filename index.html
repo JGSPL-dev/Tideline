@@ -12,8 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>YourFeed</title>
-<!-- Reader view is switched off (READER_ENABLED in the script). Restore these three libraries when turning it back on:
--->
+<!-- Reader view is switched off (READER_ENABLED in the script). It needs an article-extraction library, served from this site, before it can be turned back on. -->
 <style>
 /* Fonts ship with the app (fonts/, SIL Open Font License): no font requests to Google or anyone else */
 @font-face{font-family:"Instrument Sans";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/instrument-sans-latin-400-normal.woff2) format("woff2")}
@@ -642,7 +641,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 <script>
 (() => {
 // Inside the Android/iPhone app (Capacitor), requests go out natively from the phone: no browser
-// cross-site rules, and sites see an ordinary phone on home or mobile internet. Relays become a backup.
+// cross-site rules, and sites see an ordinary phone on home or mobile internet. The YourFeed service is the backup.
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
 // The Android build stamps this with its version, commit and date (see .github/workflows/android.yml)
 const APP_BUILD = "__APP_BUILD__";
@@ -883,7 +882,7 @@ function redditVariants(url){
   const m = (url || "").match(/^https:\/\/(?:www\.|old\.)?reddit\.com\/r\/(\w+)/i);
   return m ? [`https://www.reddit.com/r/${m[1]}/.rss`, `https://www.reddit.com/r/${m[1]}/new/.rss`] : null;
 }
-// Reddit: its RSS is often refused to cloud servers (relays, Feedly, the feed service), but its
+// Reddit: its RSS is often refused to cloud servers (including our service), but its
 // JSON listing answers this device directly. Same posts and links as the RSS, newest first.
 function redditJsonUrl(url){
   const sub = (url || "").match(/^https:\/\/(?:www\.|old\.)?reddit\.com\/r\/(\w+)/i);
@@ -1987,11 +1986,6 @@ function renderBody(it, body){
   }
   loadReader(it, body);
 }
-async function readerViaRelay(link){
-  const html = await pageDirect(link, 15000);
-  if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
-  return extractArticle(html, link);
-}
 // Strip the parts of a page that are never the article, while class and id names are still there to go on
 const NOT_ARTICLE = [
   "script","style","noscript","iframe","form","nav","header","footer","aside","dialog","button","svg","template",
@@ -2055,9 +2049,7 @@ function miniMarkdown(md){
     return "<p>" + inline(lines.join(" ")) + "</p>";
   }).join("\n");
 }
-// Jina's reader service. First ask for the page's HTML with menus, comments and similar already removed,
-// so the same article extraction can run on real page structure. Fall back to its Markdown version.
-async function readerViaJina(){ throw new Error("The reader is off"); }
+// Reader view is off (READER_ENABLED): no outside reader services are used.
 async function getArticle(){ throw new Error("The reader is off"); }
 // Remove leftovers that aren't the article: menus, share bars, comments, "related" blocks.
 const JUNK_HEAD = /^\s*(\d+\s+)?(comments?|responses?|replies|discussion|join the conversation|leave a (reply|comment)|related( stories| articles| content| reading| topics)?|more (from|on|stories|like this|to explore)|read more|read next|you (may|might) (also )?like|recommended|top stories|most (read|popular|viewed)|trending|latest (news|stories)|sign up|newsletter|subscribe|share this|follow us|about the author|tags?|topics?)\b/i;
@@ -2124,8 +2116,7 @@ async function loadReader(it, body){
     let art = readerCache.get(it.id);
     if (!art){
       if (!it.link) throw new Error("This story has no link");
-      // Two routes at once: our own extraction via the relays, and Jina's reader service. First good one wins.
-      try{ art = await getArticle(it.link); }
+            try{ art = await getArticle(it.link); }
       catch(agg){
         const errs = agg.errors || [];
         if (errs.length && errs.every(isBlockStatus) || errs.some(x => x && x.blocked)) throw blocked();
