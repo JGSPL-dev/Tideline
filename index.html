@@ -943,49 +943,60 @@ async function ytChannelPage(channelId, feed){
   // A channel page is ~1 MB (a feed is ~30 KB), so while we depend on it, check hourly to spare mobile data
   return {title, items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: ""})), everyMin: 60};
 }
-// If YouTube starts refusing many channels in a row, it is limiting this connection: stop asking for a
-// while (30 min, doubling to 6 h) instead of making it worse. Remembered across restarts.
-function ytCooling(){ return Date.now() < (store.get("yf.ytCoolUntil", 0) || 0); }
-function ytRefused(){
-  state.ytStreak = (state.ytStreak || 0) + 1;
-  if (state.ytStreak >= 4 && !ytCooling()){
-    const trips = Math.min(4, (store.get("yf.ytTrips", 0) || 0) + 1);
-    store.set("yf.ytTrips", trips);
-    store.set("yf.ytCoolUntil", Date.now() + 30 * 60000 * Math.pow(2, trips - 1));
-  }
-}
+// YouTube's channel feeds (feeds/videos.xml) have platform-wide outages: every channel answers 404 for
+// hours or days (Feb 2026, Oct 2026…), while youtube.com itself works. So when several channels fail in a
+// row, check one channel's Videos page:
+//  - it works → it's a feed outage: read every channel's Videos page instead (hourly, they're bigger), and
+//    try the feeds again every 2 hours;
+//  - it fails too → YouTube is limiting this connection: stop asking for 30 min, doubling up to 6 h.
+// Both states are remembered across restarts.
+const ytUntil = k => store.get(k, 0) || 0;
+function ytCooling(){ return Date.now() < ytUntil("yf.ytCoolUntil"); }
+function ytFeedsDown(){ return Date.now() < ytUntil("yf.ytRssDownUntil"); }
 function ytAnswered(){ state.ytStreak = 0; store.set("yf.ytTrips", 0); }
+function ytPause(){
+  const trips = Math.min(4, (store.get("yf.ytTrips", 0) || 0) + 1);
+  store.set("yf.ytTrips", trips);
+  store.set("yf.ytCoolUntil", Date.now() + 30 * 60000 * Math.pow(2, trips - 1));
+}
+const hhmm = t => new Date(t).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"});
 async function loadYouTube(url, feed){
   const channelId = ytChannelOf(url);
-  if (ytCooling()){
-    const at = new Date(store.get("yf.ytCoolUntil", 0)).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"});
-    feed.routes = [{k: "ytfeed", ok: false, err: "Paused until " + at}];
-    throw new Error(`YouTube is limiting requests from this connection. Paused until ${at} so it can recover`);
-  }
   const routes = [];
   const note = (k, fn) => fn().then(r => { routes.push({k, ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))}); return r; },
     e => { routes.push({k, ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")}); throw e; });
+  const viaPage = async () => { const r = await note("ytpage", () => ytChannelPage(channelId, feed)); ytAnswered(); feed.routes = routes; return {...r, items: stashArticles(r.items)}; };
+  if (ytCooling()){
+    feed.routes = [{k: "ytfeed", ok: false, err: "Paused until " + hhmm(ytUntil("yf.ytCoolUntil"))}];
+    throw new Error(`YouTube is limiting requests from this connection. Paused until ${hhmm(ytUntil("yf.ytCoolUntil"))} so it can recover`);
+  }
+  // During a feed outage, go straight to the Videos page
+  if (ytFeedsDown()){
+    try{ return await viaPage(); }
+    catch(e){ feed.routes = routes; if (/error (40[0-9]|429|50\d)/.test(e.message)) ytPause(); throw new Error("YouTube's feeds are down and the channel page didn't load: " + e.message); }
+  }
   try{
     const r = await note("ytfeed", () => loadOneFeed(url, feed, {}));
     ytAnswered(); feed.routes = routes; return r;
   }catch(first){
     const refused = /error (40[0-9]|429|50\d)/.test(first.message);
-    if (refused) ytRefused();
-    // One channel failing on its own: try the other ways. Many failing: YouTube is limiting us, so stop.
-    if (!ytCooling() && (state.ytStreak || 0) < 2){
-      try{
-        const pl = "https://www.youtube.com/feeds/videos.xml?playlist_id=UU" + channelId.slice(2);
-        const r = await note("ytplaylist", () => loadOneFeed(pl, feed, {}));
-        ytAnswered(); feed.routes = routes; return r;
-      }catch{}
-      try{
-        const r = await note("ytpage", () => ytChannelPage(channelId, feed));
-        ytAnswered(); feed.routes = routes;
-        return {...r, items: stashArticles(r.items)};
-      }catch{}
+    if (!refused){ feed.routes = routes; throw first; }
+    state.ytStreak = (state.ytStreak || 0) + 1;
+    // The uploads-playlist feed sometimes still works when channel feeds don't
+    try{
+      const r = await note("ytplaylist", () => loadOneFeed("https://www.youtube.com/feeds/videos.xml?playlist_id=UU" + channelId.slice(2), feed, {}));
+      ytAnswered(); feed.routes = routes; return r;
+    }catch{}
+    // Is it a feed outage, or are we being limited? The Videos page tells us.
+    try{
+      const r = await viaPage();
+      store.set("yf.ytRssDownUntil", Date.now() + 2 * 3600000);
+      return r;
+    }catch(e){
+      feed.routes = routes;
+      if (/error (40[0-9]|429|50\d)/.test(e.message)) ytPause();
+      throw new Error("YouTube is refusing requests from this connection" + (ytCooling() ? `. Paused until ${hhmm(ytUntil("yf.ytCoolUntil"))}` : ""));
     }
-    feed.routes = routes;
-    throw new Error(refused && ytCooling() ? "YouTube is limiting requests from this connection. Paused so it can recover" : first.message);
   }
 }
 async function loadFeed(url, feed){
@@ -1527,7 +1538,8 @@ function renderStatus(){
     const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
   } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
-  if (ytCooling()) s.append(document.createTextNode(` · YouTube paused until ${new Date(store.get("yf.ytCoolUntil", 0)).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"})}`));
+  if (ytCooling()) s.append(document.createTextNode(` · YouTube paused until ${hhmm(ytUntil("yf.ytCoolUntil"))}`));
+  else if (ytFeedsDown()) s.append(document.createTextNode(" · YouTube's feeds are down, reading channel pages instead"));
   else if (state.ytWaiting) s.append(document.createTextNode(` · ${state.ytWaiting} YouTube channels queued`));
 }
 function renderFilterBar(){
