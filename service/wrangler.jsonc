@@ -1,0 +1,11 @@
+// Cloudflare Wrangler config for the YourFeed service, matching the dashboard set-up.
+// Deploy from a terminal with:  npx wrangler deploy  (from this folder)
+// The YouTube API key is a secret: set it with  npx wrangler secret put YT_API_KEY  (never put it in this file)
+{
+  "name": "yourfeed-service",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-01",
+  "kv_namespaces": [
+    { "binding": "YF_CACHE", "id": "1621b0df4ba748a39b774be1f2f9aff6" }
+  ]
+}
