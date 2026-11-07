@@ -1527,6 +1527,8 @@ function renderStatus(){
     const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
   } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
+  if (ytCooling()) s.append(document.createTextNode(` · YouTube paused until ${new Date(store.get("yf.ytCoolUntil", 0)).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"})}`));
+  else if (state.ytWaiting) s.append(document.createTextNode(` · ${state.ytWaiting} YouTube channels queued`));
 }
 function renderFilterBar(){
   const pill = $("#activeFilter");
@@ -2117,7 +2119,7 @@ async function loadReader(it, body){
 // How often each kind of source is checked when its feed doesn't say (minutes)
 function defaultEveryMin(f){
   const u = f.url || "";
-  if (/youtube\.com\/feeds/.test(u)) return 15;          // YouTube refreshes its channel feeds about every 15 minutes
+  if (/youtube\.com\/feeds/.test(u)) return 30;          // YouTube limits connections that ask too often; 30 minutes is plenty for new videos
   if (/reddit\.com/.test(u)) return 15;                    // keep well inside Reddit's request limits
   if (/news\.google\.com/.test(u)) return 15;
   if (/bsky\.app|mastodon|\.rss$/.test(u) && /bsky|@/.test(u)) return 15;
@@ -2130,12 +2132,18 @@ function everyMin(f){
   return Math.min(MAX_EVERY, Math.max(MIN_EVERY, want));
 }
 function nextCheck(f){
+  if (ytChannelOf(f.url) && ytCooling()) return Math.max(store.get("yf.ytCoolUntil", 0), f.lastFetched ? 0 : 0);
   if (!f.lastFetched) return 0;
   if (f.error){                                             // failed: try again after 5, 10, 20… minutes, at most an hour
     const wait = Math.min(60, 5 * 2 ** Math.min(4, (f.fails || 1) - 1));
     return (f.lastTried || f.lastFetched) + wait * 60000;
   }
-  return f.lastFetched + everyMin(f) * 60000;
+  return f.lastFetched + (everyMin(f) + jitterMin(f)) * 60000;
+}
+// Each source gets its own small, steady offset so they don't all fall due at the same moment
+function jitterMin(f){
+  let h = 0; for (const c of String(f.id)) h = (h * 31 + c.charCodeAt(0)) | 0;
+  return (Math.abs(h) % 1000) / 1000 * everyMin(f) * 0.25;
 }
 const isDue = (f, now = Date.now()) => nextCheck(f) <= now + 30000;
 function soonestCheck(){ return Math.min(...state.feeds.map(nextCheck)); }
@@ -2166,7 +2174,14 @@ async function refreshOne(f){
 async function refreshAll(){
   if (state.busy || !state.feeds.length) return;
   // Only feeds whose own refresh time has come are fetched; the rest keep what they have
-  const due = state.feeds.filter(f => isDue(f));
+  let due = state.feeds.filter(f => isDue(f));
+  // YouTube: none while it's pausing us, and at most 10 channels per round (the rest follow a minute later),
+  // so a big import or a long gap never turns into a burst of requests
+  const isYT = f => !!ytChannelOf(f.url);
+  const ytDue = due.filter(isYT).sort((a, b) => (a.lastFetched || 0) - (b.lastFetched || 0));
+  const ytNow = ytCooling() ? [] : ytDue.slice(0, 10);
+  state.ytWaiting = ytDue.length - ytNow.length;
+  due = due.filter(f => !isYT(f)).concat(ytNow);
   if (!due.length){ state.note = "upToDate"; renderStatus(); return; }
   state.note = "";
   state.busy = true; renderStatus();

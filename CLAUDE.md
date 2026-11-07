@@ -23,6 +23,7 @@ Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.gi
 - Cards: one stretched link per card (`.cardlink`), Save and Share buttons above it. Saved posts in `yf.saved`.
 - Onboarding: welcome screen when there are no sources, interest picker → folders (`INTERESTS`), spotlight tour (`TOUR`). `suggestFolder` proposes a folder when adding.
 - Podcasts: shared player `pod`, mini player, Media Session; in the app a forked media-session plugin (`app/plugins/media-session`) runs a foreground service, with back/forward as Android 13+ system media controls. Stall guard `checkPod`.
+- YouTube is touchy about bursts from one connection (it blocks it with 404/500 for hours): requests go one at a time 1.5 s apart (app fetch wrapper), channels are checked every 30 min with a per-source jitter, at most 10 per refresh round, and `ytRefused`/`ytCooling` pause all YouTube requests 30 min→6 h after 4 refusals in a row. Fallbacks (uploads-playlist feed, channel Videos page) only for one-off failures. Imports by name look up one channel at a time.
 - Android back button (`goBack`): closes the open layer, then returns to Everything, then minimises the app.
 - Storage keys keep the old `tl.` prefix (new ones use `yf.`); keep them.
 
