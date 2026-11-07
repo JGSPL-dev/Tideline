@@ -746,7 +746,8 @@ state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddi
 // and the YourFeed service, our own locked-down Cloudflare Worker (service/worker.js). No third-party relays.
 // The app (IS_APP) goes direct first and only falls back to the service; the website needs the service
 // for most feeds, because browsers block reading other sites unless they allow it.
-const SERVICE_DEFAULT = "https://yourfeed-service.josh-gray294.workers.dev";   // the YourFeed service (service/worker.js); move to service.appsforus.co.uk later
+const SERVICE_DEFAULT = "https://service.appsforus.co.uk";   // the YourFeed service (service/worker.js)
+const SERVICE_BACKUP = "https://yourfeed-service.josh-gray294.workers.dev";   // same service, Cloudflare's own address
 const ACCEPT_FEED = {"Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, application/json;q=0.9, */*;q=0.5"};
 async function fetchWithTimeout(url, ms, headers){
   const ctrl = new AbortController();
@@ -762,7 +763,14 @@ function serviceBase(){
 async function viaService(path, params, ms = 14000){
   const base = serviceBase();
   if (!base) throw new Error(IS_APP ? "Not available from your phone" : "The website needs the YourFeed service for this");
-  const r = await fetchWithTimeout(base + path + "?" + new URLSearchParams(params), ms);
+  const q = path + "?" + new URLSearchParams(params);
+  let r;
+  try{ r = await fetchWithTimeout(base + q, ms); }
+  catch(e){
+    // Can't reach our own address (e.g. its certificate is still being set up): use Cloudflare's address for the same service
+    if (base !== SERVICE_DEFAULT || !SERVICE_BACKUP) throw e;
+    r = await fetchWithTimeout(SERVICE_BACKUP + q, ms);
+  }
   const t = await r.text();
   if (!r.ok){ let m = ""; try{ m = JSON.parse(t).error; }catch{} throw new Error(m || "The YourFeed service answered with error " + r.status); }
   return t;
