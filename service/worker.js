@@ -11,6 +11,8 @@
 //                                   (a fallback for when YouTube's own channel feeds are down)
 //   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date}]} via the official YouTube Data API
 //                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
+//   GET/POST /websub/youtube?id=UC… → YouTube's push hub: confirms subscriptions and delivers new videos
+//                                   (subscribed automatically for channels people follow; needs YF_CACHE + YT_API_KEY)
 //   GET /health                   → {ok:true, youtubeApi:true|false}
 
 const ALLOWED_ORIGINS = [
@@ -135,6 +137,73 @@ async function kvPut(env, key, value, seconds){
 }
 const sendJson = (origin, text, extra) => { const h = headers(origin, "application/json; charset=utf-8"); if (extra) for (const k in extra) h.set(k, extra[k]); return new Response(text, {headers: h}); };
 
+// ---- YouTube push (WebSub): YouTube tells us when a channel posts, so we hardly ever need to ask ----
+const HUB = "https://pubsubhubbub.appspot.com/subscribe";
+const topicFor = id => "https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + id;
+const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+async function pushSecret(env, id){
+  // Per-channel secret the hub signs deliveries with; derived from the API key, so nothing extra to set up
+  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("yourfeed-websub:" + env.YT_API_KEY + ":" + id))).slice(0, 40);
+}
+async function hmacSha1(secret, body){
+  const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), {name: "HMAC", hash: "SHA-1"}, false, ["sign"]);
+  return hex(await crypto.subtle.sign("HMAC", k, body));
+}
+// Subscribe (or renew) a channel; called in the background when someone asks for it
+async function ensurePush(env, id, self){
+  if (!env || !env.YF_CACHE || !env.YT_API_KEY) return;
+  const rec = await kvGet(env, "push:" + id);
+  if (rec && rec.until - Date.now() > 86400000) return;                       // active for at least another day
+  if (rec && rec.asked && Date.now() - rec.asked < 6 * 3600000) return;       // asked recently, waiting for the hub
+  const body = new URLSearchParams({
+    "hub.mode": "subscribe", "hub.topic": topicFor(id), "hub.callback": self + "/websub/youtube?id=" + id,
+    "hub.verify": "async", "hub.secret": await pushSecret(env, id), "hub.lease_seconds": "864000"
+  });
+  try{ await fetch(HUB, {method: "POST", body}); }catch{}
+  await kvPut(env, "push:" + id, {...(rec || {}), asked: Date.now(), until: rec ? rec.until : 0}, 30 * 86400);
+}
+async function handlePush(req, url, env){
+  const id = url.searchParams.get("id") || "";
+  const plain = (t, status = 200) => new Response(t, {status, headers: {"Content-Type": "text/plain"}});
+  if (!/^UC[\w-]{22}$/.test(id) || !env || !env.YF_CACHE || !env.YT_API_KEY) return plain("no", 404);
+  if (req.method === "GET"){
+    // The hub checks we really asked for this subscription
+    const mode = url.searchParams.get("hub.mode"), topic = url.searchParams.get("hub.topic"), challenge = url.searchParams.get("hub.challenge") || "";
+    if (topic !== topicFor(id) || !/^(subscribe|unsubscribe)$/.test(mode || "")) return plain("no", 404);
+    if (mode === "subscribe"){
+      const lease = Math.min(864000, +url.searchParams.get("hub.lease_seconds") || 432000);
+      await kvPut(env, "push:" + id, {until: Date.now() + lease * 1000}, 30 * 86400);
+    }
+    return plain(challenge.slice(0, 200));
+  }
+  if (req.method !== "POST") return plain("no", 405);
+  const body = await req.arrayBuffer();
+  if (body.byteLength > 1024 * 1024) return plain("too big", 413);
+  // Only deliveries signed with our secret are accepted
+  const sig = (req.headers.get("X-Hub-Signature") || "").replace(/^sha1=/, "");
+  if (!sig || sig !== await hmacSha1(await pushSecret(env, id), body)) return plain("ok");   // ignore, but don't help guessers
+  const xml = new TextDecoder().decode(body);
+  const kv = await kvGet(env, "ytl:" + id);
+  if (!kv) return plain("ok");                                                  // nobody has asked for this channel yet
+  let videos = kv.videos || [];
+  for (const m of xml.matchAll(/<at:deleted-entry[^>]*ref="yt:video:([\w-]{11})"/g)) videos = videos.filter(v => v.id !== m[1]);
+  for (const m of xml.matchAll(/<entry>([\s\S]*?)<\/entry>/g)){
+    const e = m[1];
+    const vid = (e.match(/<yt:videoId>([\w-]{11})<\/yt:videoId>/) || [])[1];
+    const ch = (e.match(/<yt:channelId>(UC[\w-]{22})<\/yt:channelId>/) || [])[1];
+    if (!vid || ch !== id) continue;
+    const title = ((e.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+    const date = Date.parse((e.match(/<published>([^<]+)<\/published>/) || [])[1] || "") || Date.now();
+    const old = videos.find(v => v.id === vid);
+    videos = [{id: vid, title: title || (old && old.title) || "", date: old ? old.date : date}, ...videos.filter(v => v.id !== vid)];
+  }
+  videos.sort((a, b) => b.date - a.date);
+  videos = videos.slice(0, 20);
+  await kvPut(env, "ytl:" + id, {at: Date.now(), top: videos[0] && videos[0].id, title: kv.title, videos, pushed: true}, 14 * 86400);
+  try{ await caches.default.delete(new Request("https://cache.yourfeed/" + encodeURIComponent("ytl:" + id))); }catch{}
+  return plain("ok");
+}
+
 function agoToMs(t){
   const m = String(t || "").match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s+ago/i);
   if (!m) return 0;
@@ -160,14 +229,20 @@ function videosFrom(t){
   return out.slice(0, 30);
 }
 
-async function handle(req, url, origin, env){
+async function handle(req, url, origin, env, ctx){
   const p = url.pathname.replace(/\/+$/, "") || "/";
   if (p === "/health") return json(origin, {ok: true, youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE)});
 
   if (p === "/youtube/latest"){
     const id = url.searchParams.get("id") || "";
     if (!/^UC[\w-]{22}$/.test(id)) return fail(origin, 400, "Not a YouTube channel ID");
-    const FRESH = 30 * 60000;
+    // While YouTube is pushing this channel's new videos to us, the stored copy stays current on its
+    // own, so it's only re-checked every 6 hours (as a safety net); otherwise every 30 minutes
+    const push = await kvGet(env, "push:" + id);
+    const pushing = push && push.until > Date.now();
+    if (ctx && !pushing) ctx.waitUntil(ensurePush(env, id, url.origin));
+    else if (ctx && push && push.until - Date.now() < 86400000) ctx.waitUntil(ensurePush(env, id, url.origin));
+    const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
     // 1. This location's copy (30 min)
     const edge = await edgeGet("ytl:" + id);
     if (edge) return sendJson(origin, edge, {"X-YourFeed-Cache": "edge"});
@@ -311,8 +386,12 @@ async function handle(req, url, origin, env){
 }
 
 export default {
-  async fetch(req, env){
+  async fetch(req, env, ctx){
     const url = new URL(req.url);
+    // YouTube's push hub: no Origin, POSTs, and must not be rate-limited
+    if (url.pathname === "/websub/youtube"){
+      try{ return await handlePush(req, url, env); }catch{ return new Response("error", {status: 500}); }
+    }
     const origin = req.headers.get("Origin") || "";
     if (req.method === "OPTIONS"){
       const h = headers(origin, "text/plain"); h.set("Access-Control-Allow-Methods", "GET"); h.set("Access-Control-Max-Age", "86400");
@@ -322,7 +401,7 @@ export default {
     // Browsers on other websites can't use this service; apps and the YourFeed site can
     if (origin && !ALLOWED_ORIGINS.includes(origin)) return fail(origin, 403, "Not allowed from this website");
     if (limited(req.headers.get("CF-Connecting-IP") || "?")) return fail(origin, 429, "Too many requests, try again in a minute");
-    try{ return await handle(req, url, origin, env); }
+    try{ return await handle(req, url, origin, env, ctx); }
     catch(e){ return fail(origin, 502, e && e.name === "AbortError" ? "The site took too long to answer" : String(e && e.message || "Failed")); }
   }
 };

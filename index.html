@@ -770,12 +770,25 @@ async function viaService(path, params, ms = 14000){
 const friendlyNetErr = e => e && e.name === "AbortError" ? new Error("Took too long")
   : /Failed to fetch|NetworkError|Load failed/i.test(String(e && e.message)) ? new Error(IS_APP ? "Couldn't connect" : "Blocked by the browser (normal on the website)") : e;
 // A feed's text, straight from the publisher
-async function feedDirect(url, ms = 12000){
+// "Has this changed?": in the app, send the feed's last ETag / Last-Modified, and the site answers
+// 304 (a few bytes) when nothing is new. (Browsers can't send these to other sites, so app only.)
+const NOT_MODIFIED = "\u0000not-modified";
+async function feedDirect(url, ms = 12000, feed){
+  const h = {...ACCEPT_FEED};
+  const v = IS_APP && feed && feed.http && feed.http[url];
+  const haveStories = feed && state.items.some(i => i.feedId === feed.id);
+  if (v && haveStories){ if (v.etag) h["If-None-Match"] = v.etag; if (v.lm) h["If-Modified-Since"] = v.lm; }
   let r;
-  try{ r = await fetchWithTimeout(url, ms, ACCEPT_FEED); }catch(e){ throw friendlyNetErr(e); }
+  try{ r = await fetchWithTimeout(url, ms, h); }catch(e){ throw friendlyNetErr(e); }
+  if (r.status === 304 && v && haveStories) return NOT_MODIFIED;
   if (!r.ok) throw new Error("The site answered with error " + r.status);
   const t = await r.text();
   if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
+  if (IS_APP && feed && feed.id !== "probe"){
+    const etag = r.headers.get("ETag"), lm = r.headers.get("Last-Modified");
+    feed.http = feed.http || {};
+    if (etag || lm) feed.http[url] = {etag: etag || "", lm: lm || ""}; else delete feed.http[url];
+  }
   return t;
 }
 const feedViaService = (url, ms) => viaService("/feed", {url}, ms);
@@ -972,15 +985,20 @@ async function loadYouTube(url, feed){
   const routes = [];
   const note = (k, fn) => fn().then(r => { routes.push({k, ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))}); return r; },
     e => { routes.push({k, ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")}); throw e; });
-  // Backup order: the official API (if the service has it), then the channel's Videos page
   const viaPage = async () => {
-    if (serviceBase()){
-      try{ const r = await note("ytapi", () => ytViaApi(channelId, feed)); ytAnswered(); feed.routes = routes; return {...r, items: stashArticles(r.items)}; }catch{}
-    }
     const r = await note("ytpage", () => ytChannelPage(channelId, feed)); ytAnswered(); feed.routes = routes; return {...r, items: stashArticles(r.items)};
   };
+  // First choice: the YourFeed service's shared copy. YouTube pushes new videos to it, so one copy serves
+  // everyone and nobody's phone needs to ask YouTube at all
+  if (serviceBase()){
+    try{
+      const r = await note("ytapi", () => ytViaApi(channelId, feed));
+      feed.routes = routes;
+      return {...r, items: stashArticles(r.items)};
+    }catch{}
+  }
   if (ytCooling()){
-    feed.routes = [{k: "ytfeed", ok: false, err: "Paused until " + hhmm(ytUntil("yf.ytCoolUntil"))}];
+    feed.routes = [...routes, {k: "ytfeed", ok: false, err: "Paused until " + hhmm(ytUntil("yf.ytCoolUntil"))}];
     throw new Error(`YouTube is limiting requests from this connection. Paused until ${hhmm(ytUntil("yf.ytCoolUntil"))} so it can recover`);
   }
   // During a feed outage, go straight to the Videos page
@@ -1064,12 +1082,13 @@ function notFeedReason(t){
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
-const ROUTE_NAMES = {ytapi: "YouTube API (YourFeed service)", ytfeed: "YouTube feed", ytplaylist: "YouTube uploads feed", ytpage: "YouTube channel page", phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
+const ROUTE_NAMES = {ytapi: "YourFeed service (shared copy)", ytfeed: "YouTube feed", ytplaylist: "YouTube uploads feed", ytpage: "YouTube channel page", phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
 async function loadOneFeed(url, feed, logOut){
   // Direct from the publisher, and the YourFeed service (in the app only if direct fails).
   // What each route said is kept on the feed (feed.routes) so the menu can show why a source isn't updating.
   const log = {};
   const take = (key, p) => p.then(t => {
+    if (t === NOT_MODIFIED){ log[key] = {ok: true, n: 0, unchanged: true}; return {title: feed.title, items: [], everyMin: feed.everyMin || null, unchanged: true}; }
     const r = parseFeed(t, feed);
     log[key] = {ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))};
     return r;
@@ -1077,9 +1096,9 @@ async function loadOneFeed(url, feed, logOut){
     log[key] = e && e.message === "skip" ? {skip: true} : {ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")};
     throw e;
   });
-  const direct = take("direct", feedDirect(url, 12000));
+  const direct = take("direct", feedDirect(url, 12000, feed));
   const hasService = !!serviceBase();
-  const gate = () => IS_APP ? direct.then(r => { if (r.items.length) throw new Error("skip"); }, () => {}) : Promise.resolve();
+  const gate = () => IS_APP ? direct.then(r => { if (r.items.length || r.unchanged) throw new Error("skip"); }, () => {}) : Promise.resolve();
   const service = hasService ? take("service", gate().then(() => feedViaService(url, 14000))) : null;
   const routes = service ? [direct, service] : [direct];
   const keep = () => { const r = ["direct", ...(hasService ? ["service"] : [])].map(k => ({k, ...(log[k] || {slow: true})})); if (logOut) logOut.routes = r; else feed.routes = r; };
@@ -1092,7 +1111,10 @@ async function loadOneFeed(url, feed, logOut){
     if (!IS_APP && !hasService && !real) throw new Error("This feed can't be read in a browser without the YourFeed service");
     throw errs.find(e => !/Blocked by the browser/.test(e.message)) || errs[0] || new Error("Couldn't reach that feed");
   }
-  if (!got.some(g => g.items.length)) throw new Error("The feed has no stories");
+  if (!got.some(g => g.items.length)){
+    if (got.some(g => g.unchanged)) return {title: feed.title, items: [], everyMin: feed.everyMin || null, unchanged: true};
+    throw new Error("The feed has no stories");
+  }
   const title = (got.find(g => g.title) || got[0]).title;
   const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
   return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin};
@@ -2207,7 +2229,7 @@ async function refreshAll(){
   // so a big import or a long gap never turns into a burst of requests
   const isYT = f => !!ytChannelOf(f.url);
   const ytDue = due.filter(isYT).sort((a, b) => (a.lastFetched || 0) - (b.lastFetched || 0));
-  const ytNow = ytCooling() ? [] : ytDue.slice(0, 10);
+  const ytNow = (ytCooling() && !serviceBase()) ? [] : ytDue.slice(0, serviceBase() ? 40 : 10);
   state.ytWaiting = ytDue.length - ytNow.length;
   due = due.filter(f => !isYT(f)).concat(ytNow);
   if (!due.length){ state.note = "upToDate"; renderStatus(); return; }
@@ -2433,7 +2455,7 @@ function editForm(f){
     const ul = el("ul", "checks");
     f.routes.forEach(r => {
       const li = el("li", "check-row" + (r.ok ? " ok" : r.skip || r.slow ? "" : " bad"));
-      const what = r.ok ? `${r.n} stor${r.n === 1 ? "y" : "ies"}` + (r.newest ? `, newest ${ago(r.newest)}` : "") : r.skip ? "not needed" : r.slow ? "no answer in time" : r.err;
+      const what = r.ok ? (r.unchanged ? "no change since last check" : `${r.n} stor${r.n === 1 ? "y" : "ies"}` + (r.newest ? `, newest ${ago(r.newest)}` : "")) : r.skip ? "not needed" : r.slow ? "no answer in time" : r.err;
       li.append(el("span", "mark", r.ok ? (r.n ? "✓" : "–") : r.skip || r.slow ? "·" : "✕"), el("span", null, ROUTE_NAMES[r.k] || r.k), el("span", "ms", what));
       ul.append(li);
     });
@@ -3362,7 +3384,7 @@ function buildReport(){
   failing.forEach(r => { const k = errorKind(r.f.error); (causes[k] = causes[k] || []).push(r); });
   const byPlatform = {};
   rows.forEach(r => { const p = platformOf(r.f); const b = byPlatform[p] = byPlatform[p] || {all: 0, bad: 0}; b.all++; if (r.status === "failing") b.bad++; });
-  const routeLine = f => (f.routes || []).map(r => `${ROUTE_NAMES[r.k] || r.k}: ${r.ok ? `ok ${r.n}` : r.skip ? "not needed" : r.slow ? "no answer" : r.err}`).join("; ");
+  const routeLine = f => (f.routes || []).map(r => `${ROUTE_NAMES[r.k] || r.k}: ${r.ok ? (r.unchanged ? "no change" : `ok ${r.n}`) : r.skip ? "not needed" : r.slow ? "no answer" : r.err}`).join("; ");
   const lines = [
     `YourFeed source report · ${new Date().toLocaleString("en-GB")}`,
     `Build: ${IS_APP ? "Android app " + (APP_BUILD.startsWith("__") ? "dev" : APP_BUILD) : "website"} · service: ${serviceBase() ? "on" : "off"}`,

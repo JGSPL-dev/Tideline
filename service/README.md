@@ -29,6 +29,10 @@ Remembers YouTube results, channel lookups and found feeds for everyone, so outs
 2. `yourfeed-service` → Settings → Bindings → Add → KV namespace → Variable name `YF_CACHE`, namespace `yourfeed-cache` → Deploy.
 3. `/health` should show `"sharedStore":true`.
 
+## YouTube push updates (automatic)
+
+With the API key and the shared store set up, the service subscribes each followed channel to YouTube's push hub (pubsubhubbub.appspot.com). YouTube then sends new videos to `/websub/youtube` as they're published (signed; unsigned deliveries are ignored), so stored channels stay current and are only re-checked through the API every 6 hours as a safety net. Subscriptions renew themselves while people follow the channel.
+
 ## Endpoints
 
 | Path | Returns |
