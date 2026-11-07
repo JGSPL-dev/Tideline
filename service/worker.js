@@ -172,7 +172,10 @@ async function handlePush(req, url, env){
     if (topic !== topicFor(id) || !/^(subscribe|unsubscribe)$/.test(mode || "")) return plain("no", 404);
     if (mode === "subscribe"){
       const lease = Math.min(864000, +url.searchParams.get("hub.lease_seconds") || 432000);
-      await kvPut(env, "push:" + id, {until: Date.now() + lease * 1000}, 30 * 86400);
+      const until = Date.now() + lease * 1000;
+      await kvPut(env, "push:" + id, {until}, 30 * 86400);
+      const kv = await kvGet(env, "ytl:" + id);
+      if (kv) await kvPut(env, "ytl:" + id, {...kv, pushUntil: until}, 14 * 86400);
     }
     return plain(challenge.slice(0, 200));
   }
@@ -199,7 +202,10 @@ async function handlePush(req, url, env){
   }
   videos.sort((a, b) => b.date - a.date);
   videos = videos.slice(0, 20);
-  await kvPut(env, "ytl:" + id, {at: Date.now(), top: videos[0] && videos[0].id, title: kv.title, videos, pushed: true}, 14 * 86400);
+  // Title edits and other updates to videos we already have don't need a write
+  const changed = videos.length !== (kv.videos || []).length || videos.some((v, i) => !kv.videos[i] || kv.videos[i].id !== v.id || kv.videos[i].title !== v.title);
+  if (!changed) return plain("ok");
+  await kvPut(env, "ytl:" + id, {...kv, at: Date.now(), top: videos[0] && videos[0].id, videos}, 14 * 86400);
   try{ await caches.default.delete(new Request("https://cache.yourfeed/" + encodeURIComponent("ytl:" + id))); }catch{}
   return plain("ok");
 }
@@ -236,18 +242,19 @@ async function handle(req, url, origin, env, ctx){
   if (p === "/youtube/latest"){
     const id = url.searchParams.get("id") || "";
     if (!/^UC[\w-]{22}$/.test(id)) return fail(origin, 400, "Not a YouTube channel ID");
-    // While YouTube is pushing this channel's new videos to us, the stored copy stays current on its
-    // own, so it's only re-checked every 6 hours (as a safety net); otherwise every 30 minutes
-    const push = await kvGet(env, "push:" + id);
-    const pushing = push && push.until > Date.now();
-    if (ctx && !pushing) ctx.waitUntil(ensurePush(env, id, url.origin));
-    else if (ctx && push && push.until - Date.now() < 86400000) ctx.waitUntil(ensurePush(env, id, url.origin));
-    const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
-    // 1. This location's copy (30 min)
+    // Free-plan limits shape this: KV allows 100,000 reads but only 1,000 writes a day, so
+    //  - this location's copy is checked first (free, no KV read),
+    //  - the shared copy is read once per miss, and only rewritten when there's a new video,
+    //  - push status lives inside the shared copy, so it costs no extra read.
+    // 1. This location's copy
     const edge = await edgeGet("ytl:" + id);
     if (edge) return sendJson(origin, edge, {"X-YourFeed-Cache": "edge"});
-    // 2. The shared copy, if it's recent enough
+    // 2. The shared copy. While YouTube pushes this channel's new videos to us it stays current on its own,
+    //    so it's only re-checked every 6 hours (a safety net); otherwise every 30 minutes.
     const kv = await kvGet(env, "ytl:" + id);
+    const pushing = kv && kv.pushUntil > Date.now();
+    const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
+    if (ctx && (!kv || !kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
     if (kv && Date.now() - kv.at < FRESH){
       const text = JSON.stringify({title: kv.title, videos: kv.videos});
       await edgePut("ytl:" + id, text, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000)));
@@ -272,10 +279,10 @@ async function handle(req, url, origin, env, ctx){
       .map(s => ({id: s.resourceId.videoId, title: s.title, date: Date.parse(s.publishedAt) || 0}));
     const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || (kv && kv.title) || null;
     const text = JSON.stringify({title, videos});
-    await edgePut("ytl:" + id, text, 1800);
-    // Write the shared copy only when there's a new video, or every 6 hours (KV writes are limited)
+    await edgePut("ytl:" + id, text, Math.round(FRESH / 1000));
+    // Rewrite the shared copy only when there's a new video (KV writes are the scarcest free resource)
     const top = videos[0] && videos[0].id;
-    if (!kv || kv.top !== top || Date.now() - kv.at > 6 * 3600000) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos}, 14 * 86400);
+    if (!kv || kv.top !== top) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
     return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 
