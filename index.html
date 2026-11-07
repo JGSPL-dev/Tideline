@@ -746,7 +746,7 @@ state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddi
 // and the YourFeed service, our own locked-down Cloudflare Worker (service/worker.js). No third-party relays.
 // The app (IS_APP) goes direct first and only falls back to the service; the website needs the service
 // for most feeds, because browsers block reading other sites unless they allow it.
-const SERVICE_DEFAULT = "";   // set to the YourFeed service address once it's deployed, e.g. "https://service.appsforus.co.uk"
+const SERVICE_DEFAULT = "https://yourfeed-service.josh-gray294.workers.dev";   // the YourFeed service (service/worker.js); move to service.appsforus.co.uk later
 const ACCEPT_FEED = {"Accept": "application/rss+xml, application/atom+xml, application/xml, text/xml, application/json;q=0.9, */*;q=0.5"};
 async function fetchWithTimeout(url, ms, headers){
   const ctrl = new AbortController();
