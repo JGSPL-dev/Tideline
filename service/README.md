@@ -19,4 +19,5 @@ A small Cloudflare Worker that does the few things a browser can't: read feeds f
 | `/discover?url=` | `{feeds, title}` for a website |
 | `/youtube/channel?url=` | `{id, title, avatar}` |
 | `/youtube/search?q=` | `{channels:[{id, title, avatar}]}` |
+| `/youtube/videos?id=UC…` | `{title, videos:[{id, title, date}]}` from the channel's Videos page (when YouTube's feeds are down) |
 | `/health` | `{ok:true}` |

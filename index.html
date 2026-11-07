@@ -891,7 +891,83 @@ async function fetchViaRedditJson(url, feed){
   const name = posts[0] && (posts[0].subreddit_name_prefixed || (posts[0].author && "u/" + posts[0].author));
   return {title: name || "", items};
 }
+// YouTube's channel feeds (feeds/videos.xml) go down for hours or days a few times a year, answering
+// 404/500 for every channel. When that happens: try the channel's uploads-playlist feed, then read the
+// channel's Videos page (from the phone, or via the YourFeed service on the website).
+const ytChannelOf = url => (String(url).match(/youtube\.com\/feeds\/videos\.xml\?channel_id=(UC[\w-]{22})/) || [])[1] || null;
+function agoToMs(t){
+  const m = String(t || "").match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s+ago/i);
+  if (!m) return 0;
+  const unit = {second: 1e3, minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6, year: 31536e6}[m[2].toLowerCase()];
+  return Date.now() - (+m[1]) * unit;
+}
+// Videos listed on a channel's Videos page, whatever layout YouTube used
+function ytVideosIn(t){
+  const out = [], seen = new Set();
+  const unesc = x => x.replace(/\\u0026/g, "&").replace(/\\"/g, '"').replace(/\\\//g, "/");
+  for (const m of t.matchAll(/"videoRenderer":\{"videoId":"([\w-]{11})"/g)){
+    const near = t.slice(m.index, m.index + 6000);
+    const title = (near.match(/"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)+)"/) || near.match(/"title":\{"simpleText":"((?:[^"\\]|\\.)+)"/) || [])[1];
+    const when = (near.match(/"publishedTimeText":\{"simpleText":"([^"]+)"/) || [])[1];
+    if (title && !seen.has(m[1])){ seen.add(m[1]); out.push({id: m[1], title: unesc(title), date: agoToMs(when)}); }
+  }
+  for (const m of t.matchAll(/"lockupViewModel":\{"contentImage".{0,3000}?"contentId":"([\w-]{11})"/g)){
+    if (seen.has(m[1])) continue;
+    const near = t.slice(m.index, m.index + 8000);
+    const title = (near.match(/"lockupMetadataViewModel":\{"title":\{"content":"((?:[^"\\]|\\.)+)"/) || [])[1];
+    const when = (near.match(/"content":"(\d+\s*(?:second|minute|hour|day|week|month|year)s?\s+ago)"/i) || [])[1];
+    if (title){ seen.add(m[1]); out.push({id: m[1], title: unesc(title), date: agoToMs(when)}); }
+  }
+  // Keep the page order (newest first); give undated ones a time just after the one before
+  let last = Date.now();
+  out.forEach(v => { if (!v.date) v.date = last - 60000; last = v.date; });
+  return out.slice(0, 30);
+}
+async function ytChannelPage(channelId, feed){
+  let list, title = "";
+  if (IS_APP){
+    const t = await pageDirect(ytPage(`https://www.youtube.com/channel/${channelId}/videos`), 15000);
+    list = ytVideosIn(t); title = channelTitleIn(t) || "";
+  } else {
+    const j = JSON.parse(await viaService("/youtube/videos", {id: channelId}, 18000));
+    list = (j.videos || []).filter(v => /^[\w-]{11}$/.test(v.id || "")); title = j.title || "";
+  }
+  if (!list.length) throw new Error("No videos found on the channel page");
+  // A channel page is ~1 MB (a feed is ~30 KB), so while we depend on it, check hourly to spare mobile data
+  return {title, items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: ""})), everyMin: 60};
+}
+async function loadYouTube(url, feed){
+  const channelId = ytChannelOf(url);
+  const routes = [];
+  const note = (k, fn) => fn().then(r => { routes.push({k, ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))}); return r; },
+    e => { routes.push({k, ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")}); throw e; });
+  // While YouTube's feeds are known to be down, skip straight to the channel page (fewer requests)
+  const down = Date.now() < (state.ytFeedsDownUntil || 0);
+  try{
+    if (down) throw new Error("YouTube's feeds are down");
+    const r = await note("ytfeed", () => loadOneFeed(url, feed, {}));
+    feed.routes = routes; return r;
+  }catch(first){
+    if (!down){
+      try{
+        const pl = "https://www.youtube.com/feeds/videos.xml?playlist_id=UU" + channelId.slice(2);
+        const r = await note("ytplaylist", () => loadOneFeed(pl, feed, {}));
+        feed.routes = routes; return r;
+      }catch(e2){
+        if (/error (40[34]|50\d)/.test(first.message) && /error (40[34]|50\d)/.test(e2.message)) state.ytFeedsDownUntil = Date.now() + 30 * 60000;
+      }
+    }
+    try{
+      const r = await note("ytpage", () => ytChannelPage(channelId, feed));
+      feed.routes = routes;
+      return {...r, items: stashArticles(r.items)};
+    }catch{}
+    feed.routes = routes;
+    throw new Error(/40[34]|50\d/.test(first.message) ? "YouTube's feeds aren't answering right now (YouTube problem, usually fixed within a day)" : first.message);
+  }
+}
 async function loadFeed(url, feed){
+  if (ytChannelOf(url)) return loadYouTube(url, feed);
   if (!redditJsonUrl(url)) return loadOneFeed(url, feed);   // loadOneFeed stashes its own articles
   // In the app: one request, newest posts, straight from the phone. Only fall back if Reddit refuses.
   if (IS_APP){
@@ -942,7 +1018,7 @@ function notFeedReason(t){
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
-const ROUTE_NAMES = {phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
+const ROUTE_NAMES = {ytfeed: "YouTube feed", ytplaylist: "YouTube uploads feed", ytpage: "YouTube channel page", phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
 async function loadOneFeed(url, feed, logOut){
   // Direct from the publisher, and the YourFeed service (in the app only if direct fails).
   // What each route said is kept on the feed (feed.routes) so the menu can show why a source isn't updating.

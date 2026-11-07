@@ -7,6 +7,8 @@
 //   GET /discover?url=…           → {feeds:[…], title} found on a website
 //   GET /youtube/channel?url=…    → {id, title, avatar} for a channel, @handle or video page
 //   GET /youtube/search?q=…       → {channels:[{id, title, avatar}]}
+//   GET /youtube/videos?id=UC…    → {title, videos:[{id, title, date}]} from the channel's Videos page
+//                                   (a fallback for when YouTube's own channel feeds are down)
 //   GET /health                   → {ok:true}
 
 const ALLOWED_ORIGINS = [
@@ -20,7 +22,7 @@ const JSON_HOSTS = ["itunes.apple.com", "www.reddit.com", "old.reddit.com", "pub
 const MAX_BYTES = 5 * 1024 * 1024;          // 5 MB per upstream answer
 const TIMEOUT_MS = 12000;
 const RATE = {perMinute: 120};              // per visitor IP, per worker instance (best effort; add a Cloudflare rate-limit rule too)
-const UA_BROWSER = "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";
+const UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36";
 const UA_FEEDS = "YourFeed/1.0 (+https://yourfeed.appsforus.co.uk; feed reader)";
 
 const hits = new Map();
@@ -111,6 +113,31 @@ function channelFrom(html, isVideo){
   return {id, title, avatar};
 }
 
+function agoToMs(t){
+  const m = String(t || "").match(/(\d+)\s*(second|minute|hour|day|week|month|year)s?\s+ago/i);
+  if (!m) return 0;
+  const unit = {second: 1e3, minute: 6e4, hour: 36e5, day: 864e5, week: 6048e5, month: 2592e6, year: 31536e6}[m[2].toLowerCase()];
+  return Date.now() - (+m[1]) * unit;
+}
+function videosFrom(t){
+  const out = [], seen = new Set();
+  const unesc = x => x.replace(/\\u0026/g, "&").replace(/\\"/g, '"').replace(/\\\//g, "/");
+  for (const m of t.matchAll(/"videoRenderer":\{"videoId":"([\w-]{11})"/g)){
+    const near = t.slice(m.index, m.index + 6000);
+    const title = (near.match(/"title":\{"runs":\[\{"text":"((?:[^"\\]|\\.)+)"/) || near.match(/"title":\{"simpleText":"((?:[^"\\]|\\.)+)"/) || [])[1];
+    const when = (near.match(/"publishedTimeText":\{"simpleText":"([^"]+)"/) || [])[1];
+    if (title && !seen.has(m[1])){ seen.add(m[1]); out.push({id: m[1], title: unesc(title), date: agoToMs(when)}); }
+  }
+  for (const m of t.matchAll(/"lockupViewModel":\{"contentImage".{0,3000}?"contentId":"([\w-]{11})"/g)){
+    if (seen.has(m[1])) continue;
+    const near = t.slice(m.index, m.index + 8000);
+    const title = (near.match(/"lockupMetadataViewModel":\{"title":\{"content":"((?:[^"\\]|\\.)+)"/) || [])[1];
+    const when = (near.match(/"content":"(\d+\s*(?:second|minute|hour|day|week|month|year)s?\s+ago)"/i) || [])[1];
+    if (title){ seen.add(m[1]); out.push({id: m[1], title: unesc(title), date: agoToMs(when)}); }
+  }
+  return out.slice(0, 30);
+}
+
 async function handle(req, url, origin){
   const p = url.pathname.replace(/\/+$/, "") || "/";
   if (p === "/health") return json(origin, {ok: true});
@@ -183,6 +210,17 @@ async function handle(req, url, origin){
       if (channels.length >= 20) break;
     }
     return json(origin, {channels});
+  }
+
+  if (p === "/youtube/videos"){
+    const id = url.searchParams.get("id") || "";
+    if (!/^UC[\w-]{22}$/.test(id)) return fail(origin, 400, "Not a YouTube channel ID");
+    const r = await fetchCapped(ytPage(`https://www.youtube.com/channel/${id}/videos`), {ua: UA_BROWSER, cookie: YT_COOKIE, accept: "text/html"});
+    if (!r.ok) return fail(origin, 502, "YouTube answered with error " + r.status);
+    const videos = videosFrom(r.text);
+    if (!videos.length) return fail(origin, 404, "No videos found on the channel page");
+    const title = ((r.text.match(/<meta property="og:title" content="([^"]+)"/) || [])[1]) || null;
+    return json(origin, {title, videos});
   }
 
   return fail(origin, 404, "Unknown address");
