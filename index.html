@@ -960,12 +960,25 @@ function ytPause(){
   store.set("yf.ytCoolUntil", Date.now() + 30 * 60000 * Math.pow(2, trips - 1));
 }
 const hhmm = t => new Date(t).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"});
+// The official YouTube Data API, through the YourFeed service (cached there and shared by everyone)
+async function ytViaApi(channelId, feed){
+  const j = JSON.parse(await viaService("/youtube/latest", {id: channelId}, 15000));
+  const list = (j.videos || []).filter(v => /^[\w-]{11}$/.test(v.id || ""));
+  if (!list.length) throw new Error("No videos from the YouTube API");
+  return {title: j.title || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: ""})), everyMin: null};
+}
 async function loadYouTube(url, feed){
   const channelId = ytChannelOf(url);
   const routes = [];
   const note = (k, fn) => fn().then(r => { routes.push({k, ok: true, n: r.items.length, newest: Math.max(0, ...r.items.map(i => i.date || 0))}); return r; },
     e => { routes.push({k, ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")}); throw e; });
-  const viaPage = async () => { const r = await note("ytpage", () => ytChannelPage(channelId, feed)); ytAnswered(); feed.routes = routes; return {...r, items: stashArticles(r.items)}; };
+  // Backup order: the official API (if the service has it), then the channel's Videos page
+  const viaPage = async () => {
+    if (serviceBase()){
+      try{ const r = await note("ytapi", () => ytViaApi(channelId, feed)); ytAnswered(); feed.routes = routes; return {...r, items: stashArticles(r.items)}; }catch{}
+    }
+    const r = await note("ytpage", () => ytChannelPage(channelId, feed)); ytAnswered(); feed.routes = routes; return {...r, items: stashArticles(r.items)};
+  };
   if (ytCooling()){
     feed.routes = [{k: "ytfeed", ok: false, err: "Paused until " + hhmm(ytUntil("yf.ytCoolUntil"))}];
     throw new Error(`YouTube is limiting requests from this connection. Paused until ${hhmm(ytUntil("yf.ytCoolUntil"))} so it can recover`);
@@ -1051,7 +1064,7 @@ function notFeedReason(t){
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
-const ROUTE_NAMES = {ytfeed: "YouTube feed", ytplaylist: "YouTube uploads feed", ytpage: "YouTube channel page", phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
+const ROUTE_NAMES = {ytapi: "YouTube API (YourFeed service)", ytfeed: "YouTube feed", ytplaylist: "YouTube uploads feed", ytpage: "YouTube channel page", phone: "Reddit RSS, from your phone", reddit: "Reddit, from this device", direct: IS_APP ? "Direct from your phone" : "Direct from this browser", service: "YourFeed service"};
 async function loadOneFeed(url, feed, logOut){
   // Direct from the publisher, and the YourFeed service (in the app only if direct fails).
   // What each route said is kept on the feed (feed.routes) so the menu can show why a source isn't updating.
@@ -1539,7 +1552,7 @@ function renderStatus(){
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
   } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
   if (ytCooling()) s.append(document.createTextNode(` · YouTube paused until ${hhmm(ytUntil("yf.ytCoolUntil"))}`));
-  else if (ytFeedsDown()) s.append(document.createTextNode(" · YouTube's feeds are down, reading channel pages instead"));
+  else if (ytFeedsDown()) s.append(document.createTextNode(" · YouTube's feeds are down, using backup routes"));
   else if (state.ytWaiting) s.append(document.createTextNode(` · ${state.ytWaiting} YouTube channels queued`));
 }
 function renderFilterBar(){

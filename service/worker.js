@@ -9,7 +9,9 @@
 //   GET /youtube/search?q=…       → {channels:[{id, title, avatar}]}
 //   GET /youtube/videos?id=UC…    → {title, videos:[{id, title, date}]} from the channel's Videos page
 //                                   (a fallback for when YouTube's own channel feeds are down)
-//   GET /health                   → {ok:true}
+//   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date}]} via the official YouTube Data API
+//                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
+//   GET /health                   → {ok:true, youtubeApi:true|false}
 
 const ALLOWED_ORIGINS = [
   "https://yourfeed.appsforus.co.uk",
@@ -138,9 +140,34 @@ function videosFrom(t){
   return out.slice(0, 30);
 }
 
-async function handle(req, url, origin){
+async function handle(req, url, origin, env){
   const p = url.pathname.replace(/\/+$/, "") || "/";
-  if (p === "/health") return json(origin, {ok: true});
+  if (p === "/health") return json(origin, {ok: true, youtubeApi: !!(env && env.YT_API_KEY)});
+
+  if (p === "/youtube/latest"){
+    const id = url.searchParams.get("id") || "";
+    if (!/^UC[\w-]{22}$/.test(id)) return fail(origin, 400, "Not a YouTube channel ID");
+    if (!env || !env.YT_API_KEY) return fail(origin, 501, "The YouTube Data API isn't set up on this service");
+    // Cached for 30 minutes per channel, shared by everyone, so each channel costs at most 48 units a day
+    const cache = caches.default, key = new Request("https://cache.yourfeed/yt-latest/" + id);
+    const hit = await cache.match(key);
+    if (hit){ const r = new Response(hit.body, hit); headers(origin, "application/json; charset=utf-8").forEach((v, k) => r.headers.set(k, v)); return r; }
+    const api = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=20&playlistId=UU" + id.slice(2) + "&key=" + encodeURIComponent(env.YT_API_KEY);
+    const r = await fetchCapped(api, {accept: "application/json"});
+    let j; try{ j = JSON.parse(r.text); }catch{ return fail(origin, 502, "YouTube's API didn't send JSON"); }
+    if (!r.ok){
+      const reason = (j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason) || r.status;
+      return fail(origin, reason === "quotaExceeded" ? 429 : 502, reason === "quotaExceeded" ? "Today's YouTube API allowance is used up" : "YouTube's API answered: " + reason);
+    }
+    const items = j.items || [];
+    const videos = items.map(i => i.snippet).filter(s => s && s.resourceId && s.resourceId.videoId)
+      .map(s => ({id: s.resourceId.videoId, title: s.title, date: Date.parse(s.publishedAt) || 0}));
+    const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || null;
+    const out = new Response(JSON.stringify({title, videos}), {headers: {"Content-Type": "application/json; charset=utf-8", "Cache-Control": "max-age=1800"}});
+    await cache.put(key, out.clone());
+    const res = new Response(out.body, {headers: headers(origin, "application/json; charset=utf-8")});
+    return res;
+  }
 
   if (p === "/feed"){
     const target = publicUrl(url.searchParams.get("url") || "");
@@ -227,7 +254,7 @@ async function handle(req, url, origin){
 }
 
 export default {
-  async fetch(req){
+  async fetch(req, env){
     const url = new URL(req.url);
     const origin = req.headers.get("Origin") || "";
     if (req.method === "OPTIONS"){
@@ -238,7 +265,7 @@ export default {
     // Browsers on other websites can't use this service; apps and the YourFeed site can
     if (origin && !ALLOWED_ORIGINS.includes(origin)) return fail(origin, 403, "Not allowed from this website");
     if (limited(req.headers.get("CF-Connecting-IP") || "?")) return fail(origin, 429, "Too many requests, try again in a minute");
-    try{ return await handle(req, url, origin); }
+    try{ return await handle(req, url, origin, env); }
     catch(e){ return fail(origin, 502, e && e.name === "AbortError" ? "The site took too long to answer" : String(e && e.message || "Failed")); }
   }
 };
