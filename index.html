@@ -260,6 +260,22 @@ iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#ff
 .video{width:100%;aspect-ratio:16/9;background:#000;max-width:100%}
 .vbox{grid-column:1/-1;order:-2;position:relative;z-index:3;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden}
 .vbox iframe{width:100%;height:100%;border:0;display:block}
+.vswitch{display:flex;gap:4px;background:var(--sunk);border-radius:11px;padding:3px;margin:2px 0 12px;grid-column:1/-1}
+.vswitch button{flex:1;border:0;background:none;border-radius:8px;padding:8px 6px;font:600 14px var(--ui);color:var(--muted);cursor:pointer;display:flex;gap:6px;justify-content:center;align-items:center}
+.vswitch button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.vswitch .n{font-size:12px;font-weight:700;color:var(--muted)}
+/* Shorts: two upright tiles a row; the one playing spans the row */
+.list.shortgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
+.list.shortgrid > .empty,.list.shortgrid > .sentinel,.list.shortgrid > .more{grid-column:1/-1}
+.list.shortgrid .card{display:flex;flex-direction:column;gap:6px;margin:0;padding:0 0 8px;border:0;background:none;box-shadow:none;border-radius:12px}
+.list.shortgrid .card .thumb{order:-1;width:100%;aspect-ratio:9/16;border-radius:12px;margin:0}
+.list.shortgrid .card .thumb img{height:100%;object-fit:cover}
+.list.shortgrid .card .thumb .ago,.list.shortgrid .card .sum{display:none}
+.list.shortgrid .card .title{font-size:14.5px;line-height:1.25;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+.list.shortgrid .card .meta{font-size:12px}
+.list.shortgrid .card .cacts.onimg{top:6px;right:6px}
+.list.shortgrid .card.vplaying{grid-column:1/-1}
+.list.shortgrid .card .cstrip .cacts{margin-right:0}
 .vbox.tall{aspect-ratio:9/16;width:auto;height:min(72vh,640px);max-width:100%;margin:0 auto;justify-self:center}
 .card.vplaying .thumb{display:none}
 .video iframe{width:100%;height:100%;border:0;display:block}
@@ -605,6 +621,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <input type="checkbox" id="videoInApp">
         <span><b>Play videos in YourFeed</b><br><span class="hint">Videos play under the story instead of opening YouTube. Tap full screen to watch it big.</span></span>
       </label>
+      <label class="check" for="hideShorts">
+        <input type="checkbox" id="hideShorts">
+        <span><b>Hide YouTube Shorts</b><br><span class="hint">Leave out Shorts (and videos of a minute or less) everywhere.</span></span>
+      </label>
       <label class="check" for="keepBrowser">
         <input type="checkbox" id="keepBrowser">
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
@@ -806,7 +826,8 @@ const state = {
   service: store.get("yf.service", ""),
   keepInBrowser: store.get("tl.keepbrowser", false),
   readInApp: store.get("tl.readinapp", true),
-  videoInApp: store.get("yf.videoInApp", true)
+  videoInApp: store.get("yf.videoInApp", true),
+  hideShorts: store.get("yf.hideShorts", false)
 };
 state.folders = store.get("tl.folders", []);
 // Renamed 8 Nov 2026: Boxing & MMA → Combat Sports
@@ -821,7 +842,7 @@ state.stackShown = {};
 state.saved = store.get("yf.saved", []);
 const saveSaved = () => store.set("yf.saved", state.saved);
 const isSaved = id => state.saved.some(x => x.id === id);
-const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest", saved: false};
+const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest", saved: false, vkind: "videos"};
 const view = {...VIEW_DEFAULT, ...store.get("tl.view", {})};
 // Tabs renamed Nov 2026: Reddit + Social → Conversations, Podcasts → Audio, Saved → its own button
 view.type = {reddit: "conversations", social: "conversations", podcasts: "audio"}[view.type] || view.type;
@@ -1552,7 +1573,7 @@ const itemDur = it => it.dur || (it.audioUrl && pod.dur[it.id]) || 0;
 function flagsEl(it){
   const f = el("span", "flags"), len = itemDur(it);
   if (it.videoId){
-    f.append(el("span", "tag", it.short ? "Short" : "Watch"));
+    f.append(el("span", "tag", isShortItem(it) ? "Short" : "Watch"));
     if (len) f.append(el("span", "tag len", clockLen(len)));
   } else if (it.audioUrl){
     // Grey like the others; orange only for an episode you're part-way through
@@ -1649,6 +1670,14 @@ function checkView(){
   if (!TYPES.some(([k]) => k === view.type)) view.type = "all";
 }
 // Every filter except the story type
+// Shorts: YouTube marked it (its /shorts/ address), or a video of a minute or less
+const isShortItem = it => !!it.videoId && !!(it.short || (it.dur && it.dur <= 60));
+// Videos tab: Videos or Shorts (and Shorts can be hidden everywhere in Settings)
+function videoKind(list){
+  if (state.hideShorts) return list.filter(i => !isShortItem(i));
+  if (view.type !== "videos") return list;
+  return list.filter(i => (view.vkind === "shorts") === isShortItem(i));
+}
 function baseItems(){
   let cut = 0;
   if (view.from === "today"){ const d = new Date(); d.setHours(0, 0, 0, 0); cut = d.getTime(); }
@@ -1660,10 +1689,10 @@ function visibleItems(){
     const all = [...state.saved].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
     // Saved audio is a queue: first saved, first played
     if (view.type === "audio") return all.filter(i => typeOf(i) === "audio").reverse();
-    return view.type === "all" ? all : all.filter(i => typeOf(i) === view.type);
+    return videoKind(view.type === "all" ? all : all.filter(i => typeOf(i) === view.type));
   }
   const base = baseItems();
-  const list = view.type === "all" ? base : base.filter(i => typeOf(i) === view.type);
+  const list = videoKind(view.type === "all" ? base : base.filter(i => typeOf(i) === view.type));
   if (view.sort === "source"){
     const name = id => ((feedById(id) || {}).title || "").toLowerCase();
     return [...list].sort((a, b) => name(a.feedId).localeCompare(name(b.feedId)) || (b.date || 0) - (a.date || 0));
@@ -1996,7 +2025,7 @@ function cardEl(it){
 const STACK_SHOW = 2, STACK_STEP = 10;
 function listUnits(){
   const items = visibleItems();
-  if (design.stack !== "on") return items.map(it => ({it}));
+  if (design.stack !== "on" || shortsGrid()) return items.map(it => ({it}));
   const groups = new Map();
   for (const it of items){
     let g = groups.get(it.feedId);
@@ -2052,10 +2081,28 @@ function stackEl(g){
   }
   return box;
 }
+const shortsGrid = () => view.type === "videos" && view.vkind === "shorts" && !state.hideShorts;
+// The Videos | Shorts switch at the top of the Videos tab (only when there are Shorts)
+function videoSwitch(){
+  if (view.type !== "videos" || state.hideShorts) return null;
+  const pool = view.saved ? state.saved : baseItems();
+  const shorts = pool.filter(isShortItem).length, vids = pool.filter(i => i.videoId && !isShortItem(i)).length;
+  if (!shorts && view.vkind !== "shorts") return null;
+  const g = el("div", "vswitch"); g.setAttribute("role", "group"); g.setAttribute("aria-label", "Videos or Shorts");
+  [["videos", "Videos", vids], ["shorts", "Shorts", shorts]].forEach(([k, label, n]) => {
+    const b = el("button", null); b.type = "button"; b.setAttribute("aria-pressed", String(view.vkind === k));
+    b.append(document.createTextNode(label), el("span", "n", String(n)));
+    b.onclick = () => { if (view.vkind === k) return; view.vkind = k; saveView(); state.shown = PAGE; stopCardVideos(); renderList(); scrollFeedTop(); };
+    g.append(b);
+  });
+  return g;
+}
 function renderList(){
   const list = $("#list");
   if (io) io.disconnect();
   list.textContent = "";
+  list.classList.toggle("shortgrid", shortsGrid());
+  const vs = videoSwitch(); if (vs) list.append(vs);
   const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
@@ -2067,6 +2114,9 @@ function renderList(){
       const go = el("button", "btn primary", "Get started"); go.type = "button"; go.onclick = startOnboarding;
       const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); setTimeout(() => $("#importBtn").focus(), 250); };
       const row = el("div", "iorow"); row.append(go, imp); e.append(row);
+    }
+    else if (state.items.length && shortsGrid()){
+      e.append(el("h3", null, "No Shorts right now"), el("p", null, "Shorts from the YouTube channels you follow will show here."));
     }
     else if (state.items.length){
       e.append(el("h3", null, "Nothing matches"), el("p", null, view.unread ? "You've read everything here. Turn off Unread only, or pick another type or source." : "No stories match this type or filter."));
@@ -2174,7 +2224,7 @@ function playInCard(card, it){
   // In the app: short clips (under 3 minutes, mostly Shorts) stay upright in full screen; longer videos turn to landscape
   // In the app, full screen turns the phone to landscape, except for Shorts (upright videos)
   try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.short || (it.dur && it.dur <= 60))); }catch{}
-  if (it.short || (it.dur && it.dur <= 60)) box.classList.add("tall");   // Shorts play upright
+  if (isShortItem(it)) box.classList.add("tall");   // Shorts play upright
   box.append(f); card.prepend(box); card.classList.add("vplaying");
   requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
@@ -2873,7 +2923,7 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#hideShorts").checked = state.hideShorts; $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
@@ -2903,6 +2953,7 @@ dlg.addEventListener("focusin", e => {
   if (!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || /checkbox|radio/.test(e.target.type)) return;
   setTimeout(() => { if (document.activeElement === e.target) e.target.scrollIntoView({block: "center", behavior: "smooth"}); }, 350);
 });
+$("#hideShorts").addEventListener("change", e => { state.hideShorts = e.target.checked; store.set("yf.hideShorts", state.hideShorts); state.shown = PAGE; renderChips(); renderList(); });
 $("#videoInApp").addEventListener("change", e => { state.videoInApp = e.target.checked; store.set("yf.videoInApp", state.videoInApp); });
 $("#podQueue").addEventListener("change", e => { state.podQueue = e.target.checked; store.set("yf.podQueue", state.podQueue); });
 $("#keepBrowser").addEventListener("change", e => {
