@@ -9,7 +9,7 @@
 //   GET /youtube/search?q=…       → {channels:[{id, title, avatar}]}
 //   GET /youtube/videos?id=UC…    → {title, videos:[{id, title, date}]} from the channel's Videos page
 //                                   (a fallback for when YouTube's own channel feeds are down)
-//   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date}]} via the official YouTube Data API
+//   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date, dur}]} via the official YouTube Data API (dur = seconds)
 //                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
 //   GET/POST /websub/youtube?id=UC… → YouTube's push hub: confirms subscriptions and delivers new videos
 //                                   (subscribed automatically for channels people follow; needs YF_CACHE + YT_API_KEY)
@@ -53,6 +53,11 @@ function headers(origin, type){
 }
 const json = (origin, obj, status = 200) => new Response(JSON.stringify(obj), {status, headers: headers(origin, "application/json; charset=utf-8")});
 const fail = (origin, status, error) => json(origin, {error}, status);
+// "PT1H2M3S" → 3723
+function isoSeconds(t){
+  const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(t || "");
+  return m ? ((+m[1] || 0) * 86400 + (+m[2] || 0) * 3600 + (+m[3] || 0) * 60 + (+m[4] || 0)) : 0;
+}
 
 // Only public web addresses: no private networks, no odd ports, no credentials
 function publicUrl(raw){
@@ -277,12 +282,27 @@ async function handle(req, url, origin, env, ctx){
     const items = j.items || [];
     const videos = items.map(i => i.snippet).filter(s => s && s.resourceId && s.resourceId.videoId)
       .map(s => ({id: s.resourceId.videoId, title: s.title, date: Date.parse(s.publishedAt) || 0}));
+    // Video lengths (so the app can show them, and keep Shorts upright): one more unit, and only for
+    // videos we haven't seen before. Lengths already known are copied from the shared copy.
+    const known = new Map(((kv && kv.videos) || []).filter(v => v.dur).map(v => [v.id, v.dur]));
+    videos.forEach(v => { if (known.has(v.id)) v.dur = known.get(v.id); });
+    const need = videos.filter(v => !v.dur).map(v => v.id);
+    if (need.length){
+      try{
+        const d = await fetchCapped("https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" + need.join(",") + "&key=" + encodeURIComponent(env.YT_API_KEY), {accept: "application/json"});
+        if (d.ok) for (const v of JSON.parse(d.text).items || []){
+          const secs = isoSeconds(v.contentDetails && v.contentDetails.duration);
+          const hit = videos.find(x => x.id === v.id); if (hit && secs) hit.dur = secs;
+        }
+      }catch{}
+    }
     const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || (kv && kv.title) || null;
     const text = JSON.stringify({title, videos});
     await edgePut("ytl:" + id, text, Math.round(FRESH / 1000));
     // Rewrite the shared copy only when there's a new video (KV writes are the scarcest free resource)
     const top = videos[0] && videos[0].id;
-    if (!kv || kv.top !== top) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
+    const newDur = videos.some(v => v.dur && !known.has(v.id));
+    if (!kv || kv.top !== top || newDur) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
     return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 

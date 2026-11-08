@@ -4,6 +4,7 @@ import android.content.pm.ActivityInfo;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
@@ -20,11 +21,17 @@ public class MainActivity extends BridgeActivity {
     private View fullView;
     private WebChromeClient.CustomViewCallback fullCallback;
     private OnBackPressedCallback exitFull;
+    // Set by the page before a video plays: short clips (mostly Shorts) stay upright in full screen
+    private volatile boolean rotateFull = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (bridge == null) return;
+        bridge.getWebView().addJavascriptInterface(new Object() {
+            @JavascriptInterface
+            public void setRotateFull(boolean landscape) { rotateFull = landscape; }
+        }, "YFNative");
         bridge.getWebView().setWebChromeClient(new BridgeWebChromeClient(bridge) {
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
@@ -36,7 +43,7 @@ public class MainActivity extends BridgeActivity {
                 WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), decor);
                 bars.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 bars.hide(WindowInsetsCompat.Type.systemBars());
-                setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                if (rotateFull) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                 exitFull.setEnabled(true);
             }
 

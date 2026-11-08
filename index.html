@@ -78,6 +78,14 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 .cact:hover{background:var(--sunk);color:var(--ink)}
 .cact[aria-pressed="true"]{color:var(--brand)}
 .cact svg{width:17px;height:17px}
+.flags{display:inline-flex;gap:5px;align-items:center;flex:none}
+.tag.len{font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+.cacts.onimg{position:absolute;top:8px;right:8px;background:rgba(15,18,23,.62);border-radius:99px;padding:2px 3px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.cacts.onimg .cact{color:#fff}
+.cacts.onimg .cact:hover{background:rgba(255,255,255,.18);color:#fff}
+.cacts.onimg .cact[aria-pressed="true"]{color:#ffb38a}
+.cstrip{display:flex;align-items:center;gap:8px;min-height:28px;margin-top:6px}
+.cstrip .cacts{margin-left:auto}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
 body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .iorow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -1043,7 +1051,7 @@ async function ytViaApi(channelId, feed){
   const j = JSON.parse(await viaService("/youtube/latest", {id: channelId}, 15000));
   const list = (j.videos || []).filter(v => /^[\w-]{11}$/.test(v.id || ""));
   if (!list.length) throw new Error("No videos from the YouTube API");
-  return {title: j.title || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: ""})), everyMin: null};
+  return {title: j.title || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: "", dur: v.dur})), everyMin: null};
 }
 async function loadYouTube(url, feed){
   const channelId = ytChannelOf(url);
@@ -1189,7 +1197,7 @@ function mergeHistory(oldItems, newItems){
   const now = Date.now(), cutoff = now - KEEP_DAYS * 86400000;
   const byId = new Map();
   oldItems.forEach(i => byId.set(i.id, i));
-  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined}); });
+  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined, dur: i.dur || (prev && prev.dur) || undefined}); });
   const counts = {};
   // Newest first; each feed always keeps its MIN_PER_FEED newest stories, however old,
   // so weekly podcasts and quiet channels never vanish. Beyond that, only the last KEEP_DAYS.
@@ -1263,9 +1271,17 @@ function makeItem(feed, o){
     videoId: videoId || null,
     audio: o.audio || undefined,
     audioUrl: safeUrl(o.audioUrl || "") || undefined,
+    dur: o.dur > 0 ? Math.round(o.dur) : undefined,
     // The whole article, when the feed includes it (kept out of the saved list; see stashArticles)
     _full: o.html && htmlToText(o.html).length >= 500 ? o.html : undefined
   };
+}
+// itunes:duration is "3600", "60:00" or "1:00:00"
+function hmsSeconds(t){
+  t = (t || "").trim(); if (!t) return 0;
+  if (/^\d+$/.test(t)) return +t;
+  const p = t.split(":").map(Number); if (p.some(isNaN)) return 0;
+  return p.reduce((a, b) => a * 60 + b, 0);
 }
 function rssItem(e, feed){
   const desc = txt(kid(e, "description")), content = txt(kid(e, "content:encoded"));
@@ -1280,7 +1296,7 @@ function rssItem(e, feed){
   const audio = !!audioEnc;
   const image = attr(cands[0], "url") || attr(encl, "url") || attr(kid(e, "itunes:image"), "href") || firstImg(content) || firstImg(desc);
   return makeItem(feed, {
-    audio, audioUrl: attr(audioEnc, "url"),
+    audio, audioUrl: attr(audioEnc, "url"), dur: hmsSeconds(txt(kid(e, "itunes:duration"))),
     html: content.length > desc.length ? content : desc,
     title: htmlToText(txt(kid(e, "title"))),
     link,
@@ -1489,17 +1505,30 @@ function el(tag, cls, text){
   if (text != null) e.textContent = text;
   return e;
 }
-function metaRow(it){
+// Lengths: videos as a clock (4:05, 1:02:03), episodes in minutes (45 min, 1 h 5 min)
+const clockLen = s => { s = Math.round(s); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`; };
+const minsLen = s => { const m = Math.max(1, Math.round(s / 60)); return m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? " " + m % 60 + " min" : ""}` : `${m} min`; };
+const itemDur = it => it.dur || (it.audioUrl && pod.dur[it.id]) || 0;
+// The type flag and length boxes (VIDEO 12:34, LISTEN 45 min, CONTINUE · 12 min left)
+function flagsEl(it){
+  const f = el("span", "flags"), len = itemDur(it);
+  if (it.videoId){
+    f.append(el("span", "tag", "Video"));
+    if (len) f.append(el("span", "tag len", clockLen(len)));
+  } else if (it.audioUrl){
+    const st = podStatus(it.id);
+    f.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag tag-in", "Listen"));
+    if (len && !st.pos) f.append(el("span", "tag len", minsLen(len)));
+  }
+  return f;
+}
+function metaRow(it, withFlags = true){
   const f = feedById(it.feedId) || {title:"", color:"#888"};
   const m = el("div", "meta");
   const d = el("span", "dot"); d.style.background = f.color; m.append(d);
   m.append(el("span", "src", f.title || "Feed"));
   if (it.date){ m.append(el("span", null, "·")); const t = el("time", null, ago(it.date)); t.dateTime = new Date(it.date).toISOString(); m.append(t); }
-  if (it.videoId) m.append(el("span", "tag", "Video"));
-  else if (it.audioUrl){
-    const st = podStatus(it.id);
-    m.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag tag-in", "Listen"));
-  }
+  if (withFlags){ const fl = flagsEl(it); if (fl.childNodes.length) m.append(fl); }
   return m;
 }
 function save(){
@@ -1854,10 +1883,14 @@ function cardEl(it){
   if (isPod){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); link.setAttribute("aria-label", it.title + ", podcast episode, show player"); }
   const body = el("div");
   body.style.minWidth = "0";
-  const meta = metaRow(it);
+  const meta = metaRow(it, false), flags = flagsEl(it);
   if (!feedById(it.feedId) && it.feedTitle){ const src = meta.querySelector(".src"); if (src) src.textContent = it.feedTitle; }
+  // Where flags and Save/Share go: Magazine puts them on the picture (or in the top line without one);
+  // List puts them in a strip along the bottom of the card
+  const mag = design.layout === "magazine", hasImg = !!it.image && design.thumbs !== "off";
+  let acts = null;
   if (it.link || it.audioUrl){
-    const acts = el("span", "cacts");
+    acts = el("span", "cacts");
     const sv = el("button", "cact"); sv.type = "button";
     const on = isSaved(it.id);
     sv.setAttribute("aria-pressed", String(on)); sv.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); sv.title = "Save for later";
@@ -1867,8 +1900,8 @@ function cardEl(it){
     sh.innerHTML = ICON_SHARE;
     sh.onclick = e => { e.preventDefault(); e.stopPropagation(); sharePost(it); };
     acts.append(sv, sh);
-    meta.append(acts);
   }
+  if (mag){ if (flags.childNodes.length) meta.append(flags); if (acts && !hasImg) meta.append(acts); }
   const h = el("h2", "title"); h.append(link);
   body.append(meta, h);
   if (it.summary) body.append(el("p", "sum", it.summary));
@@ -1878,11 +1911,16 @@ function cardEl(it){
     const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
     const tries = imageCandidates(it);
     let n = 0;
-    const next = () => { n++; if (n < tries.length) img.src = tries[n]; else th.remove(); };
+    const next = () => { n++; if (n < tries.length) img.src = tries[n]; else { th.remove(); if (mag && acts && acts.parentNode !== meta){ acts.classList.remove("onimg"); meta.append(acts); } } };
     img.onerror = next;
     img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) next(); };   // e.g. YouTube's "no HD thumbnail" placeholder
     img.src = tries[0];
     th.append(img); a.append(th);
+    if (mag && acts && hasImg){ acts.classList.add("onimg"); th.append(acts); }
+  }
+  if (!mag && (flags.childNodes.length || acts)){
+    const strip = el("div", "cstrip"); strip.append(flags); if (acts) strip.append(acts);
+    body.append(strip);
   }
   link.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
@@ -2074,6 +2112,8 @@ function playInCard(card, it){
   f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1`;
   f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
   f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
+  // In the app: short clips (under 3 minutes, mostly Shorts) stay upright in full screen; longer videos turn to landscape
+  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.dur && it.dur < 180)); }catch{}
   box.append(f); card.prepend(box); card.classList.add("vplaying");
   requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
@@ -3364,7 +3404,7 @@ function renderDesign(){
     opts.forEach(([v, t]) => {
       const b = el("button", null, t); b.type = "button"; b.id = "set-" + key + "-" + v;
       b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(design[key] === v)); b.setAttribute("aria-pressed", String(design[key] === v));
-      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "stack"){ state.shown = PAGE; renderList(); } $("#" + b.id).focus(); };
+      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "stack"){ state.shown = PAGE; renderList(); } else if (key === "layout" || key === "thumbs") renderList(); $("#" + b.id).focus(); };
       seg.append(b);
     });
     row.append(lab, seg); rows.append(row);
@@ -3652,10 +3692,8 @@ pod.audio.addEventListener("ended", () => {
 // Update the Listen / Continue / Played labels on cards already on screen
 function refreshPodTags(){
   document.querySelectorAll("#list .card.pod").forEach(c => {
-    const it = itemById(c.dataset.id); const old = c.querySelector(".meta");
-    if (!it || !old) return;
-    const m = metaRow(it), acts = old.querySelector(".cacts"); if (acts) m.append(acts);
-    old.replaceWith(m);
+    const it = itemById(c.dataset.id); const old = c.querySelector(".flags");
+    if (it && old) old.replaceWith(flagsEl(it));
   });
 }
 pod.audio.addEventListener("pause", () => setTimeout(refreshPodTags, 50));
