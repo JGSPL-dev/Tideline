@@ -439,12 +439,18 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 /* menu groups */
 .groups{display:flex;flex-direction:column;gap:12px}
 .attn{background:color-mix(in srgb,#e8590c 9%,var(--surface));border:1px solid color-mix(in srgb,#e8590c 45%,var(--line));border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.fnote{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
 .attn-h{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
 .attn-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
 .attn-row .who{border:0;background:none;padding:0;text-align:left;cursor:pointer;font-size:13.5px;line-height:1.35;min-width:0}
 .attn-row .who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .attn-row .why{color:var(--muted)}
-.attn-btns{display:flex;gap:6px}
+.attn-btns{display:flex;gap:4px}
+.ibtn{width:36px;height:36px;border:1px solid color-mix(in srgb,#e8590c 35%,var(--line));background:var(--surface);color:var(--ink);border-radius:9px;display:grid;place-items:center;cursor:pointer;padding:0}
+.ibtn:hover{background:var(--sunk)}
+.ibtn.danger{background:#c92a2a;border-color:#c92a2a;color:#fff}
+.ibtn.spin svg{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 .rp-det{margin-top:4px;font-size:12.5px}
 .rp-det summary{cursor:pointer;color:var(--accent);font-weight:600}
 .rp-det .rt{color:var(--muted);padding-left:4px;margin-top:2px}
@@ -1711,10 +1717,11 @@ function renderStatus(){
   if (state.busy){ s.append(el("span", "hdot idle"), document.createTextNode("Checking for new stories…")); return; }
   const n = state.feeds.length;
   if (!n){ s.append(document.createTextNode("No sources yet")); return; }
-  const bad = state.feeds.filter(isTroubled).length;
+  const troubled = state.feeds.filter(isTroubled), bad = troubled.filter(f => !f.dismissed).length, down = troubled.length;
   if (bad === n){ s.append(el("span", "hdot warn"), el("b", null, "Couldn't reach any sources."), document.createTextNode(" Check you're online, then tap refresh.")); return; }
+  // Dismissed problems lose the warning dot, but the count stays honest
   s.append(el("span", "hdot" + (bad ? " warn" : "")));
-  s.append(document.createTextNode(bad ? `${n - bad} of ${n} sources working` : `All ${n} source${n === 1 ? "" : "s"} working`));
+  s.append(document.createTextNode(down ? `${n - down} of ${n} sources working` : `All ${n} source${n === 1 ? "" : "s"} working`));
   if (state.note === "upToDate"){
     const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
@@ -2419,8 +2426,9 @@ async function fetchFeedNow(f){
   try{
     const p = await loadFeed(f.url, f);
     if (!f.title && p.title) f.title = cleanTitle(p.title, f.url);
-    f.error = null; f.fails = 0; f.lastFetched = f.lastOk = Date.now(); delete f.failingSince;
+    f.error = null; f.fails = 0; f.lastFetched = f.lastOk = Date.now(); delete f.failingSince; delete f.dismissed;
     f.everyMin = p.everyMin || null;
+    if (!f.folder && !f.folderSet && !f.autoCat && p.items.length){ f.autoCat = true; const c = categorise(f, p.items); if (c){ f.folder = makeFolder(c); } }
     if (p.items.length) f.audio = isPodcastFeed(p.items);
     return p.items;
   }catch(e){
@@ -2515,6 +2523,7 @@ const ICON_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" s
 function attentionList(){
   const out = [];
   state.feeds.forEach(f => {
+    if (f.dismissed) return;
     if (f.error){ if (isTroubled(f)) out.push({f, why: plainTrouble(f), act: "Check", bad: true}); return; }
     if (!f.lastFetched) return;
     const its = state.items.filter(i => i.feedId === f.id);
@@ -2564,15 +2573,18 @@ function renderFeedList(){
       const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", `Edit ${f.title}: ${why}`);
       who.append(el("b", null, f.title || f.url), el("span", "why", why));
       who.onclick = () => openEdit(f.id);
-      const b = el("button", "btn" + (f.error ? " primary" : ""), f._checking ? "Checking…" : act); b.type = "button"; b.disabled = !!f._checking;
+      const ib = (svg, label) => { const x = el("button", "ibtn"); x.type = "button"; x.innerHTML = svg; x.setAttribute("aria-label", `${label} ${f.title}`); x.title = label; return x; };
+      const b = ib(ATTN_ICONS.check, "Check now"); b.disabled = !!f._checking; if (f._checking) b.classList.add("spin");
       b.onclick = () => checkNow(f);
-      const rm = el("button", "btn", "Remove"); rm.type = "button"; rm.setAttribute("aria-label", "Remove " + f.title);
+      const rm = ib(ATTN_ICONS.remove, "Remove");
       let armed = false;
       rm.onclick = () => {
-        if (!armed){ armed = true; rm.textContent = "Sure?"; rm.classList.add("danger"); setTimeout(() => { armed = false; rm.textContent = "Remove"; rm.classList.remove("danger"); }, 4000); return; }
+        if (!armed){ armed = true; rm.classList.add("danger"); rm.title = "Tap again to remove"; toast(`Tap the bin again to remove ${f.title}`); setTimeout(() => { armed = false; rm.classList.remove("danger"); rm.title = "Remove"; }, 4000); return; }
         removeFeed(f);
       };
-      const btns = el("div", "attn-btns"); btns.append(b, rm);
+      const dm = ib(ATTN_ICONS.dismiss, "Dismiss");
+      dm.onclick = () => { f.dismissed = true; save(); renderFeedList(); renderStatus(); renderChips(); toast(`Hidden until ${f.title} works again`); };
+      const btns = el("div", "attn-btns"); btns.append(b, rm, dm);
       row.append(who, btns); sec.append(row);
     });
     const more = el("button", "linkbtn", attn.length > 4 ? `See all ${attn.length} in Source health` : "Open Source health"); more.type = "button";
@@ -2652,7 +2664,7 @@ function makeFolder(raw){
   return name;
 }
 function setFolder(f, name){
-  f.folder = name && name !== UNSORTED ? name : "";
+  f.folder = name && name !== UNSORTED ? name : ""; f.folderSet = true;
   save(); renderChips(); renderList();
 }
 // Open a source's edit form without popping up the keyboard: it opens when you tap a box
@@ -2661,6 +2673,11 @@ function openEdit(id){
   const form = document.querySelector(".editform");
   if (form){ form.tabIndex = -1; form.focus({preventScroll: true}); form.scrollIntoView({block: "start", behavior: "smooth"}); }
 }
+const ATTN_ICONS = {
+  check: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>',
+  remove: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  dismiss: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
 function removeFeed(f){
   state.feeds = state.feeds.filter(x => x.id !== f.id);
   state.items = state.items.filter(i => i.feedId !== f.id);
@@ -2770,18 +2787,27 @@ function editForm(f){
   });
   return form;
 }
-// After adding a source: "Put it in" a folder
+// After adding a source: say where it went, with a Change button (no question to answer)
+function showFolderNote(feed){
+  const box = $("#addFolder"); box.hidden = false; box.textContent = "";
+  const row = el("div", "fnote");
+  row.append(el("span", null, feed.folder ? `Added to ${feed.folder}` : "Added to Unsorted"));
+  const ch = el("button", "linkbtn", feed.folder ? "Change" : "Choose a folder"); ch.type = "button";
+  ch.onclick = () => showFolderPrompt(feed);
+  row.append(ch); box.append(row);
+}
+// Picking a folder by hand
 function showFolderPrompt(feed){
   const box = $("#addFolder"); box.hidden = false; box.textContent = "";
   box.append(el("span", "fb-lbl", `Put ${feed.title} in`));
   const chips = el("div", "fb-chips");
-  const done = name => { setFolder(feed, name); box.hidden = true; renderFeedList(); setMsg(`${feed.title} is in ${name}.`); };
-  const guess = suggestFolder(feed);
+  const done = name => { setFolder(feed, makeFolder(name) || name); box.hidden = true; renderFeedList(); setMsg(`${feed.title} is in ${name}.`); };
+  const guess = null;
   if (guess){ const g = el("button", "btn primary", `Put in ${guess}`); g.type = "button"; g.onclick = () => done(guess); chips.append(g); }
-  [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"})).filter(n => n !== guess).forEach(n => {
+  [...new Set([...state.folders, ...INTERESTS.map(([n]) => n)])].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"})).filter(n => n !== feed.folder).forEach(n => {
     const b = el("button", "chip", n); b.type = "button"; b.onclick = () => done(n); chips.append(b);
   });
-  const skip = el("button", "chip", "Leave unsorted"); skip.type = "button"; skip.onclick = () => { box.hidden = true; };
+  const skip = el("button", "chip", feed.folder ? "Unsorted" : "Leave unsorted"); skip.type = "button"; skip.onclick = () => { if (feed.folder) setFolder(feed, ""); else feed.folderSet = true; box.hidden = true; renderFeedList(); };
   chips.append(skip);
   box.append(chips, newFolderControl(done));
 }
@@ -2917,10 +2943,13 @@ async function addFeed(raw, direct, kind){
   if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
   feed.title = cleanTitle(p.title, feed.url) || new URL(feed.url).hostname.replace(/^www\./, "");
   feed.lastFetched = Date.now(); feed.everyMin = p.everyMin || null; feed.audio = isPodcastFeed(p.items);
+  // Sorted into a category straight away; "Change" lets people move it
+  const cat = categorise(feed, p.items); feed.autoCat = true;
+  if (cat) feed.folder = makeFolder(cat);
   state.feeds.push(feed);
   state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
-  showFolderPrompt(feed);
+  showFolderNote(feed);
   return {feed, count: state.items.filter(i => i.feedId === feed.id).length};
 }
 const storyCount = n => `${n} stor${n === 1 ? "y" : "ies"}`;
@@ -4025,30 +4054,36 @@ $("#importFile").addEventListener("change", async e => {
 });
 
 /* ---------- onboarding: interests → folders, then a quick spotlight tour ---------- */
+// The fixed categories. New sources are sorted into one automatically (people can move them);
+// the words are matched against the source's name and address (strongly) and its recent posts (weakly).
 const INTERESTS = [
-  ["News", "news headlines bbc guardian times reuters politics world uk"],
-  ["Sport", "sport sports espn sky bbc sport cricket rugby tennis f1 formula golf nfl nba"],
-  ["Football", "football soccer premier league arsenal gunners chelsea liverpool united city spurs tottenham fc"],
-  ["Tech", "tech technology verge wired gadgets android apple google software ai computing"],
-  ["Gaming", "gaming games game nintendo playstation xbox ign eurogamer retro steam switch"],
-  ["Science", "science space nasa physics veritasium nature research"],
-  ["Business", "business finance money markets economy investing ft bloomberg"],
-  ["Music", "music album band songs pitchfork guitar"],
-  ["Film & TV", "film movies tv television cinema netflix series trailer"],
-  ["Food", "food recipes cooking kitchen chef baking"],
-  ["Cars", "cars car motoring auto ev top gear"],
-  ["Comedy", "comedy funny humour humor sketch podcast comedians"]
+  ["News", "news headlines breaking bbc guardian times reuters politics election government minister parliament world uk us europe war police court latest live updates"],
+  ["Sport", "sport sports espn sky cricket rugby tennis f1 formula|one grand|prix golf nfl nba nhl mlb boxing ufc mma cycling athletics olympics wimbledon match race racing motorsport snooker darts"],
+  ["Football", "football soccer premier|league champions|league arsenal gunners chelsea liverpool united city spurs tottenham everton newcastle villa west|ham fc afc transfer goal striker midfielder manager fixture fixtures epl efl fa|cup arsenal|fc arseblog"],
+  ["Tech", "tech technology verge wired gadgets gadget android apple iphone ipad mac google software hardware ai computing laptop smartphone app apps startup developer programming linux windows microsoft chip cpu gpu"],
+  ["Gaming", "gaming games game gamer nintendo playstation ps5 xbox ign eurogamer retro steam switch console consoles rpg fps esports speedrun pokemon zelda mario analogue emulation n64 snes sega"],
+  ["Science", "science space nasa physics chemistry biology veritasium nature research scientists study astronomy climate rocket universe planet"],
+  ["Business", "business finance financial money markets market economy investing investor stocks shares ft bloomberg economics startup company earnings inflation"],
+  ["Music", "music album albums band bands songs song pitchfork guitar gig gigs tour concert singer rapper vinyl spotify"],
+  ["Film & TV", "film films movie movies tv television cinema netflix series trailer season streaming hbo disney marvel actor director box|office"],
+  ["Food", "food recipes recipe cooking kitchen chef baking bake restaurant eat dinner dessert"],
+  ["Cars", "cars car motoring auto autos ev electric|car top|gear drive driving vehicle tesla porsche bmw"],
+  ["Comedy", "comedy funny humour humor sketch comedians comedian standup stand-up jokes"],
+  ["Health & Fitness", "health fitness workout gym running runner nutrition diet wellbeing wellness yoga marathon"],
+  ["Travel", "travel trip trips holiday holidays flights airline hotel destination tourism backpacking"],
+  ["Lifestyle", "lifestyle fashion style beauty home interiors garden gardening parenting family diy"]
 ];
-// Suggest a folder for a new source from its name and address
-function suggestFolder(feed){
-  const hay = ((feed.title || "") + " " + (feed.url || "")).toLowerCase();
-  let best = null, score = 0;
-  state.folders.forEach(name => {
-    const words = (INTERESTS.find(([n]) => n === name) || [name, name])[1].split(/\s+/).concat(name.toLowerCase());
-    const sc = words.filter(w => w.length > 2 && hay.includes(w)).length;
-    if (sc > score){ score = sc; best = name; }
-  });
-  return best;
+const CAT_WORDS = INTERESTS.map(([name, words]) => [name, words.split(/\s+/).map(w => w.replace(/\|/g, " "))]);
+// Pick a category for a source; null when there's no clear winner
+function categorise(feed, items){
+  const strong = " " + [feed.title, (feed.url || "").replace(/[\/._?=&-]+/g, " "),
+    ...DIRECTORY.filter(([, u]) => u === feed.url).map(([, , tags]) => tags)].join(" ").toLowerCase() + " ";
+  const weak = " " + (items || []).slice(0, 25).map(i => (i.title || "") + " " + (i.summary || "").slice(0, 160)).join(" ").toLowerCase().replace(/[^a-z0-9&+ -]+/g, " ") + " ";
+  const has = (hay, w) => { let n = 0, i = 0; const k = " " + w + " "; while ((i = hay.indexOf(k, i)) >= 0 && n < 3){ n++; i += k.length - 1; } return n; };
+  const strongHay = strong.replace(/[^a-z0-9&+ -]+/g, " ");
+  const scores = CAT_WORDS.map(([name, words]) => [name, words.reduce((sc, w) => sc + (has(strongHay, w) ? 4 : 0) + has(weak, w), 0)]).sort((a, b) => b[1] - a[1]);
+  const [best, second] = scores;
+  return best[1] >= 3 && best[1] >= second[1] * 1.4 ? best[0] : null;
 }
 function startOnboarding(){
   const dlgO = el("dialog", "fullpage onboard"); dlgO.setAttribute("aria-labelledby", "obTitle");
