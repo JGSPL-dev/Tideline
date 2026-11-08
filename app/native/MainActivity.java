@@ -1,6 +1,7 @@
 package uk.co.appsforus.yourfeed;
 
 import android.content.pm.ActivityInfo;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,6 +32,21 @@ public class MainActivity extends BridgeActivity {
         bridge.getWebView().addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void setRotateFull(boolean landscape) { rotateFull = landscape; }
+
+            // The page's background colour for Android's status and navigation bars, so they match the app
+            @JavascriptInterface
+            public void setBars(String hex, boolean dark) {
+                final int c;
+                try { c = Color.parseColor(hex); } catch (IllegalArgumentException e) { return; }
+                runOnUiThread(() -> {
+                    getWindow().getDecorView().setBackgroundColor(c);
+                    getWindow().setStatusBarColor(c);
+                    getWindow().setNavigationBarColor(c);
+                    WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), getWindow().getDecorView());
+                    bars.setAppearanceLightStatusBars(!dark);
+                    bars.setAppearanceLightNavigationBars(!dark);
+                });
+            }
         }, "YFNative");
         bridge.getWebView().setWebChromeClient(new BridgeWebChromeClient(bridge) {
             @Override

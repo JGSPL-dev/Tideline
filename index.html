@@ -25,7 +25,8 @@
 :root{
   --bg:#edf0f3; --surface:#ffffff; --sunk:#e2e7ec; --ink:#141a22; --muted:#5a6473;
   --line:#d4dbe3; --danger:#b42318;
-  --brand:#d9480f;                                      /* fixed logo orange */
+  --brand:#d9480f;                                      /* orange text and lines (lighter in dark mode, to stay readable) */
+  --brand-fill:#d9480f;                                 /* THE brand orange: logo, app icon, badges, buttons, in every theme */
   --accent-l:#c2410c; --accent-d:#ff8a4c;              /* accent pair, changed in Settings */
   --accent:var(--accent-l); --accent-ink:#ffffff;
   --accent-soft:color-mix(in srgb, var(--accent) 16%, var(--surface));
@@ -181,7 +182,7 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 #savedBtn{position:relative}
 #savedBtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
 #savedBtn[aria-pressed="true"] svg{fill:currentColor}
-.bcount{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+.bcount{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--brand-fill);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
 .tabhelp{display:flex;gap:10px;align-items:flex-start;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:4px 0 8px;font-size:14px;line-height:1.4}
 .tabhelp p{margin:0;flex:1}
 .tabhelp button{border:0;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px;cursor:pointer;flex:none}
@@ -189,7 +190,7 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .brand{font:800 27px/1 var(--ui);letter-spacing:-.02em;margin:0;display:flex;align-items:center;justify-content:center;gap:9px}
 .wordmark{font-family:"Bricolage Grotesque",var(--ui);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink);white-space:nowrap}
 .wordmark .slash{width:.6em;height:.9em;margin:0 -.1em 0 .02em;overflow:visible}
-.wordmark .rss{color:var(--brand)}
+.wordmark .rss{color:var(--brand-fill)}
 .logo{flex:none;display:block}
 .status{font-size:12.5px;color:var(--muted);min-height:1em}
 .status b{font-weight:600;color:var(--danger)}
@@ -202,7 +203,7 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .chips.fade-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 15%);mask-image:linear-gradient(to right,transparent,#000 15%)}
 .chips.fade-l.fade-r{-webkit-mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(to right,transparent,#000 12%,#000 88%,transparent)}
 .chip{scroll-snap-align:start}
-.chip .count{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--brand);color:#fff;font-size:11.5px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums;margin-right:-6px}
+.chip .count{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:var(--brand-fill);color:#fff;font-size:11.5px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums;margin-right:-6px}
 .chip.zero .count{background:var(--sunk);color:var(--muted)}
 .chip.zero:not([aria-pressed="true"]){opacity:.55}
 .chip[aria-pressed="true"].zero .count{background:color-mix(in srgb,var(--bg) 25%,transparent);color:var(--bg)}
@@ -318,7 +319,7 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .flist .info,.flist .sub{display:flex;flex-direction:column;min-width:0}
 .flist .nm{display:block}
 .flist .all-dot{background:conic-gradient(var(--brand) 0 25%,#1c7ed6 0 50%,#2b8a3e 0 75%,#ae3ec9 0)!important}
-.flist .count{min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--brand);color:#fff;font-size:12px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.flist .count{min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--brand-fill);color:#fff;font-size:12px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
 .flist .count.zero{background:var(--sunk);color:var(--muted)}
 .flist .acts .btn.icon{width:36px;height:36px}
 .flist .acts .btn.armed{width:auto;padding:0 10px;font-weight:600}
@@ -364,11 +365,11 @@ dialog.fullpage header{gap:10px}
 .cont h3{margin:0 0 4px;font:700 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .cont-row{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
 .cont-row:first-of-type{border-top:0}
-.cont-row .pod-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer}
+.cont-row .pod-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--brand-fill);color:#fff;display:grid;place-items:center;cursor:pointer}
 .cont-row b{display:block;font-size:14.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cont-row small{color:var(--muted);font-size:12.5px}
 .cont-bar{height:3px;background:var(--sunk);border-radius:2px;margin-top:5px;overflow:hidden}
-.cont-bar i{display:block;height:100%;background:var(--brand)}
+.cont-bar i{display:block;height:100%;background:var(--brand-fill)}
 .card.pod[aria-expanded="true"]{background:var(--surface);border-color:var(--line);border-bottom-left-radius:0;border-bottom-right-radius:0}
 .pod-panel{display:flex;flex-direction:column;gap:8px;padding:10px 14px 14px;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;margin:-2px 0 6px}
 .art-body .pod-panel{border:1px solid var(--line);border-radius:12px;margin:0 0 18px;font-family:var(--ui)}
@@ -376,8 +377,8 @@ dialog.fullpage header{gap:10px}
 .pod-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:none;color:var(--ink);cursor:pointer;padding:0}
 .pod-btn:hover{background:var(--sunk)}
 .pod-btn:disabled{opacity:.35;cursor:default}
-.pod-btn.main{width:52px;height:52px;background:var(--brand);color:#fff}
-.pod-btn.main:hover{filter:brightness(1.08);background:var(--brand)}
+.pod-btn.main{width:52px;height:52px;background:var(--brand-fill);color:#fff}
+.pod-btn.main:hover{filter:brightness(1.08);background:var(--brand-fill)}
 .pod-btn.speed{width:auto;min-width:44px;padding:0 8px;border-radius:99px;font:700 13px var(--ui);font-variant-numeric:tabular-nums;border:1px solid var(--line)}
 .pod-bar{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center}
 .pod-t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px}
@@ -387,7 +388,7 @@ dialog.fullpage header{gap:10px}
 .mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
 .mini-prog{height:3px;background:var(--sunk);margin:0 calc(-1 * max(8px,env(safe-area-inset-left,0px)))}
-.mini-prog span{display:block;height:100%;background:var(--brand);width:0}
+.mini-prog span{display:block;height:100%;background:var(--brand-fill);width:0}
 .mini-row{display:flex;align-items:center;gap:2px;max-width:760px;margin:0 auto;padding:6px 0}
 .mini-row .pod-btn{width:40px;height:40px}
 .mini-row .pod-btn.main{width:44px;height:44px}
@@ -415,7 +416,7 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .fpill svg{flex:none;opacity:.7}
 .filterbtn{flex:none;height:36px;font-weight:600}
 .filterbtn[aria-expanded="true"]{border-color:var(--ink)}
-.filterbtn .fcount{min-width:18px;height:18px;padding:0 6px;border-radius:99px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
+.filterbtn .fcount{min-width:18px;height:18px;padding:0 6px;border-radius:99px;background:var(--brand-fill);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
 .filterbox{position:absolute;right:12px;top:calc(100% - 6px);width:min(340px,calc(100vw - 24px));background:var(--surface);color:var(--ink);border-radius:16px;box-shadow:0 12px 32px rgba(14,18,23,.24),0 0 0 1px var(--line);padding:14px;display:flex;flex-direction:column;gap:14px;z-index:30}
 .fb-head{display:flex;align-items:baseline;justify-content:space-between}
 .fb-head h2{margin:0;font:700 16px var(--ui)}
@@ -434,7 +435,7 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .stack-head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .stack-head .n{font-size:12px;font-weight:700;color:var(--muted)}
 .stack-close{margin-left:4px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
-.stack-head .n.new{background:var(--brand);color:#fff;border-radius:99px;padding:1px 8px}
+.stack-head .n.new{background:var(--brand-fill);color:#fff;border-radius:99px;padding:1px 8px}
 .stack .card{border-radius:0;margin:0}
 .stack .card + .card{border-top:1px solid var(--line)}
 .stack .meta .src,.stack .meta .src + span,.stack .meta > .dot{display:none}
@@ -544,7 +545,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <button class="btn icon" id="manage" aria-label="Open menu" aria-controls="dlg" aria-expanded="false" title="Menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
+        <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand-fill)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
         <div class="topacts">
           <button class="btn icon" id="savedBtn" aria-label="Saved posts" aria-pressed="false" title="Saved"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><span class="bcount" id="savedCount" hidden></span></button>
           <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
@@ -568,7 +569,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 <dialog id="dlg" class="drawer" aria-label="Menu">
   <div class="dlg">
     <header>
-      <h2 class="brand" aria-label="YourFeed"><svg class="logo" width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">Your<span class="rss">Feed</span></span></h2>
+      <h2 class="brand" aria-label="YourFeed"><svg class="logo" width="24" height="24" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand-fill)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">Your<span class="rss">Feed</span></span></h2>
       <button class="btn icon" id="dlgClose" aria-label="Close menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
@@ -3456,7 +3457,15 @@ function applyDesign(){
   r.style.setProperty("--head", design.head === "sans" ? "var(--ui)" : "var(--read)");
   ["layout","density","thumbs","sum","width"].forEach(k => r.dataset[k] = design[k]);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3";
+  const bg = getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3";
+  if (meta) meta.content = bg;
+  // In the app: Android's status and navigation bars take the page background (not orange), with matching icons
+  try{
+    if (window.YFNative && YFNative.setBars){
+      const h = bg.replace("#", ""), rgb = h.length === 3 ? [...h].map(c => parseInt(c + c, 16)) : [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
+      YFNative.setBars("#" + (h.length === 3 ? [...h].map(c => c + c).join("") : h), (rgb[0] * .299 + rgb[1] * .587 + rgb[2] * .114) < 128);
+    }
+  }catch{}
 }
 function saveDesign(){ store.set("tl.design", design); applyDesign(); }
 function renderDesign(){

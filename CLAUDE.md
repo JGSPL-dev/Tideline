@@ -2,7 +2,7 @@
 
 "Everything you follow, in one feed." One feed for websites, YouTube, Reddit, podcasts, Google News topics, Bluesky and Mastodon. No account, no tracking; data stays on the device. Do not promise "no ads" anywhere (decided 7 Nov 2026: ads may be part of the business model).
 
-Brand: wordmark "Your" + "Feed" in orange (`--brand`: #d9480f light, #ff8a4c dark), Bricolage Grotesque 800. Icon: Feed Check (two lines and a tick on an orange rounded square).
+Brand: one orange, #d9480f (`--brand-fill`), for every solid fill in every theme: logo tile, wordmark "Feed", app icon, badges, counts, buttons. `--brand` (#ff8a4c in dark mode) is only for small orange text/lines that must stay readable on dark backgrounds. Android's status/navigation bars take the page background (`YFNative.setBars`), never orange. Wordmark in Bricolage Grotesque 800. Icon: Feed Check (two lines and a tick on an orange rounded square).
 
 Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.github.io/Tideline/ now at https://yourfeed.appsforus.co.uk (CNAME file; DNS-only CNAME yourfeed → jgspl-dev.github.io on Cloudflare). The same file is the Android app (`app/`, Capacitor 7, app ID `uk.co.appsforus.yourfeed`).
 
