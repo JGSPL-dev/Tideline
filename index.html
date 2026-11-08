@@ -238,6 +238,9 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .livenote{font-size:12.5px;color:var(--muted);padding:7px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
 iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#fff}
 .video{width:100%;aspect-ratio:16/9;background:#000;max-width:100%}
+.vbox{grid-column:1/-1;order:-2;position:relative;z-index:3;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden}
+.vbox iframe{width:100%;height:100%;border:0;display:block}
+.card.vplaying .thumb{display:none}
 .video iframe{width:100%;height:100%;border:0;display:block}
 
 .reader{width:100%;max-width:68ch;margin:0 auto;padding:26px 22px 70px;font:400 19px/1.62 var(--read);overflow-wrap:break-word}
@@ -793,7 +796,6 @@ view.type = {reddit: "conversations", social: "conversations", podcasts: "audio"
 if (view.type === "saved"){ view.type = "all"; view.saved = true; }
 const saveView = () => store.set("tl.view", view);
 const readerCache = new Map();
-state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social/i.test(f.title || "")) f.title = t; });
 state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
 
 /* ---------- fetching ---------- */
@@ -1521,7 +1523,7 @@ function platformOf(f){
   if (/youtube\.com/.test(u)) return "YouTube";
   if (/reddit\.com/.test(u)) return "Reddit";
   if (f.audio) return "Podcasts";
-  if (/news\.google\.com/.test(u)) return "News topics";
+  if (/news\.google\.com/.test(u)) return (newsQuery(u) || {}).site ? "Websites" : "News topics";
   if (f.kind === "social" || /bsky\.app\/profile\/|bsky\.brid\.gy|\/@[\w.-]+\.rss$|\/users\/[\w.-]+\.rss$/.test(u)) return "Social";
   return "Websites";
 }
@@ -1831,13 +1833,14 @@ function toggleSave(it, btn){
   if (view.saved && !on){ if (!state.saved.length){ view.saved = false; view.type = "all"; saveView(); renderChips(); } renderList(); }
 }
 async function sharePost(it){
-  const data = {title: it.title, text: it.title, url: it.link};
+  const url = it.link || it.audioUrl;
+  const data = {title: it.title, text: it.title, url};
   const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
   try{
     if (S && S.share){ await S.share({...data, dialogTitle: "Share"}); return; }
     if (navigator.share){ await navigator.share(data); return; }
   }catch(e){ if (e && /cancel|abort/i.test(String(e.message || e.name))) return; }
-  try{ await navigator.clipboard.writeText(it.link); toast("Link copied"); }catch{ toast("Couldn't share this link"); }
+  try{ await navigator.clipboard.writeText(url); toast("Link copied"); }catch{ toast("Couldn't share this link"); }
 }
 function cardEl(it){
   // The whole card is one link (a "stretched" link over the card); Save and Share sit above it
@@ -1853,7 +1856,7 @@ function cardEl(it){
   body.style.minWidth = "0";
   const meta = metaRow(it);
   if (!feedById(it.feedId) && it.feedTitle){ const src = meta.querySelector(".src"); if (src) src.textContent = it.feedTitle; }
-  if (it.link){
+  if (it.link || it.audioUrl){
     const acts = el("span", "cacts");
     const sv = el("button", "cact"); sv.type = "button";
     const on = isSaved(it.id);
@@ -1884,7 +1887,7 @@ function cardEl(it){
   link.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
     if (isPod){ e.preventDefault(); togglePodPanel(it); return; }
-    if (it.videoId && state.videoInApp){ e.preventDefault(); openItem(it.id); return; }
+    if (it.videoId && state.videoInApp){ e.preventDefault(); if (isWide()) openItem(it.id); else playInCard(a, it); return; }
     if (state.keepInBrowser && it.link){
       const intent = browserIntent(it.link);
       if (intent){ e.preventDefault(); location.href = intent; }
@@ -2057,6 +2060,22 @@ function placeInline(){
   if (!card || !viewerEl) return;
   const wrap = el("div", "inline"); wrap.append(viewerEl);
   card.after(wrap);
+}
+// Phones: the video plays in the card itself, where its picture was. Tapping the card again stops it.
+function stopCardVideos(except){
+  document.querySelectorAll(".card.vplaying").forEach(c => { if (c === except) return; c.classList.remove("vplaying"); c.querySelector(".vbox")?.remove(); });
+  if (!except && state.listStale){ state.listStale = false; renderList(); }
+}
+function playInCard(card, it){
+  if (card.classList.contains("vplaying")){ stopCardVideos(); return; }
+  stopCardVideos(card);
+  if (pod.item && !pod.audio.paused) pod.audio.pause();
+  const box = el("div", "vbox"), f = el("iframe");
+  f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1`;
+  f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+  f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
+  box.append(f); card.prepend(box); card.classList.add("vplaying");
+  requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
 function closeViewer(){
   state.activeId = null; viewerEl = null;
@@ -2427,7 +2446,8 @@ async function refreshAll(){
   btn.disabled = false; btn.classList.remove("spin");
   save(); renderChips(); renderStatus(); renderFeedList();
   const keepScroll = $("#list").scrollTop;
-  renderList();
+  // A video playing in a card would stop if the list were redrawn: wait until it's closed
+  if (document.querySelector(".card.vplaying")) state.listStale = true; else renderList();
   $("#list").scrollTop = keepScroll;
 }
 
@@ -2796,8 +2816,22 @@ $("#connCheck").onclick = async () => {
 };
 // Add a feed from an address, @handle, channel ID or r/subreddit. Returns the new feed.
 // Tidy names feeds give themselves: "newest submissions : gunners" → "r/gunners", "@x.bsky.social - Name" → "bs/Name"
+// A Google News feed's search words, and the site it's limited to (site:apnews.com), if any
+function newsQuery(url){
+  try{ const u = new URL(url); if (!/news\.google\.com$/.test(u.hostname)) return null;
+    const q = (u.searchParams.get("q") || "").replace(/\s*when:\w+/g, "").trim();
+    const site = (q.match(/^site:(\S+)$/) || [])[1] || "";
+    return {q, site};
+  }catch{ return null; }
+}
 function cleanTitle(t, url){
   t = (t || "").replace(/\s+/g, " ").trim();
+  const nq = newsQuery(url);
+  if (nq && nq.site){
+    const known = NO_FEED.find(([, s]) => s === nq.site) || DIRECTORY.find(([, u]) => u.includes(nq.site));
+    return (known ? known[0] : nq.site.replace(/^www\./, "").split("/")[0]) + " via Google";
+  }
+  if (nq && nq.q && (/google news/i.test(t) || !t)) return "g/" + nq.q;
   const sub = (url || "").match(/reddit\.com\/r\/(\w+)/i);
   if (sub && (/submissions|^r\/|^\w+$/i.test(t) || !t)) return "r/" + ((t.match(/:\s*(\w+)\s*$/) || [])[1] || sub[1]);
   if (/bsky\.app\/profile\//.test(url || "")){
@@ -2938,7 +2972,7 @@ function searchDirectory(q){
   for (const [title, site, tags] of NO_FEED.filter(([t, site, tags]) => dirMatch(q, t, site + " " + tags))){
     found.unshift(
       {title, url: "", site, noFeed: true, desc: `${title} doesn't offer a feed, so it can't be added directly. Try its stories through Google News below, or look for its account under Bluesky & Mastodon.`},
-      {title: `${title} via Google News`, url: newsSite(site), website: `https://news.google.com/search?q=${encodeURIComponent("site:" + site)}`, site: "Google News", desc: `Headlines from ${site}, newest first.`, viaNews: true});
+      {title: `${title} via Google`, url: newsSite(site), website: `https://news.google.com/search?q=${encodeURIComponent("site:" + site)}`, site: "Google News", desc: `Headlines from ${site}, newest first.`, viaNews: true});
   }
   return found;
 }
@@ -3619,7 +3653,9 @@ pod.audio.addEventListener("ended", () => {
 function refreshPodTags(){
   document.querySelectorAll("#list .card.pod").forEach(c => {
     const it = itemById(c.dataset.id); const old = c.querySelector(".meta");
-    if (it && old) old.replaceWith(metaRow(it));
+    if (!it || !old) return;
+    const m = metaRow(it), acts = old.querySelector(".cacts"); if (acts) m.append(acts);
+    old.replaceWith(m);
   });
 }
 pod.audio.addEventListener("pause", () => setTimeout(refreshPodTags, 50));
@@ -4041,6 +4077,8 @@ if (IS_APP){
 }
 
 /* ---------- start ---------- */
+// Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
+state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();
 // Opening the app only fetches if the last update is over 10 minutes old (or there's nothing to show yet)
 if (state.forceRefresh) state.feeds.forEach(f => { f.lastFetched = 0; });
