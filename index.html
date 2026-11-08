@@ -120,7 +120,13 @@ body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 :root[data-density="compact"]{--pad:7px}
 :root[data-density="compact"] .title{margin:2px 0}
 :root[data-density="roomy"]{--pad:20px}
-:root[data-layout="magazine"] .card{grid-template-columns:minmax(0,1fr);gap:10px;padding:12px;border-color:var(--line);background:var(--surface);margin-bottom:8px}
+:root[data-layout="magazine"] .card{grid-template-columns:minmax(0,1fr);gap:10px;padding:12px 12px 14px;border-color:var(--line);background:var(--surface);margin-bottom:14px;border-radius:14px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 4px 14px rgba(0,0,0,.04)}
+/* List layout: a clear line between stories */
+:root:not([data-layout="magazine"]) .list > .card{border-radius:0;border-bottom-color:var(--line)}
+:root:not([data-layout="magazine"]) .list > .card.active{border-radius:10px}
+.totop{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:19;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--surface);color:var(--ink);box-shadow:0 4px 14px rgba(0,0,0,.16);display:grid;place-items:center;cursor:pointer;transition:opacity .2s,transform .2s}
+.totop[hidden]{display:grid;opacity:0;transform:translateY(12px);pointer-events:none}
+body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 :root[data-layout="magazine"] .card .thumb{order:-1;width:100%;aspect-ratio:16/9;border-radius:8px}
 :root[data-layout="magazine"] .card .title{font-size:calc(21px * var(--scale))}
 :root[data-layout="magazine"] .sum{-webkit-line-clamp:3}
@@ -149,6 +155,18 @@ body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .toprow{display:flex;align-items:center;gap:8px}
 .toprow{display:grid;grid-template-columns:44px 1fr 44px;align-items:center}
 .toprow > .btn:last-child{justify-self:end}
+.toprow{grid-template-columns:92px 1fr 92px}
+.topacts{display:flex;gap:6px;justify-self:end}
+.brandtext{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.byline{font:600 10.5px/1 var(--ui);letter-spacing:.02em;color:var(--muted);padding-left:1px}
+#savedBtn{position:relative}
+#savedBtn[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+#savedBtn[aria-pressed="true"] svg{fill:currentColor}
+.bcount{position:absolute;top:-5px;right:-5px;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--brand);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center}
+.tabhelp{display:flex;gap:10px;align-items:flex-start;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:4px 0 8px;font-size:14px;line-height:1.4}
+.tabhelp p{margin:0;flex:1}
+.tabhelp button{border:0;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 10px;font-weight:700;font-size:13px;cursor:pointer;flex:none}
+.savedhead{font-weight:700;font-size:13.5px;color:var(--muted)}
 .brand{font:800 27px/1 var(--ui);letter-spacing:-.02em;margin:0;display:flex;align-items:center;justify-content:center;gap:9px}
 .wordmark{font-family:"Bricolage Grotesque",var(--ui);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink);white-space:nowrap}
 .wordmark .slash{width:.6em;height:.9em;margin:0 -.1em 0 .02em;overflow:visible}
@@ -319,6 +337,16 @@ dialog.fullpage header{gap:10px}
 .art-hero{width:100%;border-radius:10px;margin:0 0 18px;display:block}
 .art-audio{width:100%;margin:0 0 18px}
 .tag-in{border-color:var(--brand);color:var(--brand)}
+.tag-done{background:var(--sunk)}
+.cont{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px 4px;margin:4px 0 14px}
+.cont h3{margin:0 0 4px;font:700 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cont-row{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.cont-row:first-of-type{border-top:0}
+.cont-row .pod-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--brand);color:#fff;display:grid;place-items:center;cursor:pointer}
+.cont-row b{display:block;font-size:14.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cont-row small{color:var(--muted);font-size:12.5px}
+.cont-bar{height:3px;background:var(--sunk);border-radius:2px;margin-top:5px;overflow:hidden}
+.cont-bar i{display:block;height:100%;background:var(--brand)}
 .card.pod[aria-expanded="true"]{background:var(--surface);border-color:var(--line);border-bottom-left-radius:0;border-bottom-right-radius:0}
 .pod-panel{display:flex;flex-direction:column;gap:8px;padding:10px 14px 14px;background:var(--surface);border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;margin:-2px 0 6px}
 .art-body .pod-panel{border:1px solid var(--line);border-radius:12px;margin:0 0 18px;font-family:var(--ui)}
@@ -383,6 +411,7 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .stack-head{display:flex;align-items:center;gap:8px;padding:10px 12px 4px;font-weight:700;font-size:14.5px}
 .stack-head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .stack-head .n{font-size:12px;font-weight:700;color:var(--muted)}
+.stack-close{margin-left:4px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
 .stack-head .n.new{background:var(--brand);color:#fff;border-radius:99px;padding:1px 8px}
 .stack .card{border-radius:0;margin:0}
 .stack .card + .card{border-top:1px solid var(--line)}
@@ -433,6 +462,8 @@ a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rmeta .ext{display:inline-block;vertical-align:-2px;margin-left:4px;opacity:.7}
 .rerr{font-size:12.5px;color:var(--danger);margin-top:4px}
 .rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
+.nofeed .rdesc{-webkit-line-clamp:unset;display:block}
+.nofeed .ricon{opacity:.6}
 .lbl-strong{font-weight:600;font-size:14px}
 .checks{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
 .check-row{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:center}
@@ -480,10 +511,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <button class="btn icon" id="manage" aria-label="Open menu" aria-controls="dlg" aria-expanded="false" title="Menu">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wordmark">Your<span class="rss">Feed</span></span></h1>
-        <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-        </button>
+        <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
+        <div class="topacts">
+          <button class="btn icon" id="savedBtn" aria-label="Saved posts" aria-pressed="false" title="Saved"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><span class="bcount" id="savedCount" hidden></span></button>
+          <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          </button>
+        </div>
       </div>
       <div class="chips" id="chips" role="toolbar" aria-label="Story types"></div>
       <div class="statusrow">
@@ -537,6 +571,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
       </label>
       </section>
+      <section class="set-sec" aria-labelledby="sh-pod">
+        <h3 id="sh-pod">Podcasts</h3>
+      <label class="check" for="podQueue">
+        <input type="checkbox" id="podQueue">
+        <span><b>Play saved episodes one after another</b><br><span class="hint">When an episode you saved finishes, the next one in Saved → Audio starts, in the order you saved them.</span></span>
+      </label>
+      </section>
       <section class="set-sec" aria-labelledby="sh-rep">
         <h3 id="sh-rep">Source report</h3>
         <p class="hint">How every source is doing: what's failing and why. Share it to get help. It stays on your device unless you share it.</p>
@@ -580,6 +621,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 
 
 
+<button type="button" class="totop" id="toTop" aria-label="Back to the top" title="Back to the top" hidden><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
 <div id="mini" class="mini" hidden role="region" aria-label="Podcast player">
   <div class="mini-prog"><span id="miniProg"></span></div>
   <div class="mini-row">
@@ -734,10 +776,14 @@ state.stackShown = {};
 state.saved = store.get("yf.saved", []);
 const saveSaved = () => store.set("yf.saved", state.saved);
 const isSaved = id => state.saved.some(x => x.id === id);
-const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest"};
+const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest", saved: false};
 const view = {...VIEW_DEFAULT, ...store.get("tl.view", {})};
+// Tabs renamed Nov 2026: Reddit + Social → Conversations, Podcasts → Audio, Saved → its own button
+view.type = {reddit: "conversations", social: "conversations", podcasts: "audio"}[view.type] || view.type;
+if (view.type === "saved"){ view.type = "all"; view.saved = true; }
 const saveView = () => store.set("tl.view", view);
 const readerCache = new Map();
+state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social/i.test(f.title || "")) f.title = t; });
 state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
 
 /* ---------- fetching ---------- */
@@ -1237,6 +1283,18 @@ function atomItem(e, feed){
   const vid = txt(kid(e, "yt:videoid"));
   const group = kid(e, "media:group");
   const content = txt(kid(e, "content")), summary = txt(kid(e, "summary"));
+  const href = attr(l, "href") || "";
+  if (/reddit\.com\/r\//.test(href)){
+    // Reddit's feed only carries a 140px thumbnail; image posts link the full picture as "[link]"
+    const full = (content.match(/href="(https:\/\/i\.redd\.it\/[\w.-]+\.(?:jpe?g|png|gif|webp))"/i) || [])[1];
+    const text = htmlToText(content.replace(/<table[\s\S]*?<\/table>/i, m => /class="md"/.test(m) ? m : ""))
+      .replace(/submitted by\s*\/u\/\S+/i, "").replace(/\[(link|comments)\]/g, "").replace(/\s+/g, " ").trim();
+    return makeItem(feed, {
+      title: htmlToText(txt(kid(e, "title"))), link: href,
+      date: Date.parse(txt(kid(e, "published")) || txt(kid(e, "updated"))) || 0,
+      summary: text, image: full || attr(deep(e, "media:thumbnail")[0], "url") || firstImg(content)
+    });
+  }
   return makeItem(feed, {
     html: vid ? "" : (content.length > summary.length ? content : summary),
     title: htmlToText(txt(kid(e, "title"))),
@@ -1402,7 +1460,7 @@ async function resolveInput(raw){
 
 /* ---------- helpers ---------- */
 const feedById = id => state.feeds.find(f => f.id === id);
-const itemById = id => state.items.find(i => i.id === id);
+const itemById = id => state.items.find(i => i.id === id) || state.saved.find(i => i.id === id);
 const isWide = () => matchMedia("(min-width:900px)").matches;
 function ago(ms){
   if (!ms) return "";
@@ -1426,7 +1484,10 @@ function metaRow(it){
   m.append(el("span", "src", f.title || "Feed"));
   if (it.date){ m.append(el("span", null, "·")); const t = el("time", null, ago(it.date)); t.dateTime = new Date(it.date).toISOString(); m.append(t); }
   if (it.videoId) m.append(el("span", "tag", "Video"));
-  else if (it.audioUrl) m.append(el("span", "tag tag-in", "Listen"));
+  else if (it.audioUrl){
+    const st = podStatus(it.id);
+    m.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag tag-in", "Listen"));
+  }
   return m;
 }
 function save(){
@@ -1451,21 +1512,30 @@ function platformOf(f){
   if (/reddit\.com/.test(u)) return "Reddit";
   if (f.audio) return "Podcasts";
   if (/news\.google\.com/.test(u)) return "News topics";
-  if (/bsky\.app\/profile\/|\/@[\w.-]+\.rss$/.test(u)) return "Social";
+  if (f.kind === "social" || /bsky\.app\/profile\/|bsky\.brid\.gy|\/@[\w.-]+\.rss$|\/users\/[\w.-]+\.rss$/.test(u)) return "Social";
   return "Websites";
 }
 const folderOf = f => f.folder && state.folders.includes(f.folder) ? f.folder : UNSORTED;
 const byName = (a, b) => (a.title || "").localeCompare(b.title || "", undefined, {sensitivity: "base", numeric: true});
 const saveFolders = () => { store.set("tl.folders", state.folders); };
-const TYPES = [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["reddit", "Reddit"], ["podcasts", "Podcasts"], ["social", "Social"], ["saved", "Saved"]];
+const TYPES = [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["conversations", "Conversations"], ["audio", "Audio"]];
+// What each tab holds, shown the first time it's opened
+const TYPE_HELP = {
+  articles: "Pieces straight from websites, blogs and news feeds, including Google News topics.",
+  videos: "Videos from any source you follow: YouTube channels, and video posts from other feeds.",
+  conversations: "Community chat and social posts: Reddit, Bluesky and Mastodon.",
+  audio: "Podcasts and radio feeds. Tap play to listen; YourFeed remembers where you stopped."
+};
 function typeOf(it){
   if (it.videoId) return "videos";
-  if (it.audioUrl) return "podcasts";
   const f = feedById(it.feedId), p = f ? platformOf(f) : "";
-  if (p === "Reddit") return "reddit";
-  if (p === "Social") return "social";
+  if (p === "Reddit" || p === "Social") return "conversations";
+  // A website that sometimes posts an episode (e.g. a blog with a weekly podcast) stays in Articles
+  if (it.audioUrl && (!f || f.audio)) return "audio";
   return "articles";
 }
+// A podcast feed: most of its posts are something to listen to
+const isPodcastFeed = items => { const n = items.length, a = items.filter(i => i.audio).length; return a > 0 && a >= n * 0.6; };
 // Groups shown in the menu and the filter box: folders (A–Z, Unsorted last) or platforms
 function groupList(mode = state.organise){
   if (mode === "platform"){
@@ -1492,6 +1562,7 @@ function sourceLabel(){
   return s.replace(/^(folder|platform):/, "");
 }
 function checkView(){
+  if (view.saved && !state.saved.length) view.saved = false;
   if (view.source.startsWith("feed:") && !feedById(view.source.slice(5))) view.source = "all";
   if (view.source.startsWith("folder:") && view.source !== "folder:" + UNSORTED && !state.folders.includes(view.source.slice(7))) view.source = "all";
   if (!TYPES.some(([k]) => k === view.type)) view.type = "all";
@@ -1504,7 +1575,12 @@ function baseItems(){
   return state.items.filter(i => sourceMatch(i.feedId) && (!view.unread || !state.read.has(i.id)) && (!cut || (i.date || i.seen || 0) >= cut));
 }
 function visibleItems(){
-  if (view.type === "saved") return [...state.saved].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+  if (view.saved){
+    const all = [...state.saved].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+    // Saved audio is a queue: first saved, first played
+    if (view.type === "audio") return all.filter(i => typeOf(i) === "audio").reverse();
+    return view.type === "all" ? all : all.filter(i => typeOf(i) === view.type);
+  }
   const base = baseItems();
   const list = view.type === "all" ? base : base.filter(i => typeOf(i) === view.type);
   if (view.sort === "source"){
@@ -1525,25 +1601,35 @@ function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
 // Show one source, folder or platform ("all" for everything)
 function selectFeed(src){
   view.source = src === "all" || /^(feed|folder|platform):/.test(src) ? src : "feed:" + src;
-  view.type = "all";
+  view.type = "all"; view.saved = false;
   saveView(); state.shown = PAGE;
-  renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
+  renderChips(); renderStatus(); renderList(); renderFilterBox(); scrollFeedTop();
 }
 function renderChips(){
   checkView();
   const c = $("#chips"); const keep = c.scrollLeft; c.textContent = "";
   const base = baseItems();
   const present = new Set(state.items.map(typeOf));
-  TYPES.forEach(([k, label]) => {
-    if (k === "saved"){
-      if (!state.saved.length && view.type !== k) return;
+  const sb = $("#savedBtn"), sc = $("#savedCount");
+  sb.setAttribute("aria-pressed", String(!!view.saved));
+  sb.setAttribute("aria-label", view.saved ? "Back to your feed" : `Saved posts, ${state.saved.length}`);
+  sc.hidden = !state.saved.length || view.saved; sc.textContent = String(state.saved.length);
+  if (view.saved){
+    // Saved: the same tabs, counting saved posts of each kind
+    const kinds = new Set(state.saved.map(typeOf));
+    TYPES.forEach(([k, label]) => {
+      if (k !== "all" && !kinds.has(k) && view.type !== k) return;
+      const n = k === "all" ? state.saved.length : state.saved.filter(i => typeOf(i) === k).length;
       const b = el("button", "chip saved-tab"); b.type = "button";
       b.setAttribute("aria-pressed", String(view.type === k));
-      b.setAttribute("aria-label", `Saved, ${state.saved.length}`);
-      b.append(document.createTextNode(label), el("span", "count zero", String(state.saved.length)));
+      b.setAttribute("aria-label", `Saved ${label.toLowerCase()}, ${n}`);
+      b.append(document.createTextNode(k === "all" ? "All saved" : label), el("span", "count zero", String(n)));
       b.onclick = () => setView("type", k);
-      c.append(b); return;
-    }
+      c.append(b);
+    });
+    c.scrollLeft = keep; updateChipFades(); renderFilterBar(); return;
+  }
+  TYPES.forEach(([k, label]) => {
     if (k !== "all" && !present.has(k) && view.type !== k) return;
     const its = k === "all" ? base : base.filter(i => typeOf(i) === k);
     const n = its.filter(isNew).length;
@@ -1572,6 +1658,7 @@ function updateChipFades(){
 }
 function renderStatus(){
   const s = $("#status"); s.textContent = "";
+  if (view.saved){ s.append(el("span", "savedhead", `Saved · ${state.saved.length} post${state.saved.length === 1 ? "" : "s"}, kept until you remove them`)); return; }
   if (state.busy){ s.append(el("span", "hdot idle"), document.createTextNode("Checking for new stories…")); return; }
   const n = state.feeds.length;
   if (!n){ s.append(document.createTextNode("No sources yet")); return; }
@@ -1680,6 +1767,7 @@ function browserIntent(link){
 const IMAGE_RULES = [
   // [name, address test, rewrite]
   ["BBC",        /ichef\.bbci\.co\.uk/,      u => u.replace(/(\/(?:ace|news)\/(?:standard|ws|branded_news|branded_sport)\/)\d+(\/)/, "$1800$2")],
+  ["Reddit",     /preview\.redd\.it\/[\w-]+\.(jpe?g|png|gif|webp)/i, u => u.replace(/^https:\/\/preview\.redd\.it\/([\w-]+\.\w+).*$/, "https://i.redd.it/$1")],
   ["YouTube",    /i\.ytimg\.com\/vi\//,      u => u.replace(/\/(default|mqdefault|hqdefault|sddefault)\.jpg/, "/maxresdefault.jpg")],
   ["Sky News",   /\.365dm\.com/,             u => u.replace(/\/\d{2,4}x\d{2,4}\//, "/1600x900/")],
   ["Medium",     /miro\.medium\.com/,        u => u.replace(/resize:(fit|fill):\d+(:\d+)?/, "resize:fit:1400")],
@@ -1732,7 +1820,7 @@ function toggleSave(it, btn){
   if (btn){ btn.setAttribute("aria-pressed", String(on)); btn.innerHTML = on ? ICON_SAVED : ICON_SAVE; btn.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); }
   toast(on ? "Saved for later" : "Removed from Saved");
   renderChips();
-  if (view.type === "saved" && !on) renderList();
+  if (view.saved && !on){ if (!state.saved.length){ view.saved = false; view.type = "all"; saveView(); renderChips(); } renderList(); }
 }
 async function sharePost(it){
   const data = {title: it.title, text: it.title, url: it.link};
@@ -1818,18 +1906,38 @@ function stackEl(g){
   head.append(d, el("span", "nm", f.title || "Feed"), fresh ? el("span", "n new", fresh + " new") : el("span", "n", String(total)));
   box.append(head);
   const shown = Math.min(total, state.stackShown[g.feedId] || STACK_SHOW);
+  // Put a stack back to its first two stories, keeping its heading in view
+  const collapse = () => {
+    state.stackShown[g.feedId] = STACK_SHOW;
+    const fresh = stackEl(g); box.replaceWith(fresh);
+    if (!isWide() && state.activeId) placeInline();
+    placePodPanel();
+    if (fresh.getBoundingClientRect().top < 0) fresh.scrollIntoView({block: "start"});
+  };
+  if (shown > STACK_SHOW){
+    const c = el("button", "stack-close", "Show fewer"); c.type = "button";
+    c.setAttribute("aria-label", `Show fewer from ${f.title}`); c.onclick = collapse;
+    head.append(c);
+  }
   g.items.slice(0, shown).forEach(it => box.append(cardEl(it)));
   if (total > STACK_SHOW){
     const more = total - shown;
     const b = el("button", "stack-more", more ? `Show ${Math.min(more, STACK_STEP)} more from ${f.title}` + (more > STACK_STEP ? ` (${more} left)` : "") : `Show fewer from ${f.title}`);
     b.type = "button"; b.setAttribute("aria-expanded", String(!more));
     b.onclick = () => {
-      state.stackShown[g.feedId] = more ? shown + STACK_STEP : STACK_SHOW;
-      const fresh = stackEl(g); box.replaceWith(fresh);
+      if (!more) return collapse();
+      // Open the next stories below where you are: the first new story takes the button's place on screen
+      const y = b.getBoundingClientRect().top;
+      state.stackShown[g.feedId] = shown + STACK_STEP;
+      const fresh = stackEl(g);
+      // Keep the stories already on screen (and their loaded pictures), so nothing above moves
+      const olds = [...box.querySelectorAll(":scope > .card")], news = [...fresh.querySelectorAll(":scope > .card")];
+      olds.forEach((o, i) => { if (news[i] && news[i].dataset.id === o.dataset.id) news[i].replaceWith(o); });
+      box.replaceWith(fresh);
       if (!isWide() && state.activeId) placeInline();
       placePodPanel();
-      const nb = fresh.querySelector(".stack-more"); if (nb) nb.focus();
-      if (!more) fresh.scrollIntoView({block: "nearest"});
+      const first = fresh.querySelectorAll(".card")[shown];
+      if (first){ const d = first.getBoundingClientRect().top - y; window.scrollBy(0, d); $("#list").scrollTop += d; }
     };
     box.append(b);
   }
@@ -1860,10 +1968,37 @@ function renderList(){
     else { e.append(el("h3", null, "Nothing here yet"), el("p", null, "Try refreshing, or check the menu for sources that couldn't load.")); }
     list.append(e); return;
   }
+  const help = !view.saved && TYPE_HELP[view.type];
+  if (help && !store.get("yf.tabHelp", []).includes(view.type)){
+    const b = el("div", "tabhelp"), ok = el("button", null, "Got it"); ok.type = "button";
+    b.append(el("p", null, help), ok);
+    ok.onclick = () => { store.set("yf.tabHelp", [...store.get("yf.tabHelp", []), view.type]); b.remove(); };
+    list.append(b);
+  }
+  if (view.type === "audio" && !view.saved){ const c = continueListening(); if (c) list.append(c); }
   all.slice(0, state.shown).forEach(u => list.append(unitEl(u)));
   if (!isWide() && state.activeId) placeInline();
   placePodPanel();
   addSentinel(all.length);
+}
+// Episodes you've started and not finished, most recent first
+function continueListening(){
+  const pool = new Map([...state.saved, ...state.items].filter(i => i.audioUrl && !i.videoId).map(i => [i.id, i]));
+  const eps = [...pool.values()].filter(i => podStatus(i.id).pos).sort((a, b) => (pod.last[b.id] || 0) - (pod.last[a.id] || 0)).slice(0, 5);
+  if (!eps.length) return null;
+  const box = el("section", "cont"); box.setAttribute("aria-label", "Continue listening");
+  box.append(el("h3", null, "Continue listening"));
+  eps.forEach(it => {
+    const st = podStatus(it.id), f = feedById(it.feedId) || {};
+    const row = el("div", "cont-row");
+    const b = el("button", "pod-btn"); b.type = "button"; b.innerHTML = ICONS.play; b.setAttribute("aria-label", "Continue " + it.title);
+    b.onclick = () => playEpisode(it);
+    const txt = el("div"); txt.style.minWidth = "0";
+    txt.append(el("b", null, it.title), el("small", null, [f.title || it.feedTitle || "", st.left ? st.left + " left" : ""].filter(Boolean).join(" · ")));
+    const bar = el("div", "cont-bar"), fill = el("i"); fill.style.width = st.dur ? Math.min(100, st.pos / st.dur * 100) + "%" : "8%"; bar.append(fill); txt.append(bar);
+    row.append(b, txt); box.append(row);
+  });
+  return box;
 }
 function addSentinel(total){
   const list = $("#list");
@@ -2201,10 +2336,10 @@ async function fetchFeedNow(f){
   f.lastTried = Date.now();
   try{
     const p = await loadFeed(f.url, f);
-    if (!f.title && p.title) f.title = p.title;
+    if (!f.title && p.title) f.title = cleanTitle(p.title, f.url);
     f.error = null; f.fails = 0; f.lastFetched = Date.now();
     f.everyMin = p.everyMin || null;
-    f.audio = p.items.some(i => i.audio) || f.audio || false;
+    if (p.items.length) f.audio = isPodcastFeed(p.items);
     return p.items;
   }catch(e){ f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now(); return null; }
 }
@@ -2310,7 +2445,7 @@ function renderFeedList(){
       const row = el("div", "attn-row");
       const who = el("button", "who"); who.type = "button"; who.setAttribute("aria-label", `Edit ${f.title}: ${why}`);
       who.append(el("b", null, f.title || f.url), el("span", "why", why));
-      who.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n){ n.focus(); n.scrollIntoView({block: "center"}); } };
+      who.onclick = () => openEdit(f.id);
       const b = el("button", "btn" + (f.error ? " primary" : ""), f._checking ? "Checking…" : act); b.type = "button"; b.disabled = !!f._checking;
       b.onclick = () => checkNow(f);
       row.append(who, b); sec.append(row);
@@ -2395,13 +2530,19 @@ function setFolder(f, name){
   f.folder = name && name !== UNSORTED ? name : "";
   save(); renderChips(); renderList();
 }
+// Open a source's edit form without popping up the keyboard: it opens when you tap a box
+function openEdit(id){
+  editingId = id; renderFeedList();
+  const form = document.querySelector(".editform");
+  if (form){ form.tabIndex = -1; form.focus({preventScroll: true}); form.scrollIntoView({block: "start", behavior: "smooth"}); }
+}
 function feedRow(f, pickRow){
   const li = el("li");
   if (f.id === editingId){ li.className = "editing"; li.append(editForm(f)); return li; }
   const acts = el("div", "acts");
   const ed = el("button", "btn icon"); ed.type = "button"; ed.innerHTML = ICON_EDIT;
   ed.setAttribute("aria-label", "Edit " + (f.title || "feed")); ed.title = "Edit";
-  ed.onclick = () => { editingId = f.id; renderFeedList(); const n = $("#ef-name"); if (n) n.focus(); };
+  ed.onclick = () => openEdit(f.id);
   const rm = el("button", "btn icon"); rm.type = "button"; rm.innerHTML = ICON_BIN;
   rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); rm.title = "Remove";
   let armed = false, timer;
@@ -2531,11 +2672,16 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
+  // Start clean: no leftover search, no source open for editing
+  if ($("#addInput").value || search.q){ $("#addInput").value = ""; $("#addBtn").textContent = "Add"; search.q = ""; search.seq++; renderTopResults(); }
+  if (editingId){ editingId = null; renderFeedList(); }
   dlg.classList.remove("closing"); dlg.showModal();
+  // Don't open the keyboard by itself: focus the menu, not the search box
+  if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)){ document.activeElement.blur(); dlg.tabIndex = -1; dlg.focus({preventScroll: true}); }
   $("#manage").setAttribute("aria-expanded", "true");
 }
 function closeMenu(){
@@ -2551,6 +2697,12 @@ $("#dlgClose").onclick = closeMenu;
 $("#tab-feeds").onclick = () => showTab("feeds");
 $("#tab-settings").onclick = () => showTab("settings");
 dlg.addEventListener("click", e => { if (e.target === dlg) closeMenu(); });
+// When a box is tapped, keep it in view above the keyboard
+dlg.addEventListener("focusin", e => {
+  if (!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || /checkbox|radio/.test(e.target.type)) return;
+  setTimeout(() => { if (document.activeElement === e.target) e.target.scrollIntoView({block: "center", behavior: "smooth"}); }, 350);
+});
+$("#podQueue").addEventListener("change", e => { state.podQueue = e.target.checked; store.set("yf.podQueue", state.podQueue); });
 $("#keepBrowser").addEventListener("change", e => {
   state.keepInBrowser = e.target.checked; store.set("tl.keepbrowser", state.keepInBrowser);
   const h = $("#keepBrowserHint");
@@ -2597,8 +2749,21 @@ $("#connCheck").onclick = async () => {
   }));
 };
 // Add a feed from an address, @handle, channel ID or r/subreddit. Returns the new feed.
-async function addFeed(raw, direct){
+// Tidy names feeds give themselves: "newest submissions : gunners" → "r/gunners", "@x.bsky.social - Name" → "bs/Name"
+function cleanTitle(t, url){
+  t = (t || "").replace(/\s+/g, " ").trim();
+  const sub = (url || "").match(/reddit\.com\/r\/(\w+)/i);
+  if (sub && (/submissions|^r\/|^\w+$/i.test(t) || !t)) return "r/" + ((t.match(/:\s*(\w+)\s*$/) || [])[1] || sub[1]);
+  if (/bsky\.app\/profile\//.test(url || "")){
+    const m = t.match(/^@?\S+\s+-\s+(.+)$/);
+    const name = (m ? m[1] : t.replace(/^@/, "").replace(/\.bsky\.social$/, "")).trim();
+    return /^bs\//.test(name) ? name : "bs/" + name;
+  }
+  return t;
+}
+async function addFeed(raw, direct, kind){
   const feed = {id: uid(), url: "", title: "", color: nextColor()};
+  if (kind === "bluesky" || kind === "mastodon") feed.kind = "social";
   let p;
   if (direct){
     // From search: the feed address is already known, so load it straight away.
@@ -2616,8 +2781,8 @@ async function addFeed(raw, direct){
     p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
   }
   if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
-  feed.title = p.title || new URL(feed.url).hostname.replace(/^www\./, "");
-  feed.lastFetched = Date.now(); feed.everyMin = p.everyMin || null; feed.audio = p.items.some(i => i.audio);
+  feed.title = cleanTitle(p.title, feed.url) || new URL(feed.url).hostname.replace(/^www\./, "");
+  feed.lastFetched = Date.now(); feed.everyMin = p.everyMin || null; feed.audio = isPodcastFeed(p.items);
   state.feeds.push(feed);
   state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
@@ -2669,12 +2834,67 @@ const DIRECTORY = [
   ["ESPN","https://www.espn.com/espn/rss/news","sport us"],
   ["New Scientist","https://www.newscientist.com/feed/home/","science"],
   ["ScienceDaily","https://www.sciencedaily.com/rss/all.xml","science research"],
-  ["Nature","https://www.nature.com/nature.rss","science research journal"]
+  ["Nature","https://www.nature.com/nature.rss","science research journal"],
+  ["BBC News – Business","https://feeds.bbci.co.uk/news/business/rss.xml","business money economy"],
+  ["BBC News – Politics","https://feeds.bbci.co.uk/news/politics/rss.xml","politics uk"],
+  ["BBC News – Entertainment","https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml","entertainment arts culture tv film"],
+  ["BBC Sport – Formula 1","https://feeds.bbci.co.uk/sport/formula1/rss.xml","f1 formula one motorsport racing sport"],
+  ["BBC Sport – Cricket","https://feeds.bbci.co.uk/sport/cricket/rss.xml","cricket sport"],
+  ["BBC Sport – Rugby Union","https://feeds.bbci.co.uk/sport/rugby-union/rss.xml","rugby sport"],
+  ["BBC Sport – Tennis","https://feeds.bbci.co.uk/sport/tennis/rss.xml","tennis sport"],
+  ["The Guardian – Sport","https://www.theguardian.com/uk/sport/rss","sport"],
+  ["Financial Times","https://www.ft.com/rss/home","news business money ft"],
+  ["The Telegraph","https://www.telegraph.co.uk/rss.xml","news uk"],
+  ["Daily Mail","https://www.dailymail.co.uk/articles.rss","news uk"],
+  ["The Sun","https://www.thesun.co.uk/feed/","news uk"],
+  ["Daily Mirror","https://www.mirror.co.uk/?service=rss","news uk mirror"],
+  ["Metro","https://metro.co.uk/feed/","news uk"],
+  ["Evening Standard","https://www.standard.co.uk/rss","news london uk"],
+  ["The Economist","https://www.economist.com/latest/rss.xml","news world business economics"],
+  ["The Washington Post – World","https://feeds.washingtonpost.com/rss/world","news us world"],
+  ["Politico","https://rss.politico.com/politics-news.xml","politics us news"],
+  ["Axios","https://api.axios.com/feed/","news us"],
+  ["CNN","https://rss.cnn.com/rss/edition.rss","news us world"],
+  ["GamesRadar+","https://www.gamesradar.com/rss/","games gaming"],
+  ["GameSpot","https://www.gamespot.com/feeds/mashup/","games gaming"],
+  ["Gematsu","https://www.gematsu.com/feed","games gaming japan"],
+  ["Destructoid","https://www.destructoid.com/feed/","games gaming"],
+  ["Siliconera","https://www.siliconera.com/feed/","games gaming japan"],
+  ["Nintendo Everything","https://nintendoeverything.com/feed/","nintendo switch games gaming"],
+  ["My Nintendo News","https://mynintendonews.com/feed/","nintendo switch games gaming"],
+  ["Nintendo Wire","https://nintendowire.com/feed/","nintendo switch games gaming"],
+  ["GoNintendo","https://gonintendo.com/","nintendo switch games gaming"],
+  ["Arseblog","https://arseblog.com/feed/","arsenal football soccer"],
+  ["Football365","https://www.football365.com/feed","football soccer premier league"]
 ];
+// Big publishers that offer no feed at all. Searching for them explains that and offers what works instead:
+// their stories through Google News, or their accounts on Bluesky/Mastodon.
+const NO_FEED = [
+  ["Associated Press", "apnews.com", "ap associated press news us world"],
+  ["Reuters", "reuters.com", "reuters news world business"],
+  ["Bloomberg", "bloomberg.com", "bloomberg news business money"],
+  ["The Athletic", "nytimes.com/athletic", "athletic sport football"],
+  ["The Times", "thetimes.com", "times news uk"],
+  ["Nintendo (official)", "nintendo.com", "nintendo switch games"]
+];
+const squash = t => (t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+// Matches "bbc sport", "BBCSport", "bbcsport.com" or a tag word alike
+function dirMatch(q, title, extra){
+  const words = q.toLowerCase().split(/\s+/).filter(Boolean), hay = (title + " " + extra).toLowerCase();
+  if (words.every(w => hay.includes(w))) return true;
+  const sq = squash(q.replace(/\.(com|co\.uk|org|net)\b.*$/i, ""));
+  return sq.length >= 3 && (squash(title).includes(sq) || squash(extra.split(" ")[0]).includes(sq));
+}
+const newsSite = site => `https://news.google.com/rss/search?q=${encodeURIComponent("site:" + site)}&hl=en-GB&gl=GB&ceid=GB:en`;
 function searchDirectory(q){
-  const words = q.toLowerCase().split(/\s+/).filter(Boolean);
-  return DIRECTORY.filter(([t, , tags]) => { const hay = (t + " " + tags).toLowerCase(); return words.every(w => hay.includes(w)); })
+  const found = DIRECTORY.filter(([t, url, tags]) => dirMatch(q, t, new URL(url).hostname.replace(/^www\./, "") + " " + tags))
     .map(([title, url]) => ({title, url, site: new URL(url).hostname.replace(/^www\./, "")}));
+  for (const [title, site, tags] of NO_FEED.filter(([t, site, tags]) => dirMatch(q, t, site + " " + tags))){
+    found.unshift(
+      {title, url: "", site, noFeed: true, desc: `${title} doesn't offer a feed, so it can't be added directly. Try its stories through Google News below, or look for its account under Bluesky & Mastodon.`},
+      {title: `${title} via Google News`, url: newsSite(site), website: `https://news.google.com/search?q=${encodeURIComponent("site:" + site)}`, site: "Google News", desc: `Headlines from ${site}, newest first.`, viaNews: true});
+  }
+  return found;
 }
 // Website search: the built-in directory, plus "looks like a site address" → find its feed.
 // (No outside search service sees what people type.)
@@ -2729,7 +2949,7 @@ const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcas
 const decodeAmp = u => (u || "").replace(/&amp;/g, "&");
 
 async function searchWebAll(q){
-  const local = searchDirectory(q).map(r => ({...r, kind: "web", suggested: true}));
+  const local = searchDirectory(q).map(r => ({...r, kind: r.viaNews ? "news" : "web", suggested: true}));
   let web = [];
   try{ web = (await searchWeb(q)).map(r => ({...r, kind: "web"})); }catch(e){ if (!local.length) throw e; }
   const seen = new Set(local.map(r => r.url));
@@ -2799,12 +3019,21 @@ function searchNews(q){
 }
 async function searchSocial(q){
   const out = [];
-  const bsky = getJSON("https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?limit=15&q=" + encodeURIComponent(q)).then(j => {
-    for (const a of j.actors || []) out.push({kind: "bluesky", title: a.displayName || a.handle, url: `https://bsky.app/profile/${a.did}/rss`,
+  const bsky = getJSON("https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?limit=15&q=" + encodeURIComponent(q)).then(async j => {
+    let actors = j.actors || [];
+    // Leave out accounts with fewer than 10 posts: search only knows names, so ask for their post counts
+    try{
+      if (actors.length){
+        const pj = await getJSON("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfiles?" + actors.map(a => "actors=" + encodeURIComponent(a.did)).join("&"), 8000);
+        const posts = new Map((pj.profiles || []).map(x => [x.did, x.postsCount || 0]));
+        if (posts.size) actors = actors.filter(a => (posts.get(a.did) || 0) >= 10);
+      }
+    }catch{}
+    for (const a of actors) out.push({kind: "bluesky", title: a.displayName || a.handle, url: `https://bsky.app/profile/${a.did}/rss`,
       website: `https://bsky.app/profile/${a.handle}`, site: "@" + a.handle, desc: htmlToText(a.description || ""), icon: safeUrl(a.avatar || ""), person: true});
   });
   const masto = getJSON("https://mastodon.social/api/v2/search?type=accounts&limit=15&q=" + encodeURIComponent(q)).then(j => {
-    for (const a of j.accounts || []) if (a.url) out.push({kind: "mastodon", title: a.display_name || a.username, url: a.url.replace(/\/$/, "") + ".rss",
+    for (const a of j.accounts || []) if (a.url && !/threads\.(net|com)/i.test(a.url) && (a.statuses_count || 0) >= 10) out.push({kind: "mastodon", title: a.display_name || a.username, url: a.url.replace(/\/$/, "") + ".rss",
       website: a.url, site: "@" + a.acct + (a.acct.includes("@") ? "" : "@mastodon.social"), desc: htmlToText(a.note || ""),
       followers: a.followers_count || 0, icon: safeUrl(a.avatar_static || a.avatar || ""), person: true});
   });
@@ -2928,6 +3157,7 @@ function pump(){
   }
 }
 function resultLink(r){
+  if (r.noFeed) return "https://" + r.site;
   if (r.website) return r.website;
   if (r.yt) return /^UC[\w-]{22}$/.test(r.url) ? "https://www.youtube.com/channel/" + r.url : "https://www.youtube.com/" + r.url.replace(/^youtube\.com\//, "");
   return r.website || (() => { try{ return new URL(r.url).origin; }catch{ return r.url; } })();
@@ -2956,13 +3186,18 @@ function resultEl(r, showKind){
   metaEl.insertAdjacentHTML("beforeend", '<svg class="ext" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>');
   info.append(metaEl);
   if (r.desc) info.append(el("div", "rdesc", r.desc));
+  if (r.noFeed){
+    li.classList.add("nofeed");
+    const b = el("button", "btn", "No feed"); b.type = "button"; b.disabled = true; b.title = "This site doesn't offer a feed";
+    li.append(ic, info, b); return li;
+  }
   const already = !r.yt && state.feeds.some(f => f.url === r.url) || (r.yt && r.id && state.feeds.some(f => f.url.endsWith("channel_id=" + r.id)));
   const b = el("button", "btn" + (already ? "" : " primary"), already ? "Following" : "Add"); b.type = "button"; b.disabled = already;
   b.onclick = async () => {
     b.disabled = true; b.textContent = "Adding…";
     li.querySelector(".rerr")?.remove();
     try{
-      const {feed, count} = await addFeed(r.yt && r.id ? r.id : r.url, !r.yt);
+      const {feed, count} = await addFeed(r.yt && r.id ? r.id : r.url, !r.yt, r.kind);
       b.textContent = "Added"; b.classList.remove("primary");
       setMsg(`Added ${feed.title} with ${storyCount(count)}.`);
     }catch(err){
@@ -3008,7 +3243,7 @@ $("#searchPage").addEventListener("close", () => { renderTopResults(); renderFee
 renderFilterChips($("#searchFilters"), renderAllResults);
 
 /* ---------- design settings ---------- */
-const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"list", density:"normal", thumbs:"small", sum:"on", width:"narrow", stack:"off"};
+const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"magazine", density:"normal", thumbs:"large", sum:"on", width:"narrow", stack:"off"};
 const ACCENTS = {
   orange:["#c2410c","#ff8a4c"], teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
   amber:["#9a5b00","#f2b453"], green:["#2f7a1f","#8fd47a"], slate:["#3d4a5c","#a9b6c8"], red:["#c0362c","#ff8a7e"]
@@ -3025,6 +3260,8 @@ const DESIGN_ROWS = [
   ["width","Width on desktop",[["narrow","Narrow"],["wide","Wide"]]]
 ];
 let design = {...DESIGN_DEFAULT, ...store.get("tl.design", {})};
+// Nov 2026: Magazine with large images became the default; move people still on the old defaults
+if (!store.get("yf.design2", false)){ if (design.layout === "list" && design.thumbs === "small"){ design.layout = "magazine"; design.thumbs = "large"; store.set("tl.design", design); } store.set("yf.design2", true); }
 if (!store.get("tl.brand1", false)){ if (design.accent === "teal") design.accent = "orange"; store.set("tl.brand1", true); store.set("tl.design", design); }
 function applyDesign(){
   const r = document.documentElement;
@@ -3090,6 +3327,18 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
   if (now){ if (viewerEl) $("#pane").replaceChildren(viewerEl); else renderPaneEmpty(); }
   else if (id) placeInline();
 });
+// Back-to-top button once you've scrolled a couple of screens down (the page scrolls on phones, the list on desktop)
+{
+  const tt = $("#toTop"), lst = $("#list");
+  const check = () => { tt.hidden = Math.max(window.scrollY, lst.scrollTop) < innerHeight * 1.5; };
+  addEventListener("scroll", check, {passive: true}); lst.addEventListener("scroll", check, {passive: true});
+  tt.onclick = () => { window.scrollTo({top: 0, behavior: "smooth"}); lst.scrollTo({top: 0, behavior: "smooth"}); };
+}
+$("#savedBtn").onclick = () => {
+  if (!view.saved && !state.saved.length){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
+  view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
+  renderChips(); renderStatus(); renderList(); scrollFeedTop();
+};
 $("#refresh").onclick = async () => {
   if (state.busy) return;
   state.baseline = Date.now(); store.set("tl.baseline", state.baseline);
@@ -3105,7 +3354,21 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 /* ---------- podcast player ---------- */
 // One player for the whole app: it keeps playing while you scroll, switch feeds or open other pages.
-const pod = {audio: new Audio(), item: null, open: null, speed: store.get("tl.podSpeed", 1), pos: store.get("tl.podPos", {})};
+const pod = {audio: new Audio(), item: null, open: null, speed: store.get("tl.podSpeed", 1), pos: store.get("tl.podPos", {}),
+  dur: store.get("yf.podDur", {}), last: store.get("yf.podLast", {}), played: new Set(store.get("yf.played", []))};
+state.podQueue = store.get("yf.podQueue", true);
+// Where you are with an episode: played to the end, part-way (with time left), or not started
+function podStatus(id){
+  if (pod.played.has(id)) return {played: true};
+  const t = pod.pos[id] || 0, d = pod.dur[id] || 0;
+  if (!t) return {};
+  const left = d > t ? Math.max(1, Math.round((d - t) / 60)) : 0;
+  return {pos: t, dur: d, left: left ? (left >= 60 ? `${Math.floor(left / 60)} h ${left % 60} min` : `${left} min`) : ""};
+}
+function markPlayed(id){
+  pod.played.add(id); delete pod.pos[id];
+  store.set("yf.played", [...pod.played].slice(-500)); store.set("tl.podPos", pod.pos);
+}
 pod.audio.preload = "metadata";
 // In the Android app, a native media session runs a foreground service while an episode plays.
 // Without it Android freezes the app in the background after a few minutes and the audio just stops.
@@ -3124,8 +3387,12 @@ const ICONS = {
 };
 function savePos(){
   if (!pod.item) return;
-  const t = pod.audio.currentTime || 0, d = pod.audio.duration || 0;
-  if (d && t > d - 15) delete pod.pos[pod.item.id]; else if (t > 5) pod.pos[pod.item.id] = Math.floor(t);
+  const t = pod.audio.currentTime || 0, d = pod.audio.duration || 0, id = pod.item.id;
+  if (d && isFinite(d)){ pod.dur[id] = Math.round(d); }
+  if (d && t > d - 15) markPlayed(id);
+  else if (t > 5){ pod.pos[id] = Math.floor(t); pod.last[id] = Date.now(); pod.played.delete(id); }
+  for (const m of [pod.dur, pod.last]){ const k = Object.keys(m); if (k.length > 300) k.slice(0, k.length - 300).forEach(x => delete m[x]); }
+  store.set("yf.podDur", pod.dur); store.set("yf.podLast", pod.last);
   const keys = Object.keys(pod.pos); if (keys.length > 200) keys.slice(0, keys.length - 200).forEach(k => delete pod.pos[k]);
   store.set("tl.podPos", pod.pos);
 }
@@ -3133,6 +3400,7 @@ function playEpisode(it){
   if (pod.item && pod.item.id === it.id){ pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); return; }
   savePos();
   pod.item = it;
+  if (pod.played.has(it.id)){ pod.played.delete(it.id); store.set("yf.played", [...pod.played]); }
   pod.audio.src = it.audioUrl;
   pod.audio.playbackRate = pod.speed;
   const resume = pod.pos[it.id] || 0;
@@ -3167,6 +3435,11 @@ function setMediaSession(it){
     navigator.mediaSession.setActionHandler("seekbackward", () => skip(-BACK_S));
     navigator.mediaSession.setActionHandler("seekforward", () => skip(FWD_S));
     navigator.mediaSession.setActionHandler("seekto", d => { if (d.seekTime != null) pod.audio.currentTime = d.seekTime; syncPod(); });
+    // Headphone next/previous buttons: skip within the episode (the app handles these natively)
+    if (!NativeMS){
+      navigator.mediaSession.setActionHandler("nexttrack", () => skip(FWD_S));
+      navigator.mediaSession.setActionHandler("previoustrack", () => skip(-BACK_S));
+    }
   }catch{}
 }
 // Controls for one episode: used under the card in the feed and on the description page
@@ -3285,7 +3558,25 @@ setInterval(checkPod, 5000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkPod(); });
 pod.audio.addEventListener("error", () => { if (pod.item && pod.audio.getAttribute("src")) setTimeout(() => recoverPod("error"), 2000); });
 ["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "ratechange", "waiting", "playing"].forEach(ev => pod.audio.addEventListener(ev, syncPod));
-pod.audio.addEventListener("ended", () => { if (pod.item) delete pod.pos[pod.item.id]; store.set("tl.podPos", pod.pos); syncPod(); });
+pod.audio.addEventListener("ended", () => {
+  if (!pod.item) return;
+  const done = pod.item; markPlayed(done.id); syncPod(); refreshPodTags();
+  // Saved episodes as a queue: the next one down in Saved → Audio
+  if (!state.podQueue) return;
+  const q = state.saved.filter(i => i.audioUrl && !i.videoId).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+  const at = q.findIndex(i => i.id === done.id);
+  if (at < 0) return;
+  const next = q.slice(at + 1).find(i => !pod.played.has(i.id));
+  if (next){ toast("Up next: " + next.title); playEpisode(next); }
+});
+// Update the Listen / Continue / Played labels on cards already on screen
+function refreshPodTags(){
+  document.querySelectorAll("#list .card.pod").forEach(c => {
+    const it = itemById(c.dataset.id); const old = c.querySelector(".meta");
+    if (it && old) old.replaceWith(metaRow(it));
+  });
+}
+pod.audio.addEventListener("pause", () => setTimeout(refreshPodTags, 50));
 pod.audio.addEventListener("pause", savePos);
 addEventListener("pagehide", savePos);
 $("#miniPlay").onclick = () => { if (pod.item) pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); };
@@ -3632,7 +3923,7 @@ function startOnboarding(){
 }
 const TOUR = [
   ["#manage", "Add your sources here", "Search for websites, YouTube channels, subreddits, podcasts and more, or paste a link."],
-  ["#chips", "Switch what you're seeing", "Everything in one feed, or just articles, videos, Reddit or podcasts."],
+  ["#chips", "Switch what you're seeing", "Everything in one feed, or just articles, videos, conversations or audio."],
   ["#filterBtn", "Filter your feed", "Show one folder or source, unread only, or just today."],
   ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now."]
 ];
@@ -3673,7 +3964,7 @@ function goBack(){
     closeMenu(); return true;
   }
   if (state.activeId){ closeViewer(); return true; }
-  if (view.source !== "all" || view.type !== "all"){ view.source = "all"; view.type = "all"; saveView(); state.shown = PAGE; renderChips(); renderList(); scrollFeedTop(); return true; }
+  if (view.source !== "all" || view.type !== "all" || view.saved){ view.source = "all"; view.type = "all"; view.saved = false; saveView(); state.shown = PAGE; renderChips(); renderStatus(); renderList(); scrollFeedTop(); return true; }
   return false;
 }
 if (IS_APP){
