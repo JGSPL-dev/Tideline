@@ -260,6 +260,7 @@ iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#ff
 .video{width:100%;aspect-ratio:16/9;background:#000;max-width:100%}
 .vbox{grid-column:1/-1;order:-2;position:relative;z-index:3;width:100%;aspect-ratio:16/9;background:#000;border-radius:8px;overflow:hidden}
 .vbox iframe{width:100%;height:100%;border:0;display:block}
+.vbox.tall{aspect-ratio:9/16;width:auto;height:min(72vh,640px);max-width:100%;margin:0 auto;justify-self:center}
 .card.vplaying .thumb{display:none}
 .video iframe{width:100%;height:100%;border:0;display:block}
 
@@ -1219,8 +1220,18 @@ async function loadOneFeed(url, feed, logOut){
 function mergeHistory(oldItems, newItems){
   const now = Date.now(), cutoff = now - KEEP_DAYS * 86400000;
   const byId = new Map();
-  oldItems.forEach(i => byId.set(i.id, i));
-  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined, dur: i.dur || (prev && prev.dur) || undefined}); });
+  // The same YouTube video under two addresses (older copies): keep one
+  const vids = new Map();
+  oldItems.forEach(i => {
+    if (i.videoId){
+      const k = i.feedId + "|" + i.videoId, had = vids.get(k);
+      if (had){ had.dur = had.dur || i.dur; had.short = had.short || i.short || /\/shorts\//.test(i.link || "") || undefined; return; }
+      i = {...i, short: i.short || /\/shorts\//.test(i.link || "") || undefined, link: /youtube\.com\/shorts\//.test(i.link || "") ? "https://www.youtube.com/watch?v=" + i.videoId : i.link};
+      i.id = i.feedId + "|" + i.link; vids.set(k, i);
+    }
+    byId.set(i.id, i);
+  });
+  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined, dur: i.dur || (prev && prev.dur) || undefined, short: i.short || (prev && prev.short) || undefined}); });
   const counts = {};
   // Newest first; each feed always keeps its MIN_PER_FEED newest stories, however old,
   // so weekly podcasts and quiet channels never vanish. Beyond that, only the last KEEP_DAYS.
@@ -1281,8 +1292,12 @@ function postTitle(text){
   return pick.length > 120 ? pick.slice(0, 117).replace(/\s+\S*$/, "") + "…" : pick;
 }
 function makeItem(feed, o){
-  const link = safeUrl(o.link) || "";
+  let link = safeUrl(o.link) || "";
   const videoId = o.videoId || ytId(link);
+  // YouTube's own feed links Shorts as /shorts/ID, the API as /watch?v=ID: one address for both,
+  // so the same video never appears twice, and remember that it's a Short
+  const short = !!(o.short || /youtube\.com\/shorts\//.test(link)) || undefined;
+  if (videoId && /(^|\.)youtube\.com$|youtu\.be$/.test((() => { try{ return new URL(link).hostname; }catch{ return ""; } })())) link = "https://www.youtube.com/watch?v=" + videoId;
   return {
     id: feed.id + "|" + (link || o.title),
     feedId: feed.id,
@@ -1295,6 +1310,7 @@ function makeItem(feed, o){
     audio: o.audio || undefined,
     audioUrl: safeUrl(o.audioUrl || "") || undefined,
     dur: o.dur > 0 ? Math.round(o.dur) : undefined,
+    short,
     // The whole article, when the feed includes it (kept out of the saved list; see stashArticles)
     _full: o.html && htmlToText(o.html).length >= 500 ? o.html : undefined
   };
@@ -1536,7 +1552,7 @@ const itemDur = it => it.dur || (it.audioUrl && pod.dur[it.id]) || 0;
 function flagsEl(it){
   const f = el("span", "flags"), len = itemDur(it);
   if (it.videoId){
-    f.append(el("span", "tag", "Watch"));
+    f.append(el("span", "tag", it.short ? "Short" : "Watch"));
     if (len) f.append(el("span", "tag len", clockLen(len)));
   } else if (it.audioUrl){
     // Grey like the others; orange only for an episode you're part-way through
@@ -2156,7 +2172,8 @@ function playInCard(card, it){
   f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
   f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
   // In the app: short clips (under 3 minutes, mostly Shorts) stay upright in full screen; longer videos turn to landscape
-  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.dur && it.dur < 180)); }catch{}
+  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.short || (it.dur && it.dur < 180))); }catch{}
+  if (it.short || (it.dur && it.dur <= 60)) box.classList.add("tall");   // Shorts play upright
   box.append(f); card.prepend(box); card.classList.add("vplaying");
   requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
