@@ -51,6 +51,8 @@ jobs:
           npx cap add android
           npx cap sync android
           cp -r res/* android/app/src/main/res/
+          # Full-screen video inside the app (rotates to landscape)
+          cp native/MainActivity.java android/app/src/main/java/uk/co/appsforus/yourfeed/MainActivity.java
           sed -i "s/versionCode 1$/versionCode $((100 + ${{ github.run_number }}))/; s/versionName \"1.0\"/versionName \"0.2.${{ github.run_number }}\"/" android/app/build.gradle
           grep -q "versionCode $((100 + ${{ github.run_number }}))" android/app/build.gradle
           # Podcasts keep playing in the background: the media-session plugin runs a foreground service,

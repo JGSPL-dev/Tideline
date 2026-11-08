@@ -571,6 +571,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       </section>
       <section class="set-sec" aria-labelledby="sh-links">
         <h3 id="sh-links">Opening stories</h3>
+      <label class="check" for="videoInApp">
+        <input type="checkbox" id="videoInApp">
+        <span><b>Play videos in YourFeed</b><br><span class="hint">Videos play under the story instead of opening YouTube. Tap full screen to watch it big.</span></span>
+      </label>
       <label class="check" for="keepBrowser">
         <input type="checkbox" id="keepBrowser">
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
@@ -771,7 +775,8 @@ const state = {
   busy: false,
   service: store.get("yf.service", ""),
   keepInBrowser: store.get("tl.keepbrowser", false),
-  readInApp: store.get("tl.readinapp", true)
+  readInApp: store.get("tl.readinapp", true),
+  videoInApp: store.get("yf.videoInApp", true)
 };
 state.folders = store.get("tl.folders", []);
 state.organise = store.get("tl.organise", "category");
@@ -1879,6 +1884,7 @@ function cardEl(it){
   link.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
     if (isPod){ e.preventDefault(); togglePodPanel(it); return; }
+    if (it.videoId && state.videoInApp){ e.preventDefault(); openItem(it.id); return; }
     if (state.keepInBrowser && it.link){
       const intent = browserIntent(it.link);
       if (intent){ e.preventDefault(); location.href = intent; }
@@ -2098,7 +2104,7 @@ function renderBody(it, body){
   if (it.videoId){
     const box = el("div", "video");
     const f = el("iframe");
-    f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1`;
+    f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1`;
     f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
     f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
     box.append(f); body.append(box);
@@ -2711,7 +2717,7 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
@@ -2741,6 +2747,7 @@ dlg.addEventListener("focusin", e => {
   if (!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || /checkbox|radio/.test(e.target.type)) return;
   setTimeout(() => { if (document.activeElement === e.target) e.target.scrollIntoView({block: "center", behavior: "smooth"}); }, 350);
 });
+$("#videoInApp").addEventListener("change", e => { state.videoInApp = e.target.checked; store.set("yf.videoInApp", state.videoInApp); });
 $("#podQueue").addEventListener("change", e => { state.podQueue = e.target.checked; store.set("yf.podQueue", state.podQueue); });
 $("#keepBrowser").addEventListener("change", e => {
   state.keepInBrowser = e.target.checked; store.set("tl.keepbrowser", state.keepInBrowser);
