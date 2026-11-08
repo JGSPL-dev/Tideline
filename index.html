@@ -82,6 +82,8 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 .tag.len{font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
 .cacts.onimg{position:absolute;top:8px;right:8px;background:rgba(15,18,23,.62);border-radius:99px;padding:2px 3px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .cacts.onimg .cact{color:#fff}
+.cacts.onimg{align-items:center}
+.cacts.onimg .ago{color:#fff;font-size:12.5px;font-weight:600;padding:0 6px 0 8px;white-space:nowrap}
 .cacts.onimg .cact:hover{background:rgba(255,255,255,.18);color:#fff}
 .cacts.onimg .cact[aria-pressed="true"]{color:#ffb38a}
 .cstrip{display:flex;align-items:center;gap:8px;min-height:28px;margin-top:6px}
@@ -143,6 +145,8 @@ body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .totop[hidden]{display:grid;opacity:0;transform:translateY(12px);pointer-events:none}
 body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 :root[data-layout="magazine"] .card .thumb{order:-1;width:100%;aspect-ratio:16/9;border-radius:8px}
+:root[data-layout="magazine"] .card .thumb.shaped{aspect-ratio:auto}
+:root[data-layout="magazine"] .card .thumb.shaped img{height:auto;max-height:min(78vh,720px);object-fit:contain}
 :root[data-layout="magazine"] .card .title{font-size:calc(21px * var(--scale))}
 :root[data-layout="magazine"] .sum{-webkit-line-clamp:3}
 :root[data-width="wide"] .app.solo{max-width:1000px}
@@ -803,6 +807,11 @@ const state = {
   videoInApp: store.get("yf.videoInApp", true)
 };
 state.folders = store.get("tl.folders", []);
+// Renamed 8 Nov 2026: Boxing & MMA → Combat Sports
+if (state.folders.includes("Boxing & MMA")){
+  state.folders = state.folders.map(n => n === "Boxing & MMA" ? "Combat Sports" : n); store.set("tl.folders", state.folders);
+  state.feeds.forEach(f => { if (f.folder === "Boxing & MMA") f.folder = "Combat Sports"; }); store.set("tl.feeds", state.feeds);
+}
 state.organise = store.get("tl.organise", "category");
 state.collapsed = new Set(store.get("tl.collapsed", []));
 state.stackShown = {};
@@ -1929,13 +1938,25 @@ function cardEl(it){
     const next = () => { n++; if (n < tries.length) img.src = tries[n]; else {
       th.remove();
       // No picture after all: put Save/Share back where picture-less cards have them
-      if (acts && mag && acts.parentNode !== meta){ acts.classList.remove("onimg"); meta.append(acts); }
+      if (acts && mag && acts.parentNode !== meta){
+        acts.classList.remove("onimg");
+        const t = acts.querySelector("time.ago"); if (t){ t.classList.remove("ago"); meta.querySelector(".src")?.after(el("span", null, "·"), t); }
+        meta.append(acts);
+      }
     } };
     img.onerror = next;
-    img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) next(); };   // e.g. YouTube's "no HD thumbnail" placeholder
+    img.onload = () => {
+      if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) return next();   // e.g. YouTube's "no HD thumbnail" placeholder
+      if (!it.videoId) th.classList.add("shaped");   // Magazine shows the whole picture, not a 16:9 crop
+    };
     img.src = tries[0];
     th.append(img); a.append(th);
-    if (mag && acts && hasImg){ acts.classList.add("onimg"); th.append(acts); }
+    if (mag && acts && hasImg){
+      acts.classList.add("onimg"); th.append(acts);
+      // The age moves onto the picture too, at the front of the pill
+      const t = meta.querySelector("time");
+      if (t){ const dotSep = t.previousSibling; t.classList.add("ago"); acts.prepend(t); if (dotSep && dotSep.textContent === "·") dotSep.remove(); }
+    }
   }
   if (!mag){
     // List: flags along the bottom of the text; Save/Share at the card's right edge, under the picture if there is one
@@ -4064,7 +4085,7 @@ const INTERESTS = [
   ["Tennis", "tennis wimbledon atp wta grand|slam us|open australian|open roland|garros djokovic alcaraz sinner"],
   ["Motorsport", "f1 formula|one formula|1 grand|prix motorsport motogp nascar indycar wec le|mans rally wrc verstappen hamilton norris ferrari mclaren paddock race racing"],
   ["Golf", "golf pga ryder|cup masters open|championship liv golfer birdie tour|pro"],
-  ["Boxing & MMA", "boxing boxer ufc mma fight fighter fights knockout heavyweight bout bellator"],
+  ["Combat Sports", "boxing boxer ufc mma fight fighter fights knockout heavyweight bout bellator wrestling wrestler wwe aew raw smackdown wrestlemania njpw judo kickboxing muay|thai"],
   ["Football", "football soccer premier|league champions|league arsenal gunners chelsea liverpool united city spurs tottenham everton newcastle villa west|ham fc afc transfer goal striker midfielder manager fixture fixtures epl efl fa|cup arsenal|fc arseblog"],
   ["Tech", "tech technology verge wired gadgets gadget android apple iphone ipad mac google software hardware ai computing laptop smartphone app apps startup developer programming linux windows microsoft chip cpu gpu"],
   ["Gaming", "gaming games game gamer nintendo playstation ps5 xbox ign eurogamer retro steam switch console consoles rpg fps esports speedrun pokemon zelda mario analogue emulation n64 snes sega"],
@@ -4084,7 +4105,7 @@ const INTERESTS = [
   ["Parenting & Family", "parenting parents parent mumsnet mum mums dad dads family kids children baby babies toddler pregnancy"]
 ];
 const BROAD = new Set(["Sport", "Lifestyle", "Business"]);
-const FAMILY = {Sport: ["Football", "Cricket", "Rugby", "Tennis", "Motorsport", "Golf", "Boxing & MMA"], Lifestyle: ["Fashion & Beauty", "Home & Garden", "Parenting & Family", "Food", "Travel", "Health & Fitness"], Business: ["Finance"]};
+const FAMILY = {Sport: ["Football", "Cricket", "Rugby", "Tennis", "Motorsport", "Golf", "Combat Sports"], Lifestyle: ["Fashion & Beauty", "Home & Garden", "Parenting & Family", "Food", "Travel", "Health & Fitness"], Business: ["Finance"]};
 const CAT_WORDS = INTERESTS.map(([name, words]) => [name, words.split(/\s+/).map(w => w.replace(/\|/g, " "))]);
 // Pick a category for a source; null when there's no clear winner
 function categorise(feed, items){
