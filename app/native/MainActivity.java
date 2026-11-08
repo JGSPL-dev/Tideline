@@ -3,6 +3,7 @@ package uk.co.appsforus.yourfeed;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
@@ -52,10 +53,15 @@ public class MainActivity extends BridgeActivity {
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
                 if (fullView != null) { callback.onCustomViewHidden(); return; }
-                fullView = view;
                 fullCallback = callback;
                 ViewGroup decor = (ViewGroup) getWindow().getDecorView();
-                decor.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                // The video sits in a frame that can be dragged down to close it
+                FrameLayout frame = new DragToClose();
+                frame.setBackgroundColor(Color.BLACK);
+                frame.addView(view, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                fullView = frame;
+                decor.addView(frame, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                bridge.getWebView().evaluateJavascript("window.yfVideoEnter && window.yfVideoEnter()", null);
                 WindowInsetsControllerCompat bars = new WindowInsetsControllerCompat(getWindow(), decor);
                 bars.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
                 bars.hide(WindowInsetsCompat.Type.systemBars());
@@ -78,6 +84,50 @@ public class MainActivity extends BridgeActivity {
         getOnBackPressedDispatcher().addCallback(this, exitFull);
     }
 
+    // Full-screen video frame: a firm downward drag closes it (taps and sideways swipes still reach the player)
+    private class DragToClose extends FrameLayout {
+        private float startX, startY;
+        private boolean dragging;
+        DragToClose() { super(MainActivity.this); }
+
+        @Override
+        public boolean onInterceptTouchEvent(MotionEvent ev) {
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_DOWN:
+                    startX = ev.getRawX(); startY = ev.getRawY(); dragging = false;
+                    return false;
+                case MotionEvent.ACTION_MOVE:
+                    float dy = ev.getRawY() - startY, dx = Math.abs(ev.getRawX() - startX);
+                    if (dy > 48 * getResources().getDisplayMetrics().density && dy > dx * 2) { dragging = true; return true; }
+                    return false;
+                default:
+                    return false;
+            }
+        }
+
+        @Override
+        public boolean onTouchEvent(MotionEvent ev) {
+            if (!dragging) return ev.getActionMasked() == MotionEvent.ACTION_DOWN;
+            float dy = Math.max(0, ev.getRawY() - startY), h = Math.max(1, getHeight());
+            switch (ev.getActionMasked()) {
+                case MotionEvent.ACTION_MOVE:
+                    setTranslationY(dy);
+                    setAlpha(Math.max(0.35f, 1f - dy / h));
+                    return true;
+                case MotionEvent.ACTION_UP:
+                    if (dy > h * 0.18f) { leaveFullScreen(); }
+                    else { animate().translationY(0).alpha(1f).setDuration(180).start(); }
+                    dragging = false;
+                    return true;
+                case MotionEvent.ACTION_CANCEL:
+                    animate().translationY(0).alpha(1f).setDuration(180).start();
+                    dragging = false;
+                    return true;
+            }
+            return true;
+        }
+    }
+
     private void leaveFullScreen() {
         if (fullView == null) return;
         ViewGroup decor = (ViewGroup) getWindow().getDecorView();
@@ -87,5 +137,7 @@ public class MainActivity extends BridgeActivity {
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         if (exitFull != null) exitFull.setEnabled(false);
         if (fullCallback != null) { fullCallback.onCustomViewHidden(); fullCallback = null; }
+        // Tell the page: it pauses the video and scrolls back to where you were
+        bridge.getWebView().evaluateJavascript("window.yfVideoExit && window.yfVideoExit()", null);
     }
 }

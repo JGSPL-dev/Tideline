@@ -2168,15 +2168,32 @@ function playInCard(card, it){
   stopCardVideos(card);
   if (pod.item && !pod.audio.paused) pod.audio.pause();
   const box = el("div", "vbox"), f = el("iframe");
-  f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1`;
+  f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1`;
   f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
   f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
   // In the app: short clips (under 3 minutes, mostly Shorts) stay upright in full screen; longer videos turn to landscape
-  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.short || (it.dur && it.dur < 180))); }catch{}
+  // In the app, full screen turns the phone to landscape, except for Shorts (upright videos)
+  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.short || (it.dur && it.dur <= 60))); }catch{}
   if (it.short || (it.dur && it.dur <= 60)) box.classList.add("tall");   // Shorts play upright
   box.append(f); card.prepend(box); card.classList.add("vplaying");
   requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
+// Full screen: remember which card, and on the way out pause it and put it back where it was on screen
+let fsCard = null, fsTop = 0;
+window.yfVideoEnter = () => { fsCard = document.querySelector(".card.vplaying"); fsTop = fsCard ? fsCard.getBoundingClientRect().top : 0; };
+window.yfVideoExit = () => {
+  const c = fsCard || document.querySelector(".card.vplaying"); fsCard = null;
+  if (!c) return;
+  const f = c.querySelector(".vbox iframe");
+  try{ f && f.contentWindow.postMessage(JSON.stringify({event: "command", func: "pauseVideo", args: []}), "*"); }catch{}
+  // The page reflows as the phone turns back upright; settle, then restore
+  const put = () => { if (!c.isConnected) return; const d = c.getBoundingClientRect().top - Math.max(70, Math.min(fsTop, innerHeight * 0.4)); window.scrollBy(0, d); $("#list").scrollTop += d; };
+  [80, 350, 800].forEach(t => setTimeout(put, t));
+};
+document.addEventListener("fullscreenchange", () => {
+  if (document.fullscreenElement && document.fullscreenElement.closest && document.fullscreenElement.closest(".vbox")) window.yfVideoEnter();
+  else if (!document.fullscreenElement && fsCard) window.yfVideoExit();
+});
 function closeViewer(){
   state.activeId = null; viewerEl = null;
   document.querySelectorAll(".inline").forEach(n => n.remove());
@@ -2223,7 +2240,7 @@ function renderBody(it, body){
   if (it.videoId){
     const box = el("div", "video");
     const f = el("iframe");
-    f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1`;
+    f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1`;
     f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
     f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
     box.append(f); body.append(box);
