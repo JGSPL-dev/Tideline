@@ -85,6 +85,12 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 .cacts.onimg .cact:hover{background:rgba(255,255,255,.18);color:#fff}
 .cacts.onimg .cact[aria-pressed="true"]{color:#ffb38a}
 .cstrip{display:flex;align-items:center;gap:8px;min-height:28px;margin-top:6px}
+/* List: no gap column when there's no picture, so Save/Share line up at the right edge on every card */
+:root:not([data-layout="magazine"]) .card{column-gap:0}
+:root:not([data-layout="magazine"]) .card > .thumb{margin-left:14px}
+:root:not([data-layout="magazine"]) .card:has(> .cacts.under) > div:first-child{grid-row:1/span 2;align-self:stretch;display:flex;flex-direction:column}
+:root:not([data-layout="magazine"]) .card:has(> .cacts.under) .cstrip{margin-top:auto;padding-top:6px}
+.card > .cacts.under{grid-column:2;grid-row:2;justify-self:end;align-self:end;margin-top:6px}
 .cstrip .cacts{margin-left:auto}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
 body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
@@ -1513,13 +1519,14 @@ const itemDur = it => it.dur || (it.audioUrl && pod.dur[it.id]) || 0;
 function flagsEl(it){
   const f = el("span", "flags"), len = itemDur(it);
   if (it.videoId){
-    f.append(el("span", "tag", "Video"));
+    f.append(el("span", "tag", "Watch"));
     if (len) f.append(el("span", "tag len", clockLen(len)));
   } else if (it.audioUrl){
+    // Grey like the others; orange only for an episode you're part-way through
     const st = podStatus(it.id);
-    f.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag tag-in", "Listen"));
+    f.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag", "Listen"));
     if (len && !st.pos) f.append(el("span", "tag len", minsLen(len)));
-  }
+  } else f.append(el("span", "tag", typeOf(it) === "conversations" ? "Chat" : "Read"));
   return f;
 }
 function metaRow(it, withFlags = true){
@@ -1911,16 +1918,22 @@ function cardEl(it){
     const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
     const tries = imageCandidates(it);
     let n = 0;
-    const next = () => { n++; if (n < tries.length) img.src = tries[n]; else { th.remove(); if (mag && acts && acts.parentNode !== meta){ acts.classList.remove("onimg"); meta.append(acts); } } };
+    const next = () => { n++; if (n < tries.length) img.src = tries[n]; else {
+      th.remove();
+      // No picture after all: put Save/Share back where picture-less cards have them
+      if (acts && acts.parentNode !== meta && !acts.closest(".cstrip")){ acts.classList.remove("onimg", "under"); if (mag) meta.append(acts); else a.querySelector(".cstrip")?.append(acts); }
+    } };
     img.onerror = next;
     img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) next(); };   // e.g. YouTube's "no HD thumbnail" placeholder
     img.src = tries[0];
     th.append(img); a.append(th);
     if (mag && acts && hasImg){ acts.classList.add("onimg"); th.append(acts); }
   }
-  if (!mag && (flags.childNodes.length || acts)){
-    const strip = el("div", "cstrip"); strip.append(flags); if (acts) strip.append(acts);
+  if (!mag){
+    // List: flags along the bottom of the text; Save/Share at the card's right edge, under the picture if there is one
+    const strip = el("div", "cstrip"); strip.append(flags);
     body.append(strip);
+    if (acts){ if (a.querySelector(".thumb")){ acts.classList.add("under"); a.append(acts); } else strip.append(acts); }
   }
   link.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
