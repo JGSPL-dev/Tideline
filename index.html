@@ -265,8 +265,10 @@ iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#ff
 .vswitch button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.14)}
 .vswitch .n{font-size:12px;font-weight:700;color:var(--muted)}
 /* Shorts: two upright tiles a row; the one playing spans the row */
-.list.shortgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-content:start}
-.list.shortgrid > .empty,.list.shortgrid > .sentinel,.list.shortgrid > .more{grid-column:1/-1}
+.list.shortgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;align-content:start}
+.list.shortgrid > :not(.card){grid-column:1/-1}
+.list.shortgrid .card .flags{flex-wrap:wrap}
+.list.shortgrid .card .meta{flex-wrap:wrap;min-width:0}
 .list.shortgrid .card{display:flex;flex-direction:column;gap:6px;margin:0;padding:0 0 8px;border:0;background:none;box-shadow:none;border-radius:12px}
 .list.shortgrid .card .thumb{order:-1;width:100%;aspect-ratio:9/16;border-radius:12px;margin:0}
 .list.shortgrid .card .thumb img{height:100%;object-fit:cover}
@@ -276,7 +278,7 @@ iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#ff
 .list.shortgrid .card .cacts.onimg{top:6px;right:6px}
 .list.shortgrid .card.vplaying{grid-column:1/-1}
 .list.shortgrid .card .cstrip .cacts{margin-right:0}
-.vbox.tall{aspect-ratio:9/16;width:auto;height:min(72vh,640px);max-width:100%;margin:0 auto;justify-self:center}
+.vbox.tall{aspect-ratio:9/16;width:auto;height:min(72vh,640px);max-width:100%;margin:0 auto;justify-self:center;align-self:center}
 .card.vplaying .thumb{display:none}
 .video iframe{width:100%;height:100%;border:0;display:block}
 
@@ -1096,7 +1098,7 @@ async function ytViaApi(channelId, feed){
   const j = JSON.parse(await viaService("/youtube/latest", {id: channelId}, 15000));
   const list = (j.videos || []).filter(v => /^[\w-]{11}$/.test(v.id || ""));
   if (!list.length) throw new Error("No videos from the YouTube API");
-  return {title: j.title || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: "", dur: v.dur})), everyMin: null};
+  return {title: j.title || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: "", dur: v.dur, short: v.short})), everyMin: null};
 }
 async function loadYouTube(url, feed){
   const channelId = ytChannelOf(url);
@@ -1670,8 +1672,9 @@ function checkView(){
   if (!TYPES.some(([k]) => k === view.type)) view.type = "all";
 }
 // Every filter except the story type
-// Shorts: YouTube marked it (its /shorts/ address), or a video of a minute or less
-const isShortItem = it => !!it.videoId && !!(it.short || (it.dur && it.dur <= 60));
+// Shorts: only when YouTube says so (its feed links them as /shorts/, our service checks the rest).
+// Length alone isn't enough: plenty of trailers are under a minute.
+const isShortItem = it => !!it.videoId && it.short === true;
 // Videos tab: Videos or Shorts (and Shorts can be hidden everywhere in Settings)
 function videoKind(list){
   if (state.hideShorts) return list.filter(i => !isShortItem(i));
@@ -2223,7 +2226,7 @@ function playInCard(card, it){
   f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
   // In the app: short clips (under 3 minutes, mostly Shorts) stay upright in full screen; longer videos turn to landscape
   // In the app, full screen turns the phone to landscape, except for Shorts (upright videos)
-  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!(it.short || (it.dur && it.dur <= 60))); }catch{}
+  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!isShortItem(it)); }catch{}
   if (isShortItem(it)) box.classList.add("tall");   // Shorts play upright
   box.append(f); card.prepend(box); card.classList.add("vplaying");
   requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });

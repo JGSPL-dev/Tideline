@@ -9,7 +9,7 @@
 //   GET /youtube/search?q=…       → {channels:[{id, title, avatar}]}
 //   GET /youtube/videos?id=UC…    → {title, videos:[{id, title, date}]} from the channel's Videos page
 //                                   (a fallback for when YouTube's own channel feeds are down)
-//   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date, dur}]} via the official YouTube Data API (dur = seconds)
+//   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date, dur, short}]} via the official YouTube Data API (dur = seconds; short = it's a YouTube Short)
 //                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
 //   GET/POST /websub/youtube?id=UC… → YouTube's push hub: confirms subscriptions and delivers new videos
 //                                   (subscribed automatically for channels people follow; needs YF_CACHE + YT_API_KEY)
@@ -53,6 +53,38 @@ function headers(origin, type){
 }
 const json = (origin, obj, status = 200) => new Response(JSON.stringify(obj), {status, headers: headers(origin, "application/json; charset=utf-8")});
 const fail = (origin, status, error) => json(origin, {error}, status);
+// Is this video a Short? youtube.com/shorts/ID opens for a Short and redirects to /watch for anything else.
+// No API quota; asked once per video (only for videos of 3 minutes or less) and remembered in the shared copy.
+async function shortCheck(id){
+  try{
+    const r = await fetch("https://www.youtube.com/shorts/" + id, {method: "HEAD", redirect: "manual", headers: {"User-Agent": UA_BROWSER, "Cookie": "SOCS=CAI; CONSENT=YES+1"}});
+    if (r.status === 200) return true;
+    if (r.status >= 300 && r.status < 400) return false;
+  }catch{}
+  return undefined;
+}
+// Fill in what's missing for each video: length (YouTube API, 1 unit for up to 50) and whether it's a Short.
+// Returns true when something new was learned (so the shared copy is worth rewriting).
+async function enrich(videos, env){
+  let learned = false;
+  const need = videos.filter(v => !v.dur).map(v => v.id).slice(0, 50);
+  if (need.length && env && env.YT_API_KEY){
+    try{
+      const d = await fetchCapped("https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" + need.join(",") + "&key=" + encodeURIComponent(env.YT_API_KEY), {accept: "application/json"});
+      if (d.ok){
+        const got = new Map((JSON.parse(d.text).items || []).map(v => [v.id, isoSeconds(v.contentDetails && v.contentDetails.duration)]));
+        videos.forEach(v => { if (need.includes(v.id)){ v.dur = got.get(v.id) || -1; learned = true; } });
+      }
+    }catch{}
+  }
+  const ask = videos.filter(v => v.short === undefined && v.dur > 0 && v.dur <= 180).slice(0, 12);
+  const res = await Promise.all(ask.map(v => shortCheck(v.id)));
+  ask.forEach((v, i) => { if (res[i] !== undefined){ v.short = res[i]; learned = true; } });
+  videos.forEach(v => { if (v.short === undefined && v.dur > 180){ v.short = false; learned = true; } });
+  return learned;
+}
+// What the app gets: no placeholders
+const forApp = v => ({id: v.id, title: v.title, date: v.date, ...(v.dur > 0 ? {dur: v.dur} : {}), ...(v.short ? {short: true} : {})});
 // "PT1H2M3S" → 3723
 function isoSeconds(t){
   const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$/.exec(t || "");
@@ -203,7 +235,7 @@ async function handlePush(req, url, env){
     const title = ((e.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
     const date = Date.parse((e.match(/<published>([^<]+)<\/published>/) || [])[1] || "") || Date.now();
     const old = videos.find(v => v.id === vid);
-    videos = [{id: vid, title: title || (old && old.title) || "", date: old ? old.date : date, ...(old && old.dur ? {dur: old.dur} : {})}, ...videos.filter(v => v.id !== vid)];
+    videos = [{id: vid, title: title || (old && old.title) || "", date: old ? old.date : date, ...(old && old.dur ? {dur: old.dur} : {}), ...(old && old.short !== undefined ? {short: old.short} : {})}, ...videos.filter(v => v.id !== vid)];
   }
   videos.sort((a, b) => b.date - a.date);
   videos = videos.slice(0, 20);
@@ -261,25 +293,15 @@ async function handle(req, url, origin, env, ctx){
     const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
     if (ctx && (!kv || !kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
     if (kv && Date.now() - kv.at < FRESH){
-      // Videos YouTube pushed to us arrive without a length: look those up (1 unit, once per video)
-      const missing = env && env.YT_API_KEY ? (kv.videos || []).slice(0, 10).filter(v => !v.dur).map(v => v.id) : [];
-      if (missing.length){
-        try{
-          const d = await fetchCapped("https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" + missing.join(",") + "&key=" + encodeURIComponent(env.YT_API_KEY), {accept: "application/json"});
-          if (d.ok){
-            const got = new Map((JSON.parse(d.text).items || []).map(v => [v.id, isoSeconds(v.contentDetails && v.contentDetails.duration)]));
-            kv.videos.forEach(v => { if (got.get(v.id)) v.dur = got.get(v.id); else if (missing.includes(v.id)) v.dur = v.dur || -1; });
-            await kvPut(env, "ytl:" + id, kv, 14 * 86400);
-          }
-        }catch{}
-      }
-      const text = JSON.stringify({title: kv.title, videos: kv.videos.map(v => v.dur > 0 ? v : (({dur, ...x}) => x)(v))});
+      // Videos YouTube pushed to us arrive without a length or Short flag: fill those in once
+      if (await enrich(kv.videos || [], env)) await kvPut(env, "ytl:" + id, kv, 14 * 86400);
+      const text = JSON.stringify({title: kv.title, videos: (kv.videos || []).map(forApp)});
       await edgePut("ytl:" + id, text, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000)));
       return sendJson(origin, text, {"X-YourFeed-Cache": "shared"});
     }
     // 3. Ask YouTube's API (1 unit)
     if (!env || !env.YT_API_KEY){
-      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: kv.videos, stale: true}), {"X-YourFeed-Cache": "stale"});
+      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: (kv.videos || []).map(forApp), stale: true}), {"X-YourFeed-Cache": "stale"});
       return fail(origin, 501, "The YouTube Data API isn't set up on this service");
     }
     const api = "https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=20&playlistId=UU" + id.slice(2) + "&key=" + encodeURIComponent(env.YT_API_KEY);
@@ -287,34 +309,23 @@ async function handle(req, url, origin, env, ctx){
     try{ r = await fetchCapped(api, {accept: "application/json"}); j = JSON.parse(r.text); }catch{ r = null; }
     if (!r || !r.ok){
       // API down or today's allowance used up: an older copy is better than nothing
-      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: kv.videos, stale: true}), {"X-YourFeed-Cache": "stale"});
+      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: (kv.videos || []).map(forApp), stale: true}), {"X-YourFeed-Cache": "stale"});
       const reason = j && j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
       return fail(origin, reason === "quotaExceeded" ? 429 : 502, reason === "quotaExceeded" ? "Today's YouTube API allowance is used up" : "YouTube's API answered: " + (reason || (r ? r.status : "no answer")));
     }
     const items = j.items || [];
     const videos = items.map(i => i.snippet).filter(s => s && s.resourceId && s.resourceId.videoId)
       .map(s => ({id: s.resourceId.videoId, title: s.title, date: Date.parse(s.publishedAt) || 0}));
-    // Video lengths (so the app can show them, and keep Shorts upright): one more unit, and only for
-    // videos we haven't seen before. Lengths already known are copied from the shared copy.
-    const known = new Map(((kv && kv.videos) || []).filter(v => v.dur).map(v => [v.id, v.dur]));
-    videos.forEach(v => { if (known.has(v.id)) v.dur = known.get(v.id); });
-    const need = videos.filter(v => !v.dur).map(v => v.id);
-    if (need.length){
-      try{
-        const d = await fetchCapped("https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" + need.join(",") + "&key=" + encodeURIComponent(env.YT_API_KEY), {accept: "application/json"});
-        if (d.ok) for (const v of JSON.parse(d.text).items || []){
-          const secs = isoSeconds(v.contentDetails && v.contentDetails.duration);
-          const hit = videos.find(x => x.id === v.id); if (hit && secs) hit.dur = secs;
-        }
-      }catch{}
-    }
+    // Lengths and Short flags already known come from the shared copy; only new videos are looked up
+    const known = new Map(((kv && kv.videos) || []).map(v => [v.id, v]));
+    videos.forEach(v => { const k = known.get(v.id); if (k){ if (k.dur) v.dur = k.dur; if (k.short !== undefined) v.short = k.short; } });
+    const learned = await enrich(videos, env);
     const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || (kv && kv.title) || null;
-    const text = JSON.stringify({title, videos});
+    const text = JSON.stringify({title, videos: videos.map(forApp)});
     await edgePut("ytl:" + id, text, Math.round(FRESH / 1000));
     // Rewrite the shared copy only when there's a new video (KV writes are the scarcest free resource)
     const top = videos[0] && videos[0].id;
-    const newDur = videos.some(v => v.dur && !known.has(v.id));
-    if (!kv || kv.top !== top || newDur) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
+    if (!kv || kv.top !== top || learned) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
     return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 
