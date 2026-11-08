@@ -203,7 +203,7 @@ async function handlePush(req, url, env){
     const title = ((e.match(/<title>([\s\S]*?)<\/title>/) || [])[1] || "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
     const date = Date.parse((e.match(/<published>([^<]+)<\/published>/) || [])[1] || "") || Date.now();
     const old = videos.find(v => v.id === vid);
-    videos = [{id: vid, title: title || (old && old.title) || "", date: old ? old.date : date}, ...videos.filter(v => v.id !== vid)];
+    videos = [{id: vid, title: title || (old && old.title) || "", date: old ? old.date : date, ...(old && old.dur ? {dur: old.dur} : {})}, ...videos.filter(v => v.id !== vid)];
   }
   videos.sort((a, b) => b.date - a.date);
   videos = videos.slice(0, 20);
@@ -261,7 +261,19 @@ async function handle(req, url, origin, env, ctx){
     const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
     if (ctx && (!kv || !kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
     if (kv && Date.now() - kv.at < FRESH){
-      const text = JSON.stringify({title: kv.title, videos: kv.videos});
+      // Videos YouTube pushed to us arrive without a length: look those up (1 unit, once per video)
+      const missing = env && env.YT_API_KEY ? (kv.videos || []).slice(0, 10).filter(v => !v.dur).map(v => v.id) : [];
+      if (missing.length){
+        try{
+          const d = await fetchCapped("https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=" + missing.join(",") + "&key=" + encodeURIComponent(env.YT_API_KEY), {accept: "application/json"});
+          if (d.ok){
+            const got = new Map((JSON.parse(d.text).items || []).map(v => [v.id, isoSeconds(v.contentDetails && v.contentDetails.duration)]));
+            kv.videos.forEach(v => { if (got.get(v.id)) v.dur = got.get(v.id); else if (missing.includes(v.id)) v.dur = v.dur || -1; });
+            await kvPut(env, "ytl:" + id, kv, 14 * 86400);
+          }
+        }catch{}
+      }
+      const text = JSON.stringify({title: kv.title, videos: kv.videos.map(v => v.dur > 0 ? v : (({dur, ...x}) => x)(v))});
       await edgePut("ytl:" + id, text, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000)));
       return sendJson(origin, text, {"X-YourFeed-Cache": "shared"});
     }
