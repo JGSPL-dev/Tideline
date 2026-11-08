@@ -79,7 +79,7 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 .cact[aria-pressed="true"]{color:var(--brand)}
 .cact svg{width:17px;height:17px}
 .flags{display:inline-flex;gap:5px;align-items:center;flex:none}
-.tag.len{font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
+.tag.len{font-variant-numeric:tabular-nums}
 .cacts.onimg{position:absolute;top:8px;right:8px;background:rgba(15,18,23,.62);border-radius:99px;padding:2px 3px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
 .cacts.onimg .cact{color:#fff}
 .cacts.onimg .cact:hover{background:rgba(255,255,255,.18);color:#fff}
@@ -88,9 +88,10 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 /* List: no gap column when there's no picture, so Save/Share line up at the right edge on every card */
 :root:not([data-layout="magazine"]) .card{column-gap:0}
 :root:not([data-layout="magazine"]) .card > .thumb{margin-left:14px}
-:root:not([data-layout="magazine"]) .card:has(> .cacts.under) > div:first-child{grid-row:1/span 2;align-self:stretch;display:flex;flex-direction:column}
-:root:not([data-layout="magazine"]) .card:has(> .cacts.under) .cstrip{margin-top:auto;padding-top:6px}
-.card > .cacts.under{grid-column:2;grid-row:2;justify-self:end;align-self:end;margin-top:6px}
+:root:not([data-layout="magazine"]){--tw:92px}
+:root:not([data-layout="magazine"])[data-thumbs="large"]{--tw:132px}
+/* Cards without a picture keep Save/Share in the same place as cards with one */
+:root:not([data-layout="magazine"]):not([data-thumbs="off"]) .card:not(:has(> .thumb)) .cstrip .cacts{margin-right:calc(var(--tw) + 14px)}
 .cstrip .cacts{margin-left:auto}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
 body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
@@ -1526,7 +1527,7 @@ function flagsEl(it){
     const st = podStatus(it.id);
     f.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag", "Listen"));
     if (len && !st.pos) f.append(el("span", "tag len", minsLen(len)));
-  } else f.append(el("span", "tag", typeOf(it) === "conversations" ? "Chat" : "Read"));
+  } else f.append(el("span", "tag", typeOf(it) === "conversations" ? "Comment" : "Read"));
   return f;
 }
 function metaRow(it, withFlags = true){
@@ -1921,7 +1922,7 @@ function cardEl(it){
     const next = () => { n++; if (n < tries.length) img.src = tries[n]; else {
       th.remove();
       // No picture after all: put Save/Share back where picture-less cards have them
-      if (acts && acts.parentNode !== meta && !acts.closest(".cstrip")){ acts.classList.remove("onimg", "under"); if (mag) meta.append(acts); else a.querySelector(".cstrip")?.append(acts); }
+      if (acts && mag && acts.parentNode !== meta){ acts.classList.remove("onimg"); meta.append(acts); }
     } };
     img.onerror = next;
     img.onload = () => { if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) next(); };   // e.g. YouTube's "no HD thumbnail" placeholder
@@ -1933,7 +1934,7 @@ function cardEl(it){
     // List: flags along the bottom of the text; Save/Share at the card's right edge, under the picture if there is one
     const strip = el("div", "cstrip"); strip.append(flags);
     body.append(strip);
-    if (acts){ if (a.querySelector(".thumb")){ acts.classList.add("under"); a.append(acts); } else strip.append(acts); }
+    if (acts) strip.append(acts);
   }
   link.addEventListener("click", e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
