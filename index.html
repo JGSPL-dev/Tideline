@@ -968,6 +968,7 @@ const state = {
   feeds: store.get("tl.feeds", null) || [],
   items: mergeHistory(store.get("tl.items", []), []),
   read: new Set(store.get("tl.read", [])),
+  looked: new Set(store.get("yf.looked", [])),   // stories you've had on screen (seen), not just tapped
   filter: "all",
   shown: PAGE,
   activeId: null,
@@ -1922,7 +1923,7 @@ function baseItems(){
   else if (view.from === "week") cut = Date.now() - 7 * 86400000;
   // Showing one source: everything from it. Otherwise each story once
   const dup = view.source.startsWith("feed:") ? new Set() : dupeIds();
-  return state.items.filter(i => !dup.has(i.id) && sourceMatch(i.feedId) && (!view.unread || !state.read.has(i.id)) && (!cut || (i.date || i.seen || 0) >= cut));
+  return state.items.filter(i => !dup.has(i.id) && sourceMatch(i.feedId) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut));
 }
 function visibleItems(){
   if (view.saved){
@@ -1939,7 +1940,44 @@ function visibleItems(){
   }
   return list;
 }
-const isNew = i => (i.seen || 0) > state.baseline && !state.read.has(i.id);
+// New = not seen yet: never on screen long enough to read the headline, and never tapped
+const isNew = i => !state.looked.has(i.id) && !state.read.has(i.id);
+// Nov 2026: "new" changed from "arrived since you last pressed Refresh" to "not seen yet". Start everyone where they were
+if (!store.get("yf.lookedMig", false)){
+  state.items.forEach(i => { if ((i.seen || 0) <= state.baseline || state.read.has(i.id)) state.looked.add(i.id); });
+  store.set("yf.looked", [...state.looked].slice(-6000)); store.set("yf.lookedMig", true);
+}
+// Hide seen uses a snapshot, taken when you change the filter, refresh or come back, so cards never vanish under your thumb
+state.lookSnap = new Set(state.looked);
+const snapLooked = () => { state.lookSnap = new Set(state.looked); };
+// A card counts as seen once it's mostly on screen (or fills half the screen) for a second
+const LOOK_MS = 1000;
+let lookSave = 0;
+const lookTimers = new Map();
+function markLooked(id){
+  if (!id || state.looked.has(id)) return;
+  state.looked.add(id);
+  clearTimeout(lookSave);
+  lookSave = setTimeout(() => {
+    store.set("yf.looked", [...state.looked].slice(-6000));
+    renderChips(); renderStatus && renderStatus();
+    if (dlg.open && !$("#panelFeeds").hidden && !editingId) renderFeedList();
+  }, 1500);
+}
+const lookObs = "IntersectionObserver" in window ? new IntersectionObserver(entries => entries.forEach(e => {
+  const card = e.target, id = card.dataset.id;
+  const vh = (e.rootBounds && e.rootBounds.height) || innerHeight;
+  const ok = e.isIntersecting && (e.intersectionRatio >= 0.6 || e.intersectionRect.height >= vh * 0.5) && !document.hidden;
+  if (ok && !lookTimers.has(card) && !state.looked.has(id)) lookTimers.set(card, setTimeout(() => { lookTimers.delete(card); markLooked(id); lookObs.unobserve(card); }, LOOK_MS));
+  else if (!ok && lookTimers.has(card)){ clearTimeout(lookTimers.get(card)); lookTimers.delete(card); }
+}), {threshold: [0, 0.25, 0.5, 0.6, 0.75, 1]}) : null;
+function watchLook(card){ if (lookObs && card.dataset.id && !state.looked.has(card.dataset.id) && !view.saved) lookObs.observe(card); }
+// Coming back to the app after a while: drop what you saw last time from Hide seen
+let hiddenAt = 0;
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden){ hiddenAt = Date.now(); lookTimers.forEach(t => clearTimeout(t)); lookTimers.clear(); return; }
+  if (hiddenAt && Date.now() - hiddenAt > 10 * 60000 && view.unread){ snapLooked(); state.shown = PAGE; renderList(); renderChips(); }
+});
 
 /* ---------- rendering: type tabs + status ---------- */
 function newCount(feedId){
@@ -1953,7 +1991,7 @@ function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
 function selectFeed(src){
   view.source = src === "all" || /^(feed|folder|platform):/.test(src) ? src : "feed:" + src;
   view.type = "all"; view.saved = false;
-  saveView(); state.shown = PAGE;
+  saveView(); state.shown = PAGE; snapLooked();
   renderChips(); renderStatus(); renderList(); renderFilterBox(); scrollFeedTop();
 }
 function renderChips(){
@@ -2067,7 +2105,7 @@ function renderFilterBar(){
 
 /* ---------- filter box ---------- */
 function setView(k, v, focusId){
-  view[k] = v; saveView(); state.shown = PAGE;
+  view[k] = v; saveView(); state.shown = PAGE; snapLooked();
   renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
   if (focusId){ const b = document.getElementById(focusId); if (b) b.focus(); }
 }
@@ -2105,7 +2143,7 @@ function renderFilterBox(){
   sec.append(grid);
   const ur = el("label", "fb-check"); const ucb = el("input"); ucb.type = "checkbox"; ucb.id = "fb-unread"; ucb.checked = !!view.unread;
   ucb.onchange = () => setView("unread", ucb.checked, "fb-unread");
-  ur.append(ucb, document.createTextNode(" Unread only")); sec.append(ur);
+  ur.append(ucb, document.createTextNode(" Hide seen")); sec.append(ur);
   box.append(sec);
 
   // CATEGORY: our fixed list (plus any folders people made themselves)
@@ -2303,7 +2341,11 @@ function cardEl(it){
   const a = el("article", "card");
   if (state.read.has(it.id)) a.classList.add("read");
   a.dataset.id = it.id;
+  queueMicrotask(() => watchLook(a));
   const isPod = it.audioUrl && !it.videoId;
+  // An episode with no picture of its own shows the podcast's artwork
+  const podArt = isPod && !it.image ? (feedById(it.feedId) || {}).icon : null;
+  const pic = podArt ? {...it, image: podArt} : it;
   const link = el(it.link ? "a" : "span", "cardlink");
   if (it.link){ link.href = it.link; link.target = "_blank"; link.rel = "noopener noreferrer"; }
   link.textContent = it.title;
@@ -2314,7 +2356,7 @@ function cardEl(it){
   if (!feedById(it.feedId) && it.feedTitle){ const src = meta.querySelector(".src"); if (src) src.textContent = it.feedTitle; }
   // Where flags and Save/Share go: Magazine puts them on the picture (or in the top line without one);
   // List puts them in a strip along the bottom of the card
-  const mag = design.layout === "magazine", hasImg = !!it.image && design.thumbs !== "off";
+  const mag = design.layout === "magazine", hasImg = !!pic.image && design.thumbs !== "off";
   let acts = null;
   if (it.link || it.audioUrl){
     acts = el("span", "cacts");
@@ -2335,10 +2377,10 @@ function cardEl(it){
   if (it.summary) body.append(el("p", "sum", it.summary));
   if (it.audioUrl && !it.videoId) body.append(podFoot(it));
   a.append(body);
-  if (it.image){
+  if (pic.image){
     const th = el("div", "thumb" + (it.videoId ? " vid" : ""));
     const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
-    const tries = imageCandidates(it);
+    const tries = imageCandidates(pic);
     let n = 0;
     const next = () => { n++; if (n < tries.length) img.src = tries[n]; else {
       th.remove();
@@ -2486,7 +2528,7 @@ function renderList(){
       e.append(el("h3", null, "No Shorts right now"), el("p", null, "Shorts from the YouTube channels you follow will show here."));
     }
     else if (state.items.length){
-      e.append(el("h3", null, "Nothing matches"), el("p", null, view.unread ? "You've read everything here. Turn off Unread only, or pick another type or source." : "No stories match this type or filter."));
+      e.append(el("h3", null, "Nothing matches"), el("p", null, view.unread ? "You've seen everything here. Turn off Hide seen, or pick another type or source." : "No stories match this type or filter."));
       const b = el("button", "btn", "Clear filters"); b.type = "button";
       b.onclick = () => { Object.assign(view, VIEW_DEFAULT); setView("type", "all"); };
       e.append(b);
@@ -4213,6 +4255,7 @@ $("#savedBtn").onclick = () => {
 $("#refresh").onclick = async () => {
   if (state.busy) return;
   state.baseline = Date.now(); store.set("tl.baseline", state.baseline);
+  snapLooked(); state.shown = PAGE; renderList(); renderChips();
   await refreshAll();
   if (state.note === "upToDate") setTimeout(() => { state.note = ""; renderStatus(); }, 4000);
 };
@@ -4299,11 +4342,12 @@ function stopPod(){
 }
 function setMediaSession(it){
   const f = feedById(it.feedId) || {};
-  nms("setMetadata", {title: it.title || "", artist: f.title || "", album: "YourFeed", artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
+  const art = it.image || f.icon;
+  nms("setMetadata", {title: it.title || "", artist: f.title || "", album: "YourFeed", artwork: art ? [{src: art, sizes: "512x512"}] : []});
   if (!("mediaSession" in navigator)) return;
   try{
     navigator.mediaSession.metadata = new MediaMetadata({title: it.title, artist: f.title || "", album: "YourFeed",
-      artwork: it.image ? [{src: it.image, sizes: "512x512"}] : []});
+      artwork: art ? [{src: art, sizes: "512x512"}] : []});
     navigator.mediaSession.setActionHandler("play", () => pod.audio.play());
     navigator.mediaSession.setActionHandler("pause", () => pod.audio.pause());
     navigator.mediaSession.setActionHandler("seekbackward", () => skip(-BACK_S));
@@ -4464,7 +4508,8 @@ function renderMini(){
   $("#miniTitle").textContent = pod.item.title;
   $("#miniSrc").textContent = f.title || "";
   const art = $("#miniArt"); art.textContent = "";
-  if (pod.item.image){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = pod.item.image; im.onerror = () => im.remove(); art.append(im); }
+  const mpic = pod.item.image || f.icon;
+  if (mpic){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = mpic; im.onerror = () => im.remove(); art.append(im); }
 }
 let lastPosSave = 0;
 function syncPod(){
