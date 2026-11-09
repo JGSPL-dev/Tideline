@@ -195,6 +195,16 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .status{font-size:12.5px;color:var(--muted);min-height:1em}
 .status b{font-weight:600;color:var(--danger)}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+#chips{display:none}   /* the content types live in the filter box now */
+.fb-types{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.fb-type{display:flex;justify-content:space-between;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 10px;font:600 13.5px var(--ui);cursor:pointer}
+.fb-type[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.fb-type .count{font-size:12px;font-weight:700;background:var(--brand-fill);color:#fff;border-radius:99px;padding:1px 7px}
+.fb-type .count.zero{background:none;color:var(--muted)}
+.fb-type[aria-pressed="true"] .count.zero{color:inherit;opacity:.7}
+.fb-check{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+.fb-manage summary{cursor:pointer;color:var(--accent);font:600 13px var(--ui);padding:4px 0}
+.fb-mrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:5px 12px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
@@ -874,11 +884,13 @@ state.stackShown = {};
 state.saved = store.get("yf.saved", []);
 const saveSaved = () => store.set("yf.saved", state.saved);
 const isSaved = id => state.saved.some(x => x.id === id);
-const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "any", sort: "newest", saved: false, vkind: "videos"};
+const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "week", sort: "newest", saved: false, vkind: "videos"};
 const view = {...VIEW_DEFAULT, ...store.get("tl.view", {})};
 // Tabs renamed Nov 2026: Reddit + Social → Conversations, Podcasts → Audio, Saved → its own button
 view.type = {reddit: "conversations", social: "conversations", podcasts: "audio"}[view.type] || view.type;
 if (view.type === "saved"){ view.type = "all"; view.saved = true; }
+// 9 Nov 2026: the feed opens on the past week by default
+if (!store.get("yf.fromWeek", false)){ view.from = "week"; store.set("tl.view", view); store.set("yf.fromWeek", true); }
 const saveView = () => store.set("tl.view", view);
 const readerCache = new Map();
 state.feeds.forEach(f => { const m = (f.url || "").match(/^(https:\/\/www\.reddit\.com\/r\/\w+)\/new\/\.rss$/i); if (m) f.url = m[1] + "/.rss"; });
@@ -1855,14 +1867,16 @@ function renderStatus(){
 }
 function renderFilterBar(){
   const pill = $("#activeFilter");
-  if (view.source === "all"){ pill.hidden = true; }
+  const typeName = {articles: "Articles", videos: "Videos", audio: "Audio", conversations: "Conversations"}[view.type];
+  const label = [typeName, view.source !== "all" ? sourceLabel() : ""].filter(Boolean).join(" · ");
+  if (!label){ pill.hidden = true; }
   else {
     pill.hidden = false; pill.textContent = "";
-    pill.append(el("span", null, sourceLabel()));
+    pill.append(el("span", null, label));
     pill.insertAdjacentHTML("beforeend", '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>');
-    pill.setAttribute("aria-label", `Showing ${sourceLabel()}. Show all sources`);
+    pill.setAttribute("aria-label", `Showing ${label}. Show everything`);
   }
-  const n = (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "any" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0);
+  const n = (view.type !== "all" ? 1 : 0) + (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "week" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0);
   const fc = $("#filterCount"); fc.hidden = !n; fc.textContent = String(n);
   $("#filterBtn").setAttribute("aria-label", n ? `Filter, ${n} on` : "Filter");
 }
@@ -1885,35 +1899,110 @@ function fbSeg(label, key, opts, cur, pick){
 function renderFilterBox(){
   const box = $("#filterBox"); if (box.hidden) return;
   box.textContent = "";
-  const head = el("div", "fb-head"); head.append(el("h2", null, "Filter"));
+  const head = el("div", "fb-head"); head.append(el("h2", null, view.saved ? "Filter saved posts" : "Filter"));
   const reset = el("button", "linkbtn", "Reset"); reset.type = "button"; reset.id = "fb-reset";
-  reset.onclick = () => { Object.assign(view, VIEW_DEFAULT, {type: view.type}); setView("type", view.type, "fb-reset"); };
+  reset.onclick = () => { Object.assign(view, VIEW_DEFAULT, {saved: view.saved}); setView("type", "all", "fb-reset"); };
   head.append(reset); box.append(head);
-  box.append(fbSeg("Show", "unread", [["all", "All stories"], ["unread", "Unread only"]], view.unread ? "unread" : "all", (v, id) => setView("unread", v === "unread", id)));
-  const sec = el("div", "fb-sec"); sec.append(el("span", "fb-lbl", "Sources"));
-  const chips = el("div", "fb-chips");
-  const mk = (src, label, id) => { const b = el("button", "chip", label); b.type = "button"; b.id = id; b.setAttribute("aria-pressed", String(view.source === src)); b.onclick = () => setView("source", view.source === src && src !== "all" ? "all" : src, id); chips.append(b); };
-  mk("all", `All ${state.feeds.length}`, "fb-src-all");
-  const pre = state.organise === "platform" ? "platform:" : "folder:";
-  groupList().filter(([, fs]) => fs.length).forEach(([name], i) => mk(pre + name, name, "fb-src-" + i));
-  sec.append(chips);
-  const sel = el("select", "fb-select"); sel.id = "fb-one"; sel.setAttribute("aria-label", "Just one source");
-  const o0 = el("option", null, "Just one source…"); o0.value = ""; sel.append(o0);
-  [...state.feeds].sort(byName).forEach(f => { const o = el("option", null, f.title || f.url); o.value = f.id; o.selected = view.source === "feed:" + f.id; sel.append(o); });
+
+  // SHOW: the content types (were the tabs along the top)
+  const sec = el("div", "fb-sec"); const sl = el("span", "fb-lbl", "Show"); sl.id = "fbl-show"; sec.append(sl);
+  const grid = el("div", "fb-types"); grid.setAttribute("role", "group"); grid.setAttribute("aria-labelledby", sl.id);
+  const base = view.saved ? state.saved : baseItems();
+  [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["audio", "Audio"], ["conversations", "Conversations"]].forEach(([k, label]) => {
+    const its = k === "all" ? base : base.filter(i => typeOf(i) === k);
+    const n = view.saved ? its.length : its.filter(isNew).length;
+    const b = el("button", "fb-type"); b.type = "button"; b.id = "fb-type-" + k;
+    b.setAttribute("aria-pressed", String(view.type === k));
+    b.append(document.createTextNode(label), el("span", "count" + (n ? "" : " zero"), String(n)));
+    b.setAttribute("aria-label", `${label}, ${n} ${view.saved ? "saved" : "new"}`);
+    b.onclick = () => setView("type", k, b.id);
+    grid.append(b);
+  });
+  sec.append(grid);
+  const ur = el("label", "fb-check"); const ucb = el("input"); ucb.type = "checkbox"; ucb.id = "fb-unread"; ucb.checked = !!view.unread;
+  ucb.onchange = () => setView("unread", ucb.checked, "fb-unread");
+  ur.append(ucb, document.createTextNode(" Unread only")); sec.append(ur);
+  box.append(sec);
+
+  // CATEGORY: our fixed list (plus any folders people made themselves)
+  const cs = el("div", "fb-sec"); cs.append(el("span", "fb-lbl", "Category"));
+  const csel = el("select", "fb-select"); csel.id = "fb-cat"; csel.setAttribute("aria-label", "Category");
+  const optc = (v, t, sel) => { const o = el("option", null, t); o.value = v; o.selected = sel; return o; };
+  csel.append(optc("all", "All categories", !view.source.startsWith("folder:")));
+  const used = new Map(); state.feeds.forEach(f => { const g = folderOf(f); used.set(g, (used.get(g) || 0) + 1); });
+  const fixed = INTERESTS.map(([n]) => n), custom = state.folders.filter(n => !fixed.includes(n));
+  const og1 = el("optgroup"); og1.label = "Categories";
+  fixed.forEach(n => { const o = optc("folder:" + n, `${n}${used.get(n) ? " (" + used.get(n) + ")" : ""}`, view.source === "folder:" + n); if (!used.get(n)) o.disabled = true; og1.append(o); });
+  csel.append(og1);
+  if (custom.length){ const og2 = el("optgroup"); og2.label = "Your own"; custom.forEach(n => og2.append(optc("folder:" + n, `${n} (${used.get(n) || 0})`, view.source === "folder:" + n))); csel.append(og2); }
+  if (used.get(UNSORTED)) csel.append(optc("folder:" + UNSORTED, `${UNSORTED} (${used.get(UNSORTED)})`, view.source === "folder:" + UNSORTED));
+  csel.onchange = () => setView("source", csel.value, "fb-cat");
+  cs.append(csel);
+  if (custom.length) cs.append(manageCategories(custom, used));
+  box.append(cs);
+
+  // FEED: just one source
+  const fs = el("div", "fb-sec"); fs.append(el("span", "fb-lbl", "Feed"));
+  const sel = el("select", "fb-select"); sel.id = "fb-one"; sel.setAttribute("aria-label", "Just one feed");
+  const o0 = el("option", null, "All feeds"); o0.value = ""; sel.append(o0);
+  [...state.feeds].sort(byName).forEach(f => { const o = el("option", null, f.title || redactUrl(f.url)); o.value = f.id; o.selected = view.source === "feed:" + f.id; sel.append(o); });
   sel.onchange = () => setView("source", sel.value ? "feed:" + sel.value : "all", "fb-one");
-  sec.append(sel); box.append(sec);
+  fs.append(sel); box.append(fs);
+
   const two = el("div", "fb-two");
   two.append(fbSeg("From", "from", [["today", "Today"], ["week", "Week"], ["any", "Any"]], view.from, (v, id) => setView("from", v, id)));
   two.append(fbSeg("Sort", "sort", [["newest", "Newest"], ["source", "Source"]], view.sort, (v, id) => setView("sort", v, id)));
   box.append(two);
+  // Stacks: group several stories from one source
+  box.append(fbSeg("Stack stories from the same source", "stack", [["off", "Off"], ["on", "On"]], design.stack === "on" ? "on" : "off", (v, id) => { design.stack = v; saveDesign(); state.shown = PAGE; renderList(); renderFilterBox(); const b = document.getElementById(id); if (b) b.focus(); }));
+
   const go = el("button", "btn primary fb-go", `Show ${storyCount(visibleItems().length)}`); go.type = "button";
   go.onclick = () => closeFilterBox(true);
   box.append(go);
 }
+// Your own categories: rename, or move their sources into the fixed list
+function manageCategories(custom, used){
+  const d = el("details", "fb-manage"); d.append(el("summary", null, `Your own categories (${custom.length})`));
+  if (state.manageOpen) d.open = true;
+  d.addEventListener("toggle", () => { state.manageOpen = d.open; });
+  custom.forEach(name => {
+    const row = el("div", "fb-mrow");
+    const inp = el("input", "fb-select"); inp.value = name; inp.setAttribute("aria-label", "Rename " + name);
+    inp.onchange = () => {
+      const nn = inp.value.trim().replace(/\s+/g, " ");
+      if (!nn || nn === name) { inp.value = name; return; }
+      const target = INTERESTS.map(([n]) => n).find(n => n.toLowerCase() === nn.toLowerCase()) || state.folders.find(n => n.toLowerCase() === nn.toLowerCase()) || nn;
+      state.feeds.forEach(f => { if (f.folder === name){ f.folder = target; f.folderSet = true; } });
+      state.folders = state.folders.filter(n => n !== name); if (!state.folders.includes(target)) state.folders.push(target);
+      if (view.source === "folder:" + name) view.source = "folder:" + target;
+      saveFolders(); save(); saveView(); toast(`Renamed to ${target}`); renderFeedList(); renderChips(); renderList(); renderFilterBox();
+    };
+    const move = el("select", "fb-select"); move.setAttribute("aria-label", `Move ${name} into`);
+    const m0 = el("option", null, `Move ${used.get(name) || 0} into…`); m0.value = ""; move.append(m0);
+    const ma = el("option", null, "Sort them automatically"); ma.value = "*auto"; move.append(ma);
+    INTERESTS.forEach(([n]) => { const o = el("option", null, n); o.value = n; move.append(o); });
+    move.onchange = () => {
+      if (!move.value) return;
+      let moved = 0;
+      state.feeds.forEach(f => {
+        if (f.folder !== name) return;
+        const c = move.value === "*auto" ? categorise(f, state.items.filter(i => i.feedId === f.id)) : move.value;
+        f.folder = c ? makeFolder(c) : ""; f.folderSet = true; moved++;
+      });
+      state.folders = state.folders.filter(n => n !== name);
+      if (view.source === "folder:" + name) view.source = "all";
+      saveFolders(); save(); saveView();
+      toast(`${moved} source${moved === 1 ? "" : "s"} moved; ${name} removed`);
+      renderFeedList(); renderChips(); renderList(); renderFilterBox();
+    };
+    row.append(inp, move); d.append(row);
+  });
+  return d;
+}
 function openFilterBox(){ const box = $("#filterBox"); box.hidden = false; $("#filterBtn").setAttribute("aria-expanded", "true"); renderFilterBox(); const f = box.querySelector('[aria-pressed="true"]') || box.querySelector("button"); if (f) f.focus(); }
 function closeFilterBox(focusBtn){ const box = $("#filterBox"); if (box.hidden) return; box.hidden = true; $("#filterBtn").setAttribute("aria-expanded", "false"); if (focusBtn) $("#filterBtn").focus(); }
 $("#filterBtn").onclick = () => $("#filterBox").hidden ? openFilterBox() : closeFilterBox();
-$("#activeFilter").onclick = () => selectFeed("all");
+$("#activeFilter").onclick = () => selectFeed("all");   // clears the source and the type
 // The status line: problems open Settings with Needs attention unfolded
 $("#status").onclick = () => {
   if (!attentionList().some(a => a.bad)) return openMenu("feeds");
@@ -4561,8 +4650,7 @@ function startOnboarding(){
 }
 const TOUR = [
   ["#manage", "Add your sources here", "Search for websites, YouTube channels, subreddits, podcasts and more, or paste a link."],
-  ["#chips", "Switch what you're seeing", "Everything in one feed, or just articles, videos, conversations or audio."],
-  ["#filterBtn", "Filter your feed", "Show one folder or source, unread only, or just today."],
+  ["#filterBtn", "Choose what you see", "Everything, or just articles, videos, audio or conversations. Pick a category or one feed, how far back, and whether to stack stories."],
   ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now."]
 ];
 function startTour(step = 0){
