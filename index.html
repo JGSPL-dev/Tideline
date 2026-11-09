@@ -120,6 +120,7 @@ body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .empty.welcome h3{font:800 30px/1.1 "Bricolage Grotesque",var(--ui);letter-spacing:-.02em;margin:0;color:var(--ink)}
 .empty.welcome .accent{color:var(--brand)}
 .empty.welcome p.curated{font:700 18px/1.2 "Bricolage Grotesque",var(--ui);color:var(--ink);margin-top:-4px}
+.empty.welcome .welcome-acts{margin-top:14px}
 .empty.welcome p{margin:0;font-size:16px;line-height:1.5;max-width:46ch}
 .onboard{padding:0}
 .ob-inner{max-width:520px;margin:0 auto;padding:28px 18px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
@@ -160,8 +161,16 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .addhint{margin:2px 0 0;padding:0 0 0 16px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 .addhint b{color:var(--ink)}
 .set-sec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
-#panelSettings>.set-sec+.set-sec{border-top:1px solid var(--line);padding-top:16px}
-#panelSettings>.set-sec>h3{font-size:13px;color:var(--ink)}
+#panelSettings>.setfold{display:block;border-top:1px solid var(--line)}
+#panelSettings>.setfold:first-child{border-top:0}
+.setfold>summary{list-style:none;display:flex;align-items:center;gap:10px;padding:14px 2px;cursor:pointer}
+.setfold>summary::-webkit-details-marker{display:none}
+.setfold .sf-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.setfold>summary h3{font:700 15px var(--ui);letter-spacing:0;text-transform:none;color:var(--ink);margin:0}
+.setfold .sf-sub{font-size:13px;color:var(--muted)}
+.setfold .sf-chev{flex:none;display:flex;color:var(--muted);transition:transform .15s}
+.setfold:not([open]) .sf-chev{transform:rotate(-90deg)}
+.setfold .set-body{display:flex;flex-direction:column;gap:12px;padding:0 0 18px}
 .set-sub{font:600 14px var(--ui);margin:6px 0 -4px;color:var(--ink)}
 .policies{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--muted)}
 .policies b{color:var(--ink)}
@@ -704,15 +713,18 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <div class="groups" id="flist"></div>
     </div>
     <div class="inner" id="panelSettings" role="tabpanel" aria-labelledby="tab-settings" hidden>
-      <section class="set-sec" aria-labelledby="sh-look">
-        <h3 id="sh-look">Look</h3>
+      <details class="set-sec setfold" id="sf-look">
+        <summary><span class="sf-t"><h3 id="sh-look">Look</h3><span class="sf-sub">Layout, picture size, colour</span></span><span class="sf-chev"></span></summary>
+        <div class="set-body">
         <div class="preview" id="preview" aria-hidden="true"></div>
         <div id="designRows" class="set-sec"></div>
         <div class="set-row"><span>Accent colour</span><div class="accents swatches" id="accentRow" role="radiogroup" aria-label="Accent colour"></div></div>
         <div><button class="btn" type="button" id="resetDesign">Reset look to default</button></div>
-      </section>
-      <section class="set-sec" aria-labelledby="sh-content">
-        <h3 id="sh-content">Content</h3>
+        </div>
+      </details>
+      <details class="set-sec setfold" id="sf-content">
+        <summary><span class="sf-t"><h3 id="sh-content">Content</h3><span class="sf-sub">Videos, links, podcasts and downloads</span></span><span class="sf-chev"></span></summary>
+        <div class="set-body">
         <h4 class="set-sub">Videos and links</h4>
       <label class="check" for="videoInApp">
         <input type="checkbox" id="videoInApp">
@@ -737,9 +749,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <label class="check" for="dlWifi"><input type="checkbox" id="dlWifi"><span><b>Download on Wi-Fi only</b></span></label>
         <label class="check" for="dlAutoDelete"><input type="checkbox" id="dlAutoDelete"><span><b>Delete downloads once played</b><br><span class="hint">Frees up space when you finish an episode.</span></span></label>
       </div>
-      </section>
-      <section class="set-sec" aria-labelledby="sh-sources">
-        <h3 id="sh-sources">Sources</h3>
+        </div>
+      </details>
+      <details class="set-sec setfold" id="sf-sources">
+        <summary><span class="sf-t"><h3 id="sh-sources">Sources</h3><span class="sf-sub">Source health, import and export</span></span><span class="sf-chev"></span></summary>
+        <div class="set-body">
         <h4 class="set-sub">Source health</h4>
         <p class="hint">How every source is doing: what's failing and why. Share it to get help. It stays on your device unless you share it.</p>
         <div class="iorow"><button class="btn" type="button" id="reportBtn">Open Source health</button></div>
@@ -757,9 +771,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         </label>
         <p class="msg" id="ioMsg" aria-live="polite"></p>
         <div class="fb-chips" id="ioMissing" hidden></div>
-      </section>
-      <section class="set-sec" aria-labelledby="sh-svc">
-        <h3 id="sh-svc">Service</h3>
+        </div>
+      </details>
+      <details class="set-sec setfold" id="sf-svc">
+        <summary><span class="sf-t"><h3 id="sh-svc">Service</h3><span class="sf-sub">YourFeed service and connection check</span></span><span class="sf-chev"></span></summary>
+        <div class="set-body">
       <div class="field">
         <label class="lbl-strong" for="proxyInput">YourFeed service</label>
         <p class="hint" id="serviceHint">The app reads feeds straight from your phone. The website also needs the YourFeed service, our own secure helper, because browsers block reading other sites. Leave this as it is unless you've been given a different address.</p>
@@ -775,9 +791,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <div><button class="btn" type="button" id="connCheck">Run check</button></div>
         <ul class="checks" id="connResults" hidden></ul>
       </div>
-      </section>
-      <section class="set-sec" aria-labelledby="sh-pol">
-        <h3 id="sh-pol">Policies</h3>
+        </div>
+      </details>
+      <details class="set-sec setfold" id="sf-pol">
+        <summary><span class="sf-t"><h3 id="sh-pol">Policies</h3><span class="sf-sub">Privacy and terms</span></span><span class="sf-chev"></span></summary>
+        <div class="set-body">
         <ul class="policies">
           <li><b>No account, no tracking.</b> Your sources, saved posts and settings stay on this device.</li>
           <li><b>Straight from the publisher.</b> Feeds are read directly, or through our own YourFeed service. No other companies see what you follow.</li>
@@ -785,7 +803,8 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <li><b>Content belongs to its publishers.</b> YourFeed shows headlines and previews and links to the original.</li>
           <li><b>YouTube.</b> Videos play in YouTube's own player and are covered by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
         </ul>
-      </section>
+        </div>
+      </details>
       <section class="about" aria-label="About this version">
         <p><b>YourFeed</b> by Apps For Us · <span id="appVersion"></span></p>
       </section>
@@ -2106,7 +2125,7 @@ $("#activeFilter").onclick = () => selectFeed("all");   // clears the source and
 $("#infoBtn").onclick = e => { e.stopPropagation(); toggleStatusPop(); };
 $("#healthLink").onclick = () => {
   toggleStatusPop(false);
-  state.attnOpen = true; openMenu("settings"); renderAttention();
+  state.attnOpen = true; openMenu("settings"); $("#sf-sources").open = true; renderAttention();
   setTimeout(() => { const b = $("#attnBox"); if (b && !b.hidden) b.scrollIntoView({block: "center"}); }, 250);
 };
 document.addEventListener("pointerdown", e => { const pop = $("#statusPop"); if (!pop.hidden && !pop.contains(e.target) && !$("#infoBtn").contains(e.target)){ toggleStatusPop(false); eatTap(); } });
@@ -2394,8 +2413,8 @@ function renderList(){
         el("p", null, "You decide what you see. No recommended posts and no AI-generated channels you never followed: your feed is 100% yours."),
         el("p", null, "Search for websites, YouTube channels, social feeds, podcasts and news topics, and see them side by side in one simple feed. No account and no tracking: your list stays on your device."));
       const go = el("button", "btn primary", "Get started"); go.type = "button"; go.onclick = startOnboarding;
-      const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); setTimeout(() => $("#importBtn").focus(), 250); };
-      const row = el("div", "iorow"); row.append(go, imp); e.append(row);
+      const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); $("#sf-sources").open = true; setTimeout(() => { $("#importBtn").scrollIntoView({block: "center"}); $("#importBtn").focus(); }, 250); };
+      const row = el("div", "iorow welcome-acts"); row.append(go, imp); e.append(row);
     }
     else if (state.items.length && shortsGrid()){
       e.append(el("h3", null, "No Shorts right now"), el("p", null, "Shorts from the YouTube channels you follow will show here."));
@@ -4633,6 +4652,7 @@ function openReport(focusId){
   if (!$("#reportPage").open) $("#reportPage").showModal();
   if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
 }
+document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
 $("#reportBtn").onclick = () => { closeMenu(); openReport(); };
 $("#rpBack").onclick = () => $("#reportPage").close();
 
