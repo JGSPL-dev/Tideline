@@ -1423,9 +1423,26 @@ async function loadOneFeed(url, feed, logOut){
   return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin, icon, site};
 }
 // Keep a rolling history: everything seen in the last KEEP_DAYS, per feed
+// Same story, different wrapper: a headline without Google News's " - Publisher" tail, lower case, letters and digits only
+function storyKey(i){
+  if (i.videoId || i.audioUrl) return "";
+  let t = (i.title || "").replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");
+  t = t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+  return t.length >= 20 ? t : "";
+}
+// A story's address without tracking bits (utm_, CMP, oc…), "www." or #fragment; nothing for Google News redirect links
+function linkKey(link){
+  try{
+    const u = new URL(link); if (/news\.google\.com$/.test(u.hostname)) return "";
+    [...u.searchParams.keys()].forEach(k => { if (/^(utm_|cmp$|oc$|fbclid|gclid|ref$|src$|at_|ito$|ns_)/i.test(k)) u.searchParams.delete(k); });
+    u.hash = ""; return u.hostname.replace(/^www\./, "") + u.pathname.replace(/\/$/, "") + (u.search || "");
+  }catch{ return ""; }
+}
 function mergeHistory(oldItems, newItems){
   const now = Date.now(), cutoff = now - KEEP_DAYS * 86400000;
   const byId = new Map();
+  // Same headline again in the same feed under a new address (Google News re-wraps its links): one story
+  const byStory = new Map();
   // The same YouTube video under two addresses (older copies): keep one
   const vids = new Map();
   oldItems.forEach(i => {
@@ -1435,9 +1452,19 @@ function mergeHistory(oldItems, newItems){
       i = {...i, short: i.short || /\/shorts\//.test(i.link || "") || undefined, link: /youtube\.com\/shorts\//.test(i.link || "") ? "https://www.youtube.com/watch?v=" + i.videoId : i.link};
       i.id = i.feedId + "|" + i.link; vids.set(k, i);
     }
+    const sk = storyKey(i);
+    if (sk){ const k = i.feedId + "|" + sk, had = byStory.get(k); if (had && had !== i.id) return; byStory.set(k, i.id); }
     byId.set(i.id, i);
   });
-  newItems.forEach(i => { const prev = byId.get(i.id); byId.set(i.id, {...i, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined, dur: i.dur || (prev && prev.dur) || undefined, short: i.short || (prev && prev.short) || undefined}); });
+  newItems.forEach(i => {
+    const sk = storyKey(i);
+    if (sk && !byId.has(i.id)){ const had = byStory.get(i.feedId + "|" + sk); if (had && byId.has(had)) i = {...i, id: had, link: byId.get(had).link || i.link}; }
+    const prev = byId.get(i.id);
+    if (sk) byStory.set(i.feedId + "|" + sk, i.id);
+    // Keep a story where it first appeared: updates (live blogs, re-dated news) don't push it back to the top
+    const date = prev && prev.date && i.date ? Math.min(prev.date, i.date) : (i.date || (prev && prev.date) || 0);
+    byId.set(i.id, {...i, date, seen: prev && prev.seen || now, full: i.full || (prev && prev.full) || undefined, dur: i.dur || (prev && prev.dur) || undefined, short: i.short || (prev && prev.short) || undefined});
+  });
   const counts = {};
   // Newest first; each feed always keeps its MIN_PER_FEED newest stories, however old,
   // so weekly podcasts and quiet channels never vanish. Beyond that, only the last KEEP_DAYS.
@@ -1873,11 +1900,29 @@ function videoKind(list){
   if (view.type !== "videos") return list;
   return list.filter(i => (view.vkind === "shorts") === isShortItem(i));
 }
+// The same story from two sources (e.g. The Guardian and a Google News topic, or two Guardian section feeds):
+// show it once, preferring the publisher's own feed over Google News, then whichever arrived first
+function dupeIds(){
+  if (dupeIds.src === state.items && dupeIds.n === state.items.length) return dupeIds.set;
+  const keep = new Map(), out = new Set();
+  const viaGN = i => /news\.google\.com/.test((feedById(i.feedId) || {}).url || "");
+  const rank = i => (viaGN(i) ? 1e15 : 0) + (i.seen || 0);
+  [...state.items].filter(i => typeOf(i) === "articles").sort((a, b) => rank(a) - rank(b)).forEach(i => {
+    const keys = [["l", linkKey(i.link)], ["t", storyKey(i)]].filter(([, k]) => k).map(([p, k]) => p + ":" + k);
+    const hit = keys.find(k => keep.has(k) && keep.get(k).feedId !== i.feedId);
+    if (hit){ out.add(i.id); return; }
+    keys.forEach(k => { if (!keep.has(k)) keep.set(k, i); });
+  });
+  dupeIds.src = state.items; dupeIds.n = state.items.length; dupeIds.set = out;
+  return out;
+}
 function baseItems(){
   let cut = 0;
   if (view.from === "today"){ const d = new Date(); d.setHours(0, 0, 0, 0); cut = d.getTime(); }
   else if (view.from === "week") cut = Date.now() - 7 * 86400000;
-  return state.items.filter(i => sourceMatch(i.feedId) && (!view.unread || !state.read.has(i.id)) && (!cut || (i.date || i.seen || 0) >= cut));
+  // Showing one source: everything from it. Otherwise each story once
+  const dup = view.source.startsWith("feed:") ? new Set() : dupeIds();
+  return state.items.filter(i => !dup.has(i.id) && sourceMatch(i.feedId) && (!view.unread || !state.read.has(i.id)) && (!cut || (i.date || i.seen || 0) >= cut));
 }
 function visibleItems(){
   if (view.saved){
@@ -1899,7 +1944,8 @@ const isNew = i => (i.seen || 0) > state.baseline && !state.read.has(i.id);
 /* ---------- rendering: type tabs + status ---------- */
 function newCount(feedId){
   let n = 0;
-  for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && isNew(i)) n++;
+  const dup = feedId === "all" ? dupeIds() : null;
+  for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && isNew(i) && !(dup && dup.has(i.id))) n++;
   return n;
 }
 function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
