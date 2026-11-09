@@ -11,6 +11,7 @@ import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
@@ -73,6 +74,17 @@ public class MainActivity extends BridgeActivity {
             public void onHideCustomView() {
                 leaveFullScreen();
             }
+        });
+        // The keyboard: Android 15 draws apps edge to edge, so it would cover the page instead of shrinking it.
+        // Pad the app by the keyboard's height (less the navigation bar the page already sits above),
+        // so the page gets smaller and boxes can be scrolled into view above the keyboard.
+        final View content = findViewById(android.R.id.content);
+        ViewCompat.setOnApplyWindowInsetsListener(content, (v, insets) -> {
+            int ime = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom;
+            int nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom;
+            int pad = Math.max(0, ime - nav);
+            if (v.getPaddingBottom() != pad) v.setPadding(0, 0, 0, pad);
+            return insets;
         });
         // Back while a video is full screen: leave full screen first
         exitFull = new OnBackPressedCallback(false) {
