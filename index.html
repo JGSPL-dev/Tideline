@@ -156,7 +156,15 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 :root[data-width="wide"][data-layout="magazine"] .card{margin:0}
 /* Settings panel */
 .set-sec{display:flex;flex-direction:column;gap:12px}
+.addhint{margin:2px 0 0;padding:0 0 0 16px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.addhint b{color:var(--ink)}
 .set-sec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
+#panelSettings>.set-sec+.set-sec{border-top:1px solid var(--line);padding-top:16px}
+#panelSettings>.set-sec>h3{font-size:13px;color:var(--ink)}
+.set-sub{font:600 14px var(--ui);margin:6px 0 -4px;color:var(--ink)}
+.policies{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:14px;color:var(--muted)}
+.policies b{color:var(--ink)}
+.policies a{color:inherit}
 .set-row{display:flex;flex-direction:column;gap:6px}
 .set-row > span{font-weight:600;font-size:14px}
 .set-row .seg{flex-wrap:wrap}
@@ -571,7 +579,7 @@ details.attn[open] > summary::after{content:"▴"}
 .addfolder{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .addfolder .fb-chips .chip{font-weight:600}
 .flist .pick .warn{color:#e8590c;font-weight:700}
-.about{padding:4px 2px 8px;color:var(--muted);font-size:13px}
+.about{padding:14px 2px 8px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 .about p{margin:0}
 .about b{color:var(--ink)}
 .listhead{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -6px}
@@ -684,8 +692,11 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
       </form>
-      <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>. Paid subscription? Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</p>
       <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
+      <ul class="addhint">
+        <li>Search, or paste a link, <b>r/name</b> or <b>@channel</b>.</li>
+        <li><b>Paid subscription?</b> Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</li>
+      </ul>
       <p class="msg" id="addMsg" aria-live="polite"></p>
       <div class="addfolder" id="addFolder" hidden></div>
       <div id="searchResults" class="sresults" hidden></div>
@@ -699,23 +710,22 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <div class="set-row"><span>Accent colour</span><div class="accents swatches" id="accentRow" role="radiogroup" aria-label="Accent colour"></div></div>
         <div><button class="btn" type="button" id="resetDesign">Reset look to default</button></div>
       </section>
-      <section class="set-sec" aria-labelledby="sh-links">
-        <h3 id="sh-links">Opening stories</h3>
+      <section class="set-sec" aria-labelledby="sh-content">
+        <h3 id="sh-content">Content</h3>
+        <h4 class="set-sub">Videos and links</h4>
       <label class="check" for="videoInApp">
         <input type="checkbox" id="videoInApp">
         <span><b>Play videos in YourFeed</b><br><span class="hint">Videos play under the story instead of opening YouTube. Tap full screen to watch it big.</span></span>
       </label>
       <label class="check" for="hideShorts">
         <input type="checkbox" id="hideShorts">
-        <span><b>Hide YouTube Shorts</b><br><span class="hint">Leave out Shorts (and videos of a minute or less) everywhere.</span></span>
+        <span><b>Hide YouTube Shorts</b><br><span class="hint">Leave out Shorts everywhere.</span></span>
       </label>
       <label class="check" for="keepBrowser">
         <input type="checkbox" id="keepBrowser">
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
       </label>
-      </section>
-      <section class="set-sec" aria-labelledby="sh-pod">
-        <h3 id="sh-pod">Podcasts</h3>
+        <h4 class="set-sub">Podcasts</h4>
       <label class="check" for="podQueue">
         <input type="checkbox" id="podQueue">
         <span><b>Play saved episodes one after another</b><br><span class="hint">When an episode you saved finishes, the next one in Saved → Audio starts, in the order you saved them.</span></span>
@@ -727,14 +737,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <label class="check" for="dlAutoDelete"><input type="checkbox" id="dlAutoDelete"><span><b>Delete downloads once played</b><br><span class="hint">Frees up space when you finish an episode.</span></span></label>
       </div>
       </section>
-      <section class="set-sec" aria-labelledby="sh-rep">
-        <h3 id="sh-rep">Source health</h3>
+      <section class="set-sec" aria-labelledby="sh-sources">
+        <h3 id="sh-sources">Sources</h3>
+        <h4 class="set-sub">Source health</h4>
         <p class="hint">How every source is doing: what's failing and why. Share it to get help. It stays on your device unless you share it.</p>
         <div class="iorow"><button class="btn" type="button" id="reportBtn">Open Source health</button></div>
         <div id="attnBox" hidden></div>
-      </section>
-      <section class="set-sec" aria-labelledby="sh-io">
-        <h3 id="sh-io">Your sources</h3>
+        <h4 class="set-sub">Import and export</h4>
         <p class="hint">Move your sources between devices, or add lots at once. Import works with OPML (the standard format other feed readers use), YouTube's subscriptions.csv from Google Takeout, or a text file with one address, @handle, r/name or "youtube: Channel name" per line.</p>
         <div class="iorow">
           <button class="btn" type="button" id="importBtn">Import sources</button>
@@ -749,7 +758,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <div class="fb-chips" id="ioMissing" hidden></div>
       </section>
       <section class="set-sec" aria-labelledby="sh-svc">
-        <h3 id="sh-svc">Feed service</h3>
+        <h3 id="sh-svc">Service</h3>
       <div class="field">
         <label class="lbl-strong" for="proxyInput">YourFeed service</label>
         <p class="hint" id="serviceHint">The app reads feeds straight from your phone. The website also needs the YourFeed service, our own secure helper, because browsers block reading other sites. Leave this as it is unless you've been given a different address.</p>
@@ -765,6 +774,16 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <div><button class="btn" type="button" id="connCheck">Run check</button></div>
         <ul class="checks" id="connResults" hidden></ul>
       </div>
+      </section>
+      <section class="set-sec" aria-labelledby="sh-pol">
+        <h3 id="sh-pol">Policies</h3>
+        <ul class="policies">
+          <li><b>No account, no tracking.</b> Your sources, saved posts and settings stay on this device.</li>
+          <li><b>Straight from the publisher.</b> Feeds are read directly, or through our own YourFeed service. No other companies see what you follow.</li>
+          <li><b>Private feeds stay private.</b> Paid subscription links never leave this device and are left out of reports, shares and exports.</li>
+          <li><b>Content belongs to its publishers.</b> YourFeed shows headlines and previews and links to the original.</li>
+          <li><b>YouTube.</b> Videos play in YouTube's own player and are covered by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
+        </ul>
       </section>
       <section class="about" aria-label="About this version">
         <p><b>YourFeed</b> by Apps For Us · <span id="appVersion"></span></p>
@@ -1740,7 +1759,7 @@ function nextColor(){
 const uid = () => Math.random().toString(36).slice(2, 9);
 
 /* ---------- sources: platforms, folders, story types ---------- */
-const UNSORTED = "Unsorted";
+const UNSORTED = "Uncategorised";
 const PLATFORMS = ["YouTube", "Reddit", "Podcasts", "Websites", "News topics", "Social"];
 function platformOf(f){
   const u = f.url || "";
@@ -1800,6 +1819,7 @@ function sourceLabel(){
 function checkView(){
   if (view.saved && !state.saved.length) view.saved = false;
   if (view.source.startsWith("feed:") && !feedById(view.source.slice(5))) view.source = "all";
+  if (view.source === "folder:Unsorted") view.source = "folder:" + UNSORTED;
   if (view.source.startsWith("folder:") && view.source !== "folder:" + UNSORTED && !state.folders.includes(view.source.slice(7))) view.source = "all";
   if (!TYPES.some(([k]) => k === view.type)) view.type = "all";
 }
@@ -2982,10 +3002,6 @@ function renderFeedList(){
     return pick;
   };
   renderAttention();
-  // Everything
-  const ev = el("ul", "flist"); const li = el("li", "row-all");
-  li.append(pickRow("all", null, "Everything", el("span", "url", `${state.feeds.length} source${state.feeds.length === 1 ? "" : "s"}`)));
-  ev.append(li); box.append(ev);
   // Organise by
   const org = el("div", "org-row"); const ol = el("span", "fb-lbl", "Organise by"); ol.id = "org-lbl"; org.append(ol);
   const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-labelledby", "org-lbl");
@@ -3209,9 +3225,14 @@ function feedRow(f, pickRow){
 function folderField(cur){
   const fF = el("label", "field"); fF.append(el("span", "lbl", "Folder"));
   const sel = el("select", "fb-select"); sel.id = "ef-folder";
-  const names = [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"}));
-  [...names, UNSORTED].forEach(n => { const o = el("option", null, n); o.value = n; o.selected = n === cur; sel.append(o); });
-  const o = el("option", null, "New folder…"); o.value = "\u0000new"; sel.append(o);
+  // Our fixed list, then the person's own folders, then Uncategorised and New folder
+  const fixed = INTERESTS.map(([n]) => n);
+  const own = state.folders.filter(n => !fixed.includes(n)).sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"}));
+  const opt = n => { const o = el("option", null, n); o.value = n; o.selected = n === cur; return o; };
+  const g1 = el("optgroup"); g1.label = "Categories"; fixed.forEach(n => g1.append(opt(n))); sel.append(g1);
+  if (own.length){ const g2 = el("optgroup"); g2.label = "Your folders"; own.forEach(n => g2.append(opt(n))); sel.append(g2); }
+  sel.append(opt(UNSORTED));
+  const o = el("option", null, "+ New folder…"); o.value = "\u0000new"; sel.append(o);
   const nf = el("input"); nf.type = "text"; nf.placeholder = "New folder name"; nf.hidden = true; nf.setAttribute("aria-label", "New folder name"); nf.maxLength = 40;
   sel.onchange = () => { nf.hidden = sel.value !== "\u0000new"; if (!nf.hidden) nf.focus(); };
   fF.append(sel, nf);
@@ -3271,7 +3292,7 @@ function editForm(f){
       }
       f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
       f.color = color;
-      const fv = folder.value(); f.folder = fv && fv !== UNSORTED ? fv : "";
+      const fv = folder.value(); f.folder = fv && fv !== UNSORTED ? (makeFolder(fv) || "") : ""; f.folderSet = true;
       editingId = null;
       save(); renderFeedList(); renderChips(); renderStatus(); renderList();
       if (viewerEl && state.activeId){ const it = itemById(state.activeId); if (it) viewerEl.querySelector(".vbar .meta")?.replaceWith(metaRow(it)); }
@@ -3287,7 +3308,7 @@ function editForm(f){
 function showFolderNote(feed){
   const box = $("#addFolder"); box.hidden = false; box.textContent = "";
   const row = el("div", "fnote");
-  row.append(el("span", null, feed.folder ? `Added to ${feed.folder}` : "Added to Unsorted"));
+  row.append(el("span", null, feed.folder ? `Added to ${feed.folder}` : "Added to Uncategorised"));
   const ch = el("button", "linkbtn", feed.folder ? "Change" : "Choose a folder"); ch.type = "button";
   ch.onclick = () => showFolderPrompt(feed);
   row.append(ch); box.append(row);
@@ -3303,7 +3324,7 @@ function showFolderPrompt(feed){
   [...new Set([...state.folders, ...INTERESTS.map(([n]) => n)])].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"})).filter(n => n !== feed.folder).forEach(n => {
     const b = el("button", "chip", n); b.type = "button"; b.onclick = () => done(n); chips.append(b);
   });
-  const skip = el("button", "chip", feed.folder ? "Unsorted" : "Leave unsorted"); skip.type = "button"; skip.onclick = () => { if (feed.folder) setFolder(feed, ""); else feed.folderSet = true; box.hidden = true; renderFeedList(); };
+  const skip = el("button", "chip", feed.folder ? "Uncategorised" : "Leave uncategorised"); skip.type = "button"; skip.onclick = () => { if (feed.folder) setFolder(feed, ""); else feed.folderSet = true; box.hidden = true; renderFeedList(); };
   chips.append(skip);
   box.append(chips, newFolderControl(done));
 }
