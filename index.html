@@ -225,6 +225,9 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .meta{display:flex;align-items:center;gap:6px;font-size:calc(12.5px * var(--scale));color:var(--muted);min-width:0}
 .meta .src{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.sicon{display:inline-grid;place-items:center;flex:none;border-radius:4px;overflow:hidden;background:var(--sunk);vertical-align:middle}
+.sicon img{width:100%;height:100%;object-fit:cover;display:block}
+.sicon.letter{color:#fff;font-weight:800;line-height:1;font-family:var(--ui)}
 .tag{font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:4px;padding:0 5px;color:var(--muted)}
 .title{font:600 calc(18px * var(--scale))/1.24 var(--head);margin:5px 0 4px;text-wrap:pretty}
 .sum{margin:0;color:var(--muted);font-size:calc(13.5px * var(--scale));display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
@@ -1217,7 +1220,7 @@ async function loadFeed(url, feed){
       const p = parseFeed(t, feed);
       if (p.items.length){
         feed.routes = [{k: "phone", ok: true, n: p.items.length, newest: Math.max(0, ...p.items.map(i => i.date || 0))}];
-        return {title: p.title, items: stashArticles(p.items), everyMin: p.everyMin || null};
+        return {title: p.title, items: stashArticles(p.items), everyMin: p.everyMin || null, icon: p.icon, site: p.site};
       }
     }catch(e){ feed._phoneErr = String(e.message || "Failed").replace(/\.$/, ""); }
   }
@@ -1292,7 +1295,8 @@ async function loadOneFeed(url, feed, logOut){
   }
   const title = (got.find(g => g.title) || got[0]).title;
   const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
-  return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin};
+  const icon = (got.find(g => g.icon) || {}).icon || "", site = (got.find(g => g.site) || {}).site || "";
+  return {title, items: stashArticles(mergeItems(got.map(g => g.items))), everyMin, icon, site};
 }
 // Keep a rolling history: everything seen in the last KEEP_DAYS, per feed
 function mergeHistory(oldItems, newItems){
@@ -1465,16 +1469,23 @@ function parseFeed(xml, feed){
   if (!root || doc.getElementsByTagName("parsererror").length) throw new Error("That address isn't an RSS or Atom feed");
   const rn = lc(root);
   let title = "", items = [];
+  let icon = "", site = "";
   if (rn === "feed"){
     title = txt(kid(root, "title"));
+    icon = txt(kid(root, "icon")) || txt(kid(root, "logo"));
+    const alt = kids(root, "link").find(l => !attr(l, "rel") || attr(l, "rel") === "alternate"); site = alt ? attr(alt, "href") : "";
     items = kids(root, "entry").map(e => atomItem(e, feed));
   } else if (rn === "rss" || rn.endsWith("rdf")){
     const ch = deep(root, "channel")[0];
     title = txt(kid(ch, "title"));
+    // The show's artwork (podcasts) or the site's logo
+    const it = deep(ch, "itunes:image")[0];
+    icon = (it && attr(it, "href")) || txt(kid(kid(ch, "image") || ch, "url")) || "";
+    site = txt(kid(ch, "link"));
     items = deep(root, "item").map(e => rssItem(e, feed));
   } else throw new Error("That address isn't an RSS or Atom feed");
   items = items.filter(i => i.link || i.title).sort((a, b) => b.date - a.date).slice(0, 40);
-  return {title: htmlToText(title), items, everyMin: feedHintMinutes(root)};
+  return {title: htmlToText(title), items, everyMin: feedHintMinutes(root), icon: safeUrl((icon || "").trim()) || "", site: safeUrl((site || "").trim()) || ""};
 }
 const looksLikeFeed = t => /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000));
 
@@ -1644,7 +1655,7 @@ function flagsEl(it){
 function metaRow(it, withFlags = true){
   const f = feedById(it.feedId) || {title:"", color:"#888"};
   const m = el("div", "meta");
-  const d = el("span", "dot"); d.style.background = f.color; m.append(d);
+  m.append(iconFor(feedById(it.feedId), 16));
   m.append(el("span", "src", f.title || "Feed"));
   if (it.date){ m.append(el("span", null, "·")); const t = el("time", null, ago(it.date)); t.dateTime = new Date(it.date).toISOString(); m.append(t); }
   if (withFlags){ const fl = flagsEl(it); if (fl.childNodes.length) m.append(fl); }
@@ -2108,7 +2119,7 @@ function stackEl(g){
   const total = g.items.length, fresh = g.items.filter(isNew).length;
   const box = el("section", "stack"); box.setAttribute("aria-label", `${f.title}, ${total} stories`);
   const head = el("div", "stack-head");
-  const d = el("span", "dot"); d.style.background = f.color;
+  const d = iconFor(feedById(g.feedId), 18);
   head.append(d, el("span", "nm", f.title || "Feed"), fresh ? el("span", "n new", fresh + " new") : el("span", "n", String(total)));
   box.append(head);
   const shown = Math.min(total, state.stackShown[g.feedId] || STACK_SHOW);
@@ -2619,6 +2630,9 @@ async function fetchFeedNow(f){
     const p = await loadFeed(f.url, f);
     if (!f.title && p.title) f.title = cleanTitle(p.title, f.url);
     f.error = null; f.fails = 0; f.lastFetched = f.lastOk = Date.now(); delete f.failingSince; delete f.dismissed;
+    if (p.icon && !/redditstatic\.com/.test(p.icon) && p.icon !== f.icon && !f.iconFixed){ f.icon = p.icon; f.iconFailed = false; }
+    if (p.site) f.site = p.site;
+    if (!f.icon && !f.iconAt) fetchSourceIcon(f);
     f.everyMin = p.everyMin || null;
     if (!f.folder && !f.folderSet && !f.autoCat && p.items.length){ f.autoCat = true; const c = categorise(f, p.items); if (c){ f.folder = makeFolder(c); } }
     if (p.items.length) f.audio = isPodcastFeed(p.items);
@@ -2750,7 +2764,9 @@ function renderFeedList(){
   const pickRow = (src, dotColor, name, sub) => {
     const pick = el("button", "pick"); pick.type = "button";
     pick.setAttribute("aria-current", String(view.source === src));
-    const d = el("span", "dot"); d.style.background = dotColor || "transparent"; if (!dotColor) d.classList.add("all-dot");
+    let d;
+    if (src.startsWith("feed:")) d = iconFor(feedById(src.slice(5)), 20);
+    else { d = el("span", "dot"); d.style.background = dotColor || "transparent"; if (!dotColor) d.classList.add("all-dot"); }
     const info = el("span", "info");
     info.append(el("span", "nm", name));
     if (sub) info.append(sub);
@@ -2878,6 +2894,65 @@ function renderAttention(){
   });
   box.append(sec);
 }
+/* ---------- source icons (instead of coloured dots) ----------
+   The feed's own artwork or logo, a YouTube channel's or Bluesky account's picture, a subreddit's icon, or
+   the website's favicon, all loaded straight from the publisher. Falls back to the coloured dot. */
+function iconCandidates(f){
+  const out = [];
+  if (f.icon && !f.iconFailed) out.push(f.icon);
+  const nq = newsQuery(f.url);
+  if (nq && !nq.site) return out;                               // Google News topics: keep the dot (no calls to Google)
+  if (isPrivateFeed(f) && !f.icon) return out;                  // nothing extra for private feeds
+  if (!ytChannelOf(f.url) && !redditJsonUrl(f.url) && !/bsky\.app/.test(f.url)){
+    let base = "";
+    try{ base = new URL(nq && nq.site ? "https://" + nq.site.split("/")[0] : (f.site || f.url)).origin; }catch{}
+    if (base) out.push(base + "/favicon.ico");
+  }
+  return out;
+}
+function srcIcon(f, size = 16){
+  // Fallback: the source's first letter on its colour, the same size as a picture
+  const d = el("span", "sicon letter"); d.style.width = d.style.height = size + "px"; d.style.fontSize = Math.round(size * 0.62) + "px";
+  d.style.background = (f && f.color) || "var(--muted)";
+  d.textContent = ((f && f.title || "?").replace(/^(r|bs|g)\//, "").match(/[\p{L}\p{N}]/u) || ["?"])[0].toUpperCase();
+  d.setAttribute("aria-hidden", "true");
+  if (!f) return d;
+  const tries = iconCandidates(f);
+  if (!tries.length) return d;
+  const wrap = el("span", "sicon"); wrap.style.width = wrap.style.height = size + "px";
+  const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+  let n = 0;
+  img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else wrap.replaceWith(d); };
+  img.onload = () => { if (img.naturalWidth && img.naturalWidth < 8) img.onerror(); };
+  img.src = tries[0]; wrap.append(img);
+  return wrap;
+}
+// One-off lookups for pictures feeds don't carry (kept for 30 days)
+async function fetchSourceIcon(f){
+  if (isPrivateFeed(f)) return;
+  f.iconAt = Date.now();
+  try{
+    const yt = ytChannelOf(f.url);
+    if (yt && serviceBase()){
+      const j = JSON.parse(await viaService("/youtube/channel", {url: "https://www.youtube.com/channel/" + yt}, 10000));
+      if (j.avatar) f.icon = j.avatar;
+    } else if (redditJsonUrl(f.url)){
+      const sub = (f.url.match(/\/r\/(\w+)/) || [])[1];
+      if (sub){ const j = await getJSON(`https://www.reddit.com/r/${sub}/about.json`, 8000); const d = j && j.data || {};
+        const ic = (d.community_icon || d.icon_img || "").replace(/&amp;/g, "&").split("?")[0]; if (ic) f.icon = ic; }
+    } else if (/bsky\.app\/profile\//.test(f.url)){
+      const actor = (f.url.match(/profile\/([^/]+)/) || [])[1];
+      if (actor){ const j = await getJSON("https://public.api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=" + encodeURIComponent(actor), 8000); if (j && j.avatar) f.icon = j.avatar; }
+    }
+  }catch{}
+  if (f.icon){ save(); refreshIcons(f.id); }
+}
+// Swap in a newly found icon wherever that source is shown
+function refreshIcons(id){
+  const f = feedById(id); if (!f) return;
+  document.querySelectorAll(`[data-icon-for="${CSS.escape(id)}"]`).forEach(n => { const i = srcIcon(f, +n.dataset.size || 16); i.dataset.iconFor = id; i.dataset.size = n.dataset.size || 16; n.replaceWith(i); });
+}
+const iconFor = (f, size) => { const i = srcIcon(f, size); if (f){ i.dataset.iconFor = f.id; i.dataset.size = size; } return i; };
 // Small padlock for private feeds
 function lockEl(){
   const s = el("span", "lock"); s.title = "Private feed: only fetched from this device, its link is never shared";
@@ -3187,6 +3262,8 @@ async function addFeed(raw, direct, kind){
   if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
   feed.title = cleanTitle(p.title, feed.url) || new URL(feed.url).hostname.replace(/^www\./, "");
   feed.lastFetched = Date.now(); feed.everyMin = p.everyMin || null; feed.audio = isPodcastFeed(p.items);
+  if (p.icon && !/redditstatic\.com/.test(p.icon)) feed.icon = p.icon; if (p.site) feed.site = p.site;
+  if (!feed.icon) setTimeout(() => fetchSourceIcon(feed), 500);
   // Sorted into a category straight away; "Change" lets people move it
   const cat = categorise(feed, p.items); feed.autoCat = true;
   if (cat) feed.folder = makeFolder(cat);
@@ -4100,7 +4177,7 @@ function articleFragment(html, base){
 async function openArticle(it){
   const page = $("#articlePage"), body = $("#artBody");
   const f = feedById(it.feedId) || {};
-  const src = el("div", "meta"); const dot = el("span", "dot"); dot.style.background = f.color || "var(--muted)";
+  const src = el("div", "meta"); const dot = iconFor(feedById(it.feedId) || f, 16);
   src.append(dot, el("span", "src", f.title || "")); $("#artSrc").replaceChildren(src);
   const open = $("#artOpen"); open.hidden = !it.link; if (it.link) open.href = it.link;
   body.textContent = "";
