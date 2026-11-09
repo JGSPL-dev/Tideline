@@ -561,6 +561,7 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .support-sec ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
 .support-sec li{display:flex;flex-direction:column;gap:1px;padding-left:22px;position:relative;font-size:13.5px;color:var(--muted);line-height:1.4}
 .support-sec li b{color:var(--ink);font-weight:600}
+.support-sec li span,.support-foot .hint{text-wrap:pretty}
 .support-sec li::before{position:absolute;left:0;top:0;font-weight:800}
 .support-sec.yes li::before{content:"✓";color:var(--ok,#2b8a3e)}
 .support-sec.no li::before{content:"✕";color:var(--muted)}
@@ -3030,15 +3031,15 @@ function feedSub(f){
 }
 // What YourFeed can follow, and what it can't (with the short reason). Shown once to new users, and in Settings → FAQs
 const SUPPORT_YES = [
-  ["Websites, blogs and newsletters", "Anything with a public feed. Paste the site and we'll find it."],
-  ["YouTube channels", "Search by name, or paste a channel or @handle."],
-  ["Reddit", "Any public subreddit, e.g. r/worldnews."],
-  ["Podcasts", "Any show with a public feed, plus paid ones from Patreon, Supercast or Substack."],
-  ["News topics", "Follow a subject or site through Google News."],
+  ["Websites, blogs and newsletters", "Anything with a public feed."],
+  ["YouTube channels", "Search by name or paste a link."],
+  ["Reddit", "Any subreddit, e.g. r/worldnews."],
+  ["Podcasts", "Any public show, plus paid ones from Patreon, Supercast or Substack."],
+  ["News topics", "Any subject or site, via Google News."],
   ["Bluesky and Mastodon", "Public accounts."]
 ];
 const SUPPORT_NO = [
-  ["X, Meta and TikTok", "Block outside apps or have no public feeds."],
+  ["X, Meta and TikTok", "Block outside apps or have no feeds."],
   ["Exclusive and paid-for content", "Locked to the content provider."]
 ];
 function supportInfo(){
@@ -3070,13 +3071,13 @@ function renderFeedList(){
   syncPrivateRow();
   const box = $("#flist"); box.textContent = "";
   if (!state.feeds.length){
-    box.append(el("p", "hint", "No sources yet. Search or paste a link above to add one."));
+    box.append(el("p", "hint", "No sources yet. Search or paste a link above."));
     // Once only: what you can and can't follow. After that it lives in Settings → FAQs
     if (!store.get("yf.supportSeen", false)){
       const sb = el("section", "support-box"); sb.setAttribute("aria-label", "What you can follow");
       sb.append(supportInfo());
       const row = el("div", "support-foot");
-      row.append(el("span", "hint", "You'll find this again in Settings → FAQs."));
+      row.append(el("span", "hint", "Find this again in Settings → FAQs."));
       const ok = el("button", "btn primary", "Got it"); ok.type = "button";
       ok.onclick = () => { store.set("yf.supportSeen", true); sb.remove(); };
       row.append(ok); sb.append(row); box.append(sb);
