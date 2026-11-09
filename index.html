@@ -1942,10 +1942,12 @@ function visibleItems(){
 }
 // New = not seen yet: never on screen long enough to read the headline, and never tapped
 const isNew = i => !state.looked.has(i.id) && !state.read.has(i.id);
-// Nov 2026: "new" changed from "arrived since you last pressed Refresh" to "not seen yet". Start everyone where they were
-if (!store.get("yf.lookedMig", false)){
-  state.items.forEach(i => { if ((i.seen || 0) <= state.baseline || state.read.has(i.id)) state.looked.add(i.id); });
-  store.set("yf.looked", [...state.looked].slice(-6000)); store.set("yf.lookedMig", true);
+// Nov 2026: "new" changed from "arrived since you last pressed Refresh" to "not seen yet". Seen tracking starts now:
+// only stories you've tapped count as seen to begin with (a first try marked everything older than the last refresh,
+// which made Hide seen hide the whole feed)
+if (!store.get("yf.lookedMig2", false)){
+  state.looked = new Set(state.read);
+  store.set("yf.looked", [...state.looked].slice(-6000)); store.set("yf.lookedMig2", true); store.set("yf.lookedMig", true);
 }
 // Hide seen uses a snapshot, taken when you change the filter, refresh or come back, so cards never vanish under your thumb
 state.lookSnap = new Set(state.looked);
