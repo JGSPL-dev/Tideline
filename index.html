@@ -2081,8 +2081,12 @@ $("#healthLink").onclick = () => {
   state.attnOpen = true; openMenu("settings"); renderAttention();
   setTimeout(() => { const b = $("#attnBox"); if (b && !b.hidden) b.scrollIntoView({block: "center"}); }, 250);
 };
-document.addEventListener("pointerdown", e => { const pop = $("#statusPop"); if (!pop.hidden && !pop.contains(e.target) && !$("#infoBtn").contains(e.target)) toggleStatusPop(false); });
-document.addEventListener("pointerdown", e => { const box = $("#filterBox"); if (!box.hidden && !box.contains(e.target) && !$("#filterBtn").contains(e.target)) closeFilterBox(); });
+document.addEventListener("pointerdown", e => { const pop = $("#statusPop"); if (!pop.hidden && !pop.contains(e.target) && !$("#infoBtn").contains(e.target)){ toggleStatusPop(false); eatTap(); } });
+// Tapping outside an open filter box or summary only closes it: that tap doesn't also open a post
+let swallowTap = false;
+const eatTap = () => { swallowTap = true; setTimeout(() => { swallowTap = false; }, 700); };
+document.addEventListener("pointerdown", e => { const box = $("#filterBox"); if (!box.hidden && !box.contains(e.target) && !$("#filterBtn").contains(e.target)){ closeFilterBox(); eatTap(); } });
+document.addEventListener("click", e => { if (swallowTap){ swallowTap = false; e.preventDefault(); e.stopPropagation(); } }, true);
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#filterBox").hidden){ e.preventDefault(); closeFilterBox(true); } });
 
 /* ---------- rendering: list ---------- */
