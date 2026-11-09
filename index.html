@@ -2697,6 +2697,8 @@ function attentionList(){
     if (!f.lastFetched) return;
     const its = state.items.filter(i => i.feedId === f.id);
     if (!its.length){ out.push({f, why: "No stories found yet", act: "Check"}); return; }
+    // A YouTube channel that loads fine just hasn't posted lately: that's working, not a problem
+    if (ytChannelOf(f.url)) return;
     const dates = its.map(i => i.date || 0).filter(Boolean).sort((a, b) => b - a);
     const newest = dates[0] || 0;
     // Judge "quiet" against the source's own rhythm: a weekly channel isn't quiet after 5 days
