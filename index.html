@@ -2911,7 +2911,7 @@ function editForm(f){
   const every = everyMin(f);
   urlF.append(url, el("span", "hint", `${platformOf(f)} · checked every ${every >= 60 ? (every % 60 ? (every / 60).toFixed(1) : every / 60) + " h" : every + " min"}${f.everyMin ? " (set by the feed)" : ""}${f.lastFetched ? " · last " + ago(f.lastFetched) : ""}. Changing the link reloads this feed's stories.`));
   if (isTroubled(f)) urlF.append(el("span", "er", plainTrouble(f)));
-  const diag = el("div", "field"); diag.append(el("span", "lbl", "Health"));
+  const diag = el("div", "field ef-health"); diag.append(el("span", "lbl", "Health"));
   const its = state.items.filter(i => i.feedId === f.id);
   const newest = Math.max(0, ...its.map(i => i.date || 0));
   diag.append(el("span", "hint", its.length ? `${its.length} stories saved · newest ${newest ? ago(newest) : "has no date"}` : "No stories saved yet"));
@@ -3024,7 +3024,26 @@ dlg.addEventListener("click", e => { if (e.target === dlg) closeMenu(); });
 // When a box is tapped, keep it in view above the keyboard
 dlg.addEventListener("focusin", e => {
   if (!/INPUT|TEXTAREA|SELECT/.test(e.target.tagName) || /checkbox|radio/.test(e.target.type)) return;
-  setTimeout(() => { if (document.activeElement === e.target) e.target.scrollIntoView({block: "center", behavior: "smooth"}); }, 350);
+  const t = e.target, form = t.closest(".editform");
+  const fit = () => {
+    if (document.activeElement !== t) return;
+    // Editing a source: line the keyboard up just above "Health", so all three boxes stay in view
+    const health = form && form.querySelector(".ef-health");
+    if (health){
+      const vh = window.visualViewport ? window.visualViewport.height : innerHeight;
+      let sc = form.parentElement; while (sc && sc !== document.body && !(sc.scrollHeight > sc.clientHeight && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement;
+      const d = health.getBoundingClientRect().top - (vh - 8);
+      const formTop = form.getBoundingClientRect().top;
+      // never push the top of the form off the screen
+      const move = Math.min(d, formTop - 8);
+      if (sc && sc !== document.body) sc.scrollBy({top: move, behavior: "smooth"}); else window.scrollBy({top: move, behavior: "smooth"});
+      return;
+    }
+    t.scrollIntoView({block: "center", behavior: "smooth"});
+  };
+  setTimeout(fit, 350);
+  // the keyboard may still be opening: fit again once the screen has resized
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", () => setTimeout(fit, 60), {once: true});
 });
 $("#hideShorts").addEventListener("change", e => { state.hideShorts = e.target.checked; store.set("yf.hideShorts", state.hideShorts); state.shown = PAGE; renderChips(); renderList(); });
 $("#videoInApp").addEventListener("change", e => { state.videoInApp = e.target.checked; store.set("yf.videoInApp", state.videoInApp); });
