@@ -4422,14 +4422,21 @@ pod.audio.addEventListener("error", () => { if (pod.item && pod.audio.getAttribu
 ["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "ratechange", "waiting", "playing"].forEach(ev => pod.audio.addEventListener(ev, syncPod));
 pod.audio.addEventListener("ended", () => {
   if (!pod.item) return;
-  const done = pod.item; markPlayed(done.id); syncPod(); refreshPodTags();
+  const done = pod.item; markPlayed(done.id); refreshPodTags();
   // Saved episodes as a queue: the next one down in Saved → Audio
-  if (!state.podQueue) return;
-  const q = state.saved.filter(i => i.audioUrl && !i.videoId).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
-  const at = q.findIndex(i => i.id === done.id);
-  if (at < 0) return;
-  const next = q.slice(at + 1).find(i => !pod.played.has(i.id));
-  if (next){ toast("Up next: " + next.title); playEpisode(next); }
+  let next = null;
+  if (state.podQueue){
+    const q = state.saved.filter(i => i.audioUrl && !i.videoId).sort((a, b) => (a.savedAt || 0) - (b.savedAt || 0));
+    const at = q.findIndex(i => i.id === done.id);
+    if (at >= 0) next = q.slice(at + 1).find(i => !pod.played.has(i.id));
+  }
+  if (next){ toast("Up next: " + next.title); playEpisode(next); if ($("#articlePage").open && $("#articlePage").classList.contains("is-pod")) openPlayer(next); return; }
+  // Nothing next: clear the finished episode away (mini player, lock screen, full-screen player)
+  stopPod();
+  if ($("#articlePage").open && $("#articlePage").classList.contains("is-pod")) $("#articlePage").close();
+  renderMini();
+  if (view.type === "audio" && !view.saved) renderList();
+  toast("Finished: " + done.title);
 });
 // Update the Listen / Continue / Played labels on cards already on screen
 function refreshPodTags(){
