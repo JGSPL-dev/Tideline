@@ -265,6 +265,13 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .open{display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--surface)}
 .open:hover{background:var(--accent-soft)}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.podplay{position:absolute;left:6px;bottom:6px;z-index:2;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+:root[data-layout="magazine"] .podplay{left:10px;bottom:10px;width:46px;height:46px;background:var(--brand-fill)}
+.podplay svg{width:55%;height:55%}
+.podplay.on{background:var(--brand-fill)}
+.dl-icon.on{color:#2b8a3e}
+.cacts.onimg .dl-icon.on{color:#8ce99a}
+.dl-pct{font:700 10.5px var(--ui)}
 .thumb.vid::after{content:"";position:absolute;inset:auto auto 6px 6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M9 7v10l8-5z'/%3E%3C/svg%3E") center/16px no-repeat}
 .more{padding:20px;text-align:center;color:var(--muted);font-size:13px}
 .empty{padding:40px 16px;text-align:center;color:var(--muted)}
@@ -2214,6 +2221,7 @@ function cardEl(it){
     sh.innerHTML = ICON_SHARE;
     sh.onclick = e => { e.preventDefault(); e.stopPropagation(); sharePost(it); };
     acts.append(sv, sh);
+    if (it.audioUrl && !it.videoId && CAN_DOWNLOAD){ const dlb = downloadBtn(it, true); acts.append(dlb); }
   }
   if (mag){ if (flags.childNodes.length) meta.append(flags); if (acts && !hasImg) meta.append(acts); }
   const h = el("h2", "title"); h.append(link);
@@ -2242,6 +2250,12 @@ function cardEl(it){
     };
     img.src = tries[0];
     th.append(img); a.append(th);
+    if (it.audioUrl && !it.videoId){
+      const pb = el("button", "podplay"); pb.type = "button"; pb.dataset.podBadge = it.id;
+      pb.innerHTML = ICONS.play; pb.setAttribute("aria-label", "Play " + it.title);
+      pb.onclick = e => { e.preventDefault(); e.stopPropagation(); playEpisode(it); };
+      th.append(pb);
+    }
     if (mag && acts && hasImg){
       acts.classList.add("onimg"); th.append(acts);
       // The age moves onto the picture too, in its own pill at the top left
@@ -4171,7 +4185,6 @@ function podFoot(it){
       web.onclick = e => { e.stopPropagation(); if (IS_APP){ e.preventDefault(); openOutside(it.link); } };
       foot.append(web);
     }
-    if (CAN_DOWNLOAD) foot.append(downloadBtn(it));
     return foot;
   }
 }
@@ -4209,7 +4222,7 @@ async function downloadEpisode(it){
     let size = 0; try{ size = (await FS().stat({path, directory: "DATA"})).size || 0; }catch{}
     dl.list[it.id] = {path, uri, size, at: Date.now(), title: it.title};
     saveDl();
-    if (!isSaved(it.id)) toggleSave(it);          // keep it, even after it drops out of the feed
+    if (!isSaved(it.id)) toggleSave(it, document.querySelector(`.card[data-id="${CSS.escape(it.id)}"] .cacts .cact`));   // keep it, even after it drops out of the feed
     toast("Downloaded: " + it.title);
   }catch(e){
     try{ await FS().deleteFile({path, directory: "DATA"}); }catch{}
@@ -4226,13 +4239,24 @@ async function deleteDownload(id, quiet){
   if (!quiet) toast("Download removed");
   refreshDlButtons(id); renderDlSummary(); refreshPodTags();
 }
-function downloadBtn(it){
-  const b = el("button", "pod-more dl-btn"); b.type = "button"; b.dataset.dlFor = it.id;
-  b.onclick = e => { e.stopPropagation(); if (dl.busy[it.id] != null) return; isDownloaded(it.id) ? deleteDownload(it.id) : downloadEpisode(it); };
+const ICON_DL = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
+const ICON_DL_DONE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>';
+function downloadBtn(it, asIcon){
+  const b = el("button", asIcon ? "cact dl-icon" : "pod-more dl-btn"); b.type = "button"; b.dataset.dlFor = it.id;
+  b.onclick = e => { e.preventDefault(); e.stopPropagation(); if (dl.busy[it.id] != null) return; isDownloaded(it.id) ? deleteDownload(it.id) : downloadEpisode(it); };
   paintDl(b, it.id); return b;
 }
 function paintDl(b, id){
   const busy = dl.busy[id];
+  if (b.classList.contains("dl-icon")){
+    // Small icon next to Save and Share: arrow, then the percentage, then a tick when it's on the phone
+    if (busy != null) b.innerHTML = `<span class="dl-pct">${busy}%</span>`;
+    else b.innerHTML = isDownloaded(id) ? ICON_DL_DONE : ICON_DL;
+    b.title = busy != null ? "Downloading" : isDownloaded(id) ? "Downloaded (tap to remove)" : "Download for offline listening";
+    b.setAttribute("aria-label", busy != null ? `Downloading, ${busy} percent` : isDownloaded(id) ? "Downloaded. Tap to remove the download" : "Download for offline listening");
+    b.classList.toggle("on", isDownloaded(id));
+    return;
+  }
   b.textContent = busy != null ? `Downloading ${busy}%` : isDownloaded(id) ? "Downloaded ✓ · Remove" : "Download";
   b.setAttribute("aria-label", busy != null ? `Downloading, ${busy} percent` : isDownloaded(id) ? "Downloaded. Tap to remove the download" : "Download for offline listening");
   b.classList.toggle("on", isDownloaded(id));
@@ -4284,6 +4308,11 @@ function syncPod(){
     box.querySelector(".pod-btn.speed").textContent = pod.speed + "×";
     const range = box.querySelector(".pod-range");
     if (mine && d){ range.value = Math.round(t / d * 1000); box.querySelector(".cur").textContent = fmtTime(t); box.querySelector(".dur").textContent = "-" + fmtTime(d - t); range.setAttribute("aria-valuetext", `${fmtTime(t)} of ${fmtTime(d)}`); }
+  });
+  document.querySelectorAll("[data-pod-badge]").forEach(b => {
+    const on = b.dataset.podBadge === cur && playing;
+    b.innerHTML = on ? ICONS.pause : ICONS.play; b.classList.toggle("on", on);
+    b.setAttribute("aria-label", (on ? "Pause " : "Play ") + (b.closest(".card")?.querySelector(".title")?.textContent || "episode"));
   });
   const mini = $("#mini");
   if (pod.item){
