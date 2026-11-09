@@ -3030,18 +3030,16 @@ function feedSub(f){
 }
 // What YourFeed can follow, and what it can't (with the short reason). Shown once to new users, and in Settings → FAQs
 const SUPPORT_YES = [
-  ["Websites, blogs and newsletters", "Anything with an RSS or Atom feed. Paste the site and we'll find it."],
+  ["Websites, blogs and newsletters", "Anything with a public feed. Paste the site and we'll find it."],
   ["YouTube channels", "Search by name, or paste a channel or @handle."],
-  ["Reddit", "Any public subreddit, e.g. r/gunners."],
+  ["Reddit", "Any public subreddit, e.g. r/worldnews."],
   ["Podcasts", "Any show with a public feed, plus paid ones from Patreon, Supercast or Substack."],
-  ["News topics", "Follow a subject, or a site with no feed, through Google News."],
+  ["News topics", "Follow a subject through Google News."],
   ["Bluesky and Mastodon", "Public accounts."]
 ];
 const SUPPORT_NO = [
-  ["X (Twitter)", "No public feeds, and its paid API costs too much to offer."],
-  ["Instagram, Facebook, Threads and TikTok", "They don't offer feeds and block outside apps from reading them."],
-  ["Spotify or Apple exclusive podcasts", "Exclusives are locked inside those apps, with no public feed."],
-  ["Full paywalled articles", "You'll see the headline and preview; the full story opens on the publisher's site."],
+  ["X, Meta and TikTok", "Block outside apps or have no public feeds."],
+  ["Exclusive and paid-for content", "Locked to the content provider."],
   ["A few sites with no feed", "Some publishers don't publish one. We'll offer their Google News version instead."]
 ];
 function supportInfo(){
