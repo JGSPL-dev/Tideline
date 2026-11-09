@@ -665,7 +665,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand-fill)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
         <div class="topacts">
           <button class="btn icon" id="savedBtn" aria-label="Saved posts" aria-pressed="false" title="Saved"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><span class="bcount" id="savedCount" hidden></span></button>
-          <button class="btn icon" id="nowBtn" aria-label="Open the episode that's playing" title="Now playing" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
+          <button class="btn icon" id="nowBtn" aria-label="Listen: open the player or your audio" title="Listen"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
         </div>
       </div>
       <div class="chips" id="chips" role="toolbar" aria-label="Story types"></div>
@@ -2443,10 +2443,14 @@ function renderList(){
   addSentinel(all.length);
 }
 // Episodes you've started and not finished, most recent first
-function continueListening(){
+// Every episode you've started, most recent first
+function startedEpisodes(){
   const pool = new Map([...state.saved, ...state.items].filter(i => i.audioUrl && !i.videoId).map(i => [i.id, i]));
-  // Every episode you've started, most recent first: the latest is on show, the rest drop down
-  const eps = [...pool.values()].filter(i => podStatus(i.id).pos).sort((a, b) => (pod.last[b.id] || 0) - (pod.last[a.id] || 0));
+  return [...pool.values()].filter(i => podStatus(i.id).pos).sort((a, b) => (pod.last[b.id] || 0) - (pod.last[a.id] || 0));
+}
+function continueListening(){
+  // The latest is on show, the rest drop down
+  const eps = startedEpisodes();
   if (!eps.length) return null;
   const box = el("section", "cont"); box.setAttribute("aria-label", "Continue listening");
   box.append(el("h3", null, "Continue listening"));
@@ -4077,7 +4081,13 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
   addEventListener("scroll", check, {passive: true}); lst.addEventListener("scroll", check, {passive: true});
   tt.onclick = () => { window.scrollTo({top: 0, behavior: "smooth"}); lst.scrollTo({top: 0, behavior: "smooth"}); };
 }
-$("#nowBtn").onclick = () => { if (pod.item) openArticle(pod.item); };
+// Play button, always there: the episode that's loaded, else the last one you started (ready to continue), else the Audio feed
+$("#nowBtn").onclick = () => {
+  const it = pod.item || startedEpisodes()[0];
+  if (it){ openArticle(it); return; }
+  view.saved = false; renderStatus();
+  setView("type", "audio");
+};
 $("#savedBtn").onclick = () => {
   if (!view.saved && !state.saved.length){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
   view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
@@ -4330,7 +4340,7 @@ function placePodPanel(){
 // Mini player along the bottom, on every page while an episode is loaded
 function renderMini(){
   const m = $("#mini");
-  const nb = $("#nowBtn"); if (nb){ nb.hidden = !pod.item; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); }
+  const nb = $("#nowBtn"); if (nb){ nb.hidden = false; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); }
   if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
   m.hidden = false; document.body.classList.add("has-mini");
   const f = feedById(pod.item.feedId) || {};
