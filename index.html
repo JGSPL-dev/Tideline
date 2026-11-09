@@ -555,6 +555,20 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 /* menu groups */
 .groups{display:flex;flex-direction:column;gap:12px}
 .attn{background:color-mix(in srgb,#e8590c 9%,var(--surface));border:1px solid color-mix(in srgb,#e8590c 45%,var(--line));border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.support-box{margin-top:12px;border:1px solid var(--line);border-radius:14px;padding:14px;background:var(--surface);display:flex;flex-direction:column;gap:12px}
+.support{display:flex;flex-direction:column;gap:14px}
+.support-sec h4{margin:0 0 6px;font:700 14px var(--ui);color:var(--ink)}
+.support-sec ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px}
+.support-sec li{display:flex;flex-direction:column;gap:1px;padding-left:22px;position:relative;font-size:13.5px;color:var(--muted);line-height:1.4}
+.support-sec li b{color:var(--ink);font-weight:600}
+.support-sec li::before{position:absolute;left:0;top:0;font-weight:800}
+.support-sec.yes li::before{content:"✓";color:var(--ok,#2b8a3e)}
+.support-sec.no li::before{content:"✕";color:var(--muted)}
+.support-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.faq-list{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.faq{border-bottom:1px solid var(--line)}
+.faq summary{cursor:pointer;padding:10px 0;font:600 14px var(--ui);color:var(--ink)}
+.faq p{margin:0 0 10px;font-size:14px;color:var(--muted);line-height:1.5}
 .fnote{display:flex;align-items:center;gap:10px;font-size:14px;font-weight:600}
 details.attn > summary{list-style:none;cursor:pointer}
 details.attn > summary::-webkit-details-marker{display:none}
@@ -793,6 +807,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <ul class="checks" id="connResults" hidden></ul>
       </div>
         </div>
+      </details>
+      <details class="set-sec setfold" id="sf-faq">
+        <summary><span class="sf-t"><h3 id="sh-faq">FAQs</h3><span class="sf-sub">What works, what doesn't, and why</span></span><span class="sf-chev"></span></summary>
+        <div class="set-body" id="faqBody"></div>
       </details>
       <details class="set-sec setfold" id="sf-pol">
         <summary><span class="sf-t"><h3 id="sh-pol">Policies</h3><span class="sf-sub">Privacy and terms</span></span><span class="sf-chev"></span></summary>
@@ -3010,10 +3028,65 @@ function feedSub(f){
   sub.append(el("span", "url", bits.join(" · ")));
   return sub;
 }
+// What YourFeed can follow, and what it can't (with the short reason). Shown once to new users, and in Settings → FAQs
+const SUPPORT_YES = [
+  ["Websites, blogs and newsletters", "Anything with an RSS or Atom feed. Paste the site and we'll find it."],
+  ["YouTube channels", "Search by name, or paste a channel or @handle."],
+  ["Reddit", "Any public subreddit, e.g. r/gunners."],
+  ["Podcasts", "Any show with a public feed, plus paid ones from Patreon, Supercast or Substack."],
+  ["News topics", "Follow a subject, or a site with no feed, through Google News."],
+  ["Bluesky and Mastodon", "Public accounts."]
+];
+const SUPPORT_NO = [
+  ["X (Twitter)", "No public feeds, and its paid API costs too much to offer."],
+  ["Instagram, Facebook, Threads and TikTok", "They don't offer feeds and block outside apps from reading them."],
+  ["Spotify or Apple exclusive podcasts", "Exclusives are locked inside those apps, with no public feed."],
+  ["Full paywalled articles", "You'll see the headline and preview; the full story opens on the publisher's site."],
+  ["A few sites with no feed", "Some publishers don't publish one. We'll offer their Google News version instead."]
+];
+function supportInfo(){
+  const wrap = el("div", "support");
+  const list = (title, rows, cls) => {
+    const sec = el("div", "support-sec " + cls); sec.append(el("h4", null, title));
+    const ul = el("ul");
+    rows.forEach(([name, why]) => { const li = el("li"); li.append(el("b", null, name), el("span", null, why)); ul.append(li); });
+    sec.append(ul); return sec;
+  };
+  wrap.append(list("You can follow", SUPPORT_YES, "yes"), list("Not supported, and why", SUPPORT_NO, "no"));
+  return wrap;
+}
+const FAQS = [
+  ["Why can't YouTube play in the background?", "YouTube's rules don't allow it in other apps. Podcasts play in the background as normal."],
+  ["Where's my data kept?", "On this device only. There's no account. Use Settings → Sources → Export to move your list to another device."],
+  ["Is my paid podcast link safe?", "Yes. Private links are read straight from your phone and never sent to us, or included in reports, shares or exports unless you choose."],
+  ["How are sources put into categories?", "Automatically, from the source's name and recent posts. Change it any time by editing the source."],
+  ["A source stopped updating. What now?", "Most problems fix themselves. If one keeps failing, it shows under Settings → Sources → Source health with a plain reason."]
+];
+function renderFaqs(){
+  const body = $("#faqBody"); if (!body || body.childElementCount) return;
+  body.append(supportInfo());
+  const qs = el("div", "faq-list"); qs.append(el("h4", "set-sub", "Questions"));
+  FAQS.forEach(([q, a]) => { const d = el("details", "faq"); d.append(el("summary", null, q), el("p", null, a)); qs.append(d); });
+  body.append(qs);
+}
 function renderFeedList(){
   syncPrivateRow();
   const box = $("#flist"); box.textContent = "";
-  if (!state.feeds.length){ box.append(el("p", "hint", "No sources yet. Search or paste a link above to add one.")); return; }
+  if (!state.feeds.length){
+    box.append(el("p", "hint", "No sources yet. Search or paste a link above to add one."));
+    // Once only: what you can and can't follow. After that it lives in Settings → FAQs
+    if (!store.get("yf.supportSeen", false)){
+      const sb = el("section", "support-box"); sb.setAttribute("aria-label", "What you can follow");
+      sb.append(supportInfo());
+      const row = el("div", "support-foot");
+      row.append(el("span", "hint", "You'll find this again in Settings → FAQs."));
+      const ok = el("button", "btn primary", "Got it"); ok.type = "button";
+      ok.onclick = () => { store.set("yf.supportSeen", true); sb.remove(); };
+      row.append(ok); sb.append(row); box.append(sb);
+    }
+    return;
+  }
+  if (!store.get("yf.supportSeen", false)) store.set("yf.supportSeen", true);
   const pickRow = (src, dotColor, name, sub) => {
     const pick = el("button", "pick"); pick.type = "button";
     pick.setAttribute("aria-current", String(view.source === src));
@@ -4672,6 +4745,7 @@ function openReport(focusId){
   if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
 }
 document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
+renderFaqs();
 // One settings folder open at a time: opening one folds the rest
 document.querySelectorAll(".setfold").forEach(d => d.addEventListener("toggle", () => {
   if (!d.open) return;
