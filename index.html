@@ -627,6 +627,9 @@ a.rinfo:hover .rtitle{text-decoration:underline}
 a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .rmeta .ext{display:inline-block;vertical-align:-2px;margin-left:4px;opacity:.7}
 .rerr{font-size:12.5px;color:var(--danger);margin-top:4px}
+.rsec-wrap{grid-column:1/-1;padding-left:42px;display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.rsec-chips .chip{font-size:13px;padding:5px 10px}
+.rsec-chips .chip.on{opacity:.6}
 .rdesc{font-size:12.5px;color:var(--muted);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-top:2px}
 .nofeed .rdesc{-webkit-line-clamp:unset;display:block}
 .nofeed .ricon{opacity:.6}
@@ -4073,7 +4076,111 @@ const DIRECTORY = [
   ["ScienceAlert", "https://www.sciencealert.com/feed", "science"],
   ["Universe Today", "https://www.universetoday.com/feed/", "science space astronomy"],
   ["EarthSky", "https://earthsky.org/feed/", "science space nature"],
-  ["STAT", "https://www.statnews.com/feed/", "health medicine science"]
+  ["STAT", "https://www.statnews.com/feed/", "health medicine science"],
+  ["Manchester Evening News", "https://www.manchestereveningnews.co.uk/?service=rss", "news uk local manchester"],
+  ["Liverpool Echo", "https://www.liverpoolecho.co.uk/?service=rss", "news uk local liverpool"],
+  ["Birmingham Live", "https://www.birminghammail.co.uk/?service=rss", "news uk local birmingham"],
+  ["Bristol Live", "https://www.bristolpost.co.uk/?service=rss", "news uk local bristol"],
+  ["WalesOnline", "https://www.walesonline.co.uk/?service=rss", "news uk local wales"],
+  ["Daily Record", "https://www.dailyrecord.co.uk/?service=rss", "news uk scotland"],
+  ["Chronicle Live", "https://www.chroniclelive.co.uk/?service=rss", "news uk local newcastle north east"],
+  ["YorkshireLive", "https://www.examinerlive.co.uk/?service=rss", "news uk local yorkshire"],
+  ["Nottingham Post", "https://www.nottinghampost.com/?service=rss", "news uk local nottingham"],
+  ["Leicester Mercury", "https://www.leicestermercury.co.uk/?service=rss", "news uk local leicester"],
+  ["Belfast Live", "https://www.belfastlive.co.uk/?service=rss", "news uk local belfast northern ireland"],
+  ["MyLondon", "https://www.mylondon.news/?service=rss", "news uk local london"],
+  ["Edinburgh Live", "https://www.edinburghlive.co.uk/?service=rss", "news uk local edinburgh scotland"],
+  ["Glasgow Live", "https://www.glasgowlive.co.uk/?service=rss", "news uk local glasgow scotland"],
+  ["Hull Live", "https://www.hulldailymail.co.uk/?service=rss", "news uk local hull"],
+  ["Stoke-on-Trent Live", "https://www.stokesentinel.co.uk/?service=rss", "news uk local stoke"],
+  ["Plymouth Live", "https://www.plymouthherald.co.uk/?service=rss", "news uk local plymouth devon"],
+  ["Cornwall Live", "https://www.cornwalllive.com/?service=rss", "news uk local cornwall"],
+  ["Kent Live", "https://www.kentlive.news/?service=rss", "news uk local kent"],
+  ["Football.London", "https://www.football.london/?service=rss", "football soccer london arsenal chelsea spurs"],
+  ["The Scotsman", "https://www.scotsman.com/rss", "news uk scotland"],
+  ["The Yorkshire Post", "https://www.yorkshirepost.co.uk/rss", "news uk local yorkshire"],
+  ["News Letter", "https://www.newsletter.co.uk/rss", "news uk northern ireland"],
+  ["TheJournal.ie", "https://www.thejournal.ie/feed/", "news ireland"],
+  ["Los Angeles Times", "https://www.latimes.com/world-nation/rss2.0.xml", "news us world"],
+  ["The Wall Street Journal – World", "https://feeds.a.dj.com/rss/RSSWorldNews.xml", "news world business"],
+  ["Le Monde (English)", "https://www.lemonde.fr/en/rss/une.xml", "news world europe france"],
+  ["The Japan Times", "https://www.japantimes.co.jp/feed/", "news japan asia"],
+  ["The Straits Times – World", "https://www.straitstimes.com/news/world/rss.xml", "news asia singapore world"],
+  ["The Hindu", "https://www.thehindu.com/news/national/feeder/default.rss", "news india"],
+  ["The Times of Israel", "https://www.timesofisrael.com/feed/", "news israel middle east"],
+  ["The Kyiv Independent", "https://kyivindependent.com/rss/", "news ukraine europe"],
+  ["The Sydney Morning Herald", "https://www.smh.com.au/rss/feed.xml", "news australia"],
+  ["Rest of World", "https://restofworld.org/feed/latest", "tech world global"],
+  ["Semafor", "https://www.semafor.com/rss.xml", "news world politics business"],
+  ["Global Voices", "https://globalvoices.org/feed/", "news world"],
+  ["Planet Rugby", "https://www.planetrugby.com/feed", "rugby sport"],
+  ["PlanetF1", "https://www.planetf1.com/feed", "f1 formula one motorsport racing"],
+  ["National Club Golfer", "https://www.nationalclubgolfer.com/feed/", "golf sport"],
+  ["Tennishead", "https://tennishead.net/feed/", "tennis sport"],
+  ["Boxing News", "https://www.boxingnewsonline.net/feed/", "boxing combat sports"],
+  ["MMA Junkie", "https://mmajunkie.usatoday.com/feed", "mma ufc combat sports"],
+  ["Popular Information", "https://popular.info/feed", "newsletter politics us"],
+  ["Slow Boring", "https://www.slowboring.com/feed", "newsletter politics policy"],
+  ["The Free Press", "https://www.thefp.com/feed", "newsletter news culture"],
+  ["Garbage Day", "https://www.garbageday.email/feed", "newsletter internet culture"],
+  ["Platformer", "https://www.platformer.news/rss/", "newsletter tech platforms"],
+  ["Noahpinion", "https://www.noahpinion.blog/feed", "newsletter economics"],
+  ["Astral Codex Ten", "https://www.astralcodexten.com/feed", "newsletter essays science"],
+  ["Letters from an American", "https://heathercoxrichardson.substack.com/feed", "newsletter politics history us"],
+  ["The Pragmatic Engineer", "https://newsletter.pragmaticengineer.com/feed", "newsletter tech software engineering"],
+  ["Lenny's Newsletter", "https://www.lennysnewsletter.com/feed", "newsletter product business"],
+  ["Exponential View", "https://www.exponentialview.co/feed", "newsletter tech ai"],
+  ["One Useful Thing", "https://www.oneusefulthing.org/feed", "newsletter ai"],
+  ["Import AI", "https://importai.substack.com/feed", "newsletter ai tech"],
+  ["Simon Willison", "https://simonwillison.net/atom/everything/", "tech ai blog"],
+  ["Pluralistic", "https://pluralistic.net/feed/", "tech blog"],
+  ["Waxy", "https://waxy.org/feed/", "tech internet culture blog"],
+  ["Hackaday", "https://hackaday.com/blog/feed/", "tech hardware maker diy"],
+  ["Pocket-lint", "https://www.pocket-lint.com/feed/", "tech gadgets reviews"],
+  ["Trusted Reviews", "https://www.trustedreviews.com/feed", "tech gadgets reviews"],
+  ["404 Media", "https://www.404media.co/rss/", "tech journalism"],
+  ["Techmeme", "https://www.techmeme.com/feed.xml", "tech news"],
+  ["GamingBolt", "https://gamingbolt.com/feed", "games gaming"],
+  ["DualShockers", "https://www.dualshockers.com/feed/", "games gaming"],
+  ["Shacknews", "https://www.shacknews.com/feed/rss", "games gaming"],
+  ["Nautilus", "https://nautil.us/feed/", "science essays"],
+  ["Aeon", "https://aeon.co/feed.rss", "essays philosophy science culture"],
+  ["Big Think", "https://bigthink.com/feed/", "science ideas"],
+  ["The Marginalian", "https://www.themarginalian.org/feed/", "books culture essays"],
+  ["Science-Based Medicine", "https://sciencebasedmedicine.org/feed/", "health medicine science"],
+  ["Quartz", "https://qz.com/rss", "business economy"],
+  ["NerdWallet", "https://www.nerdwallet.com/blog/feed/", "finance money personal"],
+  ["City A.M.", "https://www.cityam.com/feed/", "business finance london"],
+  ["Crunchbase News", "https://news.crunchbase.com/feed/", "business startups funding"],
+  ["Half Baked Harvest", "https://www.halfbakedharvest.com/feed/", "food recipes"],
+  ["Gimme Some Oven", "https://www.gimmesomeoven.com/feed/", "food recipes"],
+  ["The Woks of Life", "https://thewoksoflife.com/feed/", "food recipes chinese"],
+  ["Just One Cookbook", "https://www.justonecookbook.com/feed/", "food recipes japanese"],
+  ["David Lebovitz", "https://www.davidlebovitz.com/feed/", "food baking paris"],
+  ["The Truth About Cars", "https://www.thetruthaboutcars.com/feed/", "cars motoring"],
+  ["CarBuzz", "https://carbuzz.com/feed/", "cars motoring"],
+  ["HotCars", "https://www.hotcars.com/feed/", "cars motoring"],
+  ["electrive", "https://www.electrive.com/feed/", "cars electric ev"],
+  ["Gardenista", "https://www.gardenista.com/feed/", "garden gardening home"],
+  ["Remodelista", "https://www.remodelista.com/feed/", "home interiors design"],
+  ["Apartment Therapy", "https://www.apartmenttherapy.com/main.rss", "home interiors"],
+  ["Matador Network", "https://matadornetwork.com/feed/", "travel"],
+  ["Reductress", "https://reductress.com/feed/", "comedy satire funny"],
+  ["The Babylon Bee", "https://babylonbee.com/feed", "comedy satire funny"],
+  ["ClickHole", "https://clickhole.com/feed/", "comedy satire funny"],
+  ["Clash", "https://www.clashmusic.com/feed/", "music"],
+  ["BrooklynVegan", "https://www.brooklynvegan.com/feed/", "music"],
+  ["Mixmag", "https://mixmag.net/rss.xml", "music dance electronic"],
+  ["The Quietus", "https://thequietus.com/feed", "music"],
+  ["Little White Lies", "https://lwlies.com/feed/", "film movies"],
+  ["RogerEbert.com", "https://www.rogerebert.com/feed", "film movies reviews"],
+  ["Digital Spy", "https://www.digitalspy.com/rss/all.xml/", "tv film soaps entertainment"],
+  ["Decider", "https://decider.com/feed/", "tv film streaming"],
+  ["The Art of Manliness", "https://www.artofmanliness.com/feed/", "lifestyle men"],
+  ["Zen Habits", "https://zenhabits.net/feed/", "lifestyle habits wellbeing"],
+  ["Cup of Jo", "https://cupofjo.com/feed/", "lifestyle parenting family"],
+  ["SpaceNews", "https://spacenews.com/feed/", "science space"],
+  ["NASASpaceflight", "https://www.nasaspaceflight.com/feed/", "science space rockets"]
 ];
 // Big publishers that offer no feed at all. Searching for them explains that and offers what works instead:
 // their stories through Google News, or their accounts on Bluesky/Mastodon.
@@ -4095,12 +4202,45 @@ function dirMatch(q, title, extra){
   return sq.length >= 3 && (squash(title).includes(sq) || squash(extra.split(" ")[0]).includes(sq));
 }
 const newsSite = site => `https://news.google.com/rss/search?q=${encodeURIComponent("site:" + site)}&hl=en-GB&gl=GB&ceid=GB:en`;
+// Publishers with many section feeds show as one result, with their sections to pick from
+const PUBLISHERS = [
+  ["The Guardian", u => /theguardian\.com/.test(u), "https://www.theguardian.com/uk/rss", "guardian"],
+  ["BBC Sport", u => /bbci\.co\.uk\/sport/.test(u), "https://feeds.bbci.co.uk/sport/rss.xml", "bbc sport"],
+  ["BBC News", u => /bbci\.co\.uk\/news/.test(u), "https://feeds.bbci.co.uk/news/rss.xml", "bbc news"],
+  ["Sky News", u => /skynews\.com/.test(u), "https://feeds.skynews.com/feeds/rss/home.xml", "sky news"],
+  ["ESPN", u => /(^|\.)espn\.com\/espn/.test(new URL(u).hostname + new URL(u).pathname), "https://www.espn.com/espn/rss/news", "espn"]
+];
+const pubOf = url => PUBLISHERS.find(([, test]) => test(url));
+const sectionName = (title, pub) => title.replace(/^(The Guardian|BBC (News|Sport)|Sky News|ESPN)\s*[–-]\s*/, "").trim() || "Top stories";
+function groupPublishers(q, found){
+  const sq = squash(q), out = [], groups = new Map();
+  found.forEach(r => {
+    const pub = pubOf(r.url); if (!pub){ out.push(r); return; }
+    // Searching for the publisher itself ("guardian", "bbc sport"): all its sections; otherwise only the matching ones
+    let g = groups.get(pub[0]);
+    if (!g){ g = {pub, hits: []}; groups.set(pub[0], g); out.push(g); }
+    g.hits.push(r);
+  });
+  return out.map(x => {
+    if (!x.pub) return x;
+    const [name, test, main, word] = x.pub;
+    const named = squash(word).includes(sq) || sq.includes(squash(word)) || (sq.length >= 3 && squash(name).includes(sq));
+    const all = named ? DIRECTORY.filter(([, u]) => test(u)).map(([title, url]) => ({title, url})) : x.hits;
+    if (all.length === 1) return x.hits[0];
+    const lead = named ? (all.find(r => r.url === main) || all[0]) : x.hits[0];
+    const rest = all.filter(r => r !== lead && r.url !== lead.url);
+    return {title: named ? name : lead.title, url: lead.url, site: new URL(lead.url).hostname.replace(/^www\.|^feeds\./, ""),
+      desc: named ? "Top stories. Or pick sections below." : `${name} section. More ${name} sections below.`,
+      sections: rest.map(r => ({title: sectionName(r.title), url: r.url})).sort((a, b) => a.title.localeCompare(b.title))};
+  });
+}
 function searchDirectory(q){
-  const found = DIRECTORY.filter(([t, url, tags]) => dirMatch(q, t, new URL(url).hostname.replace(/^www\./, "") + " " + tags))
+  let found = DIRECTORY.filter(([t, url, tags]) => dirMatch(q, t, new URL(url).hostname.replace(/^www\./, "") + " " + tags))
     .map(([title, url]) => ({title, url, site: new URL(url).hostname.replace(/^www\./, "")}));
+  found = groupPublishers(q, found);
   // A publisher with no feed: first when you search for it by name ("bbc food"), after the real feeds for a subject ("food")
   for (const [title, site, tags] of NO_FEED.filter(([t, site]) => dirMatch(q, t, site))){
-    const named = squash(title).startsWith(squash(q)) || squash(site).startsWith(squash(q));
+    const sq = squash(q), named = sq.length >= squash(title).length * 0.6 && (squash(title).startsWith(sq) || squash(site).startsWith(sq));
     found[named ? "unshift" : "push"](
       {title, url: "", site, noFeed: true, desc: `${title} doesn't offer a feed, so it can't be added directly. Try its stories through Google News below, or look for its account under Bluesky & Mastodon.`},
       {title: `${title} via Google`, url: newsSite(site), website: `https://news.google.com/search?q=${encodeURIComponent("site:" + site)}`, site: "Google News", desc: `Headlines from ${site}, newest first.`, viaNews: true});
@@ -4420,6 +4560,25 @@ function resultEl(r, showKind){
     }
   };
   li.append(ic, info, b);
+  if (r.sections && r.sections.length){
+    // "N sections": chips to add any of the publisher's section feeds
+    const tog = el("button", "linkbtn rsec-tog", `${r.sections.length} more section${r.sections.length === 1 ? "" : "s"}`); tog.type = "button";
+    tog.setAttribute("aria-expanded", "false");
+    const chips = el("div", "fb-chips rsec-chips"); chips.hidden = true;
+    r.sections.forEach(sec => {
+      const on = state.feeds.some(f => f.url === sec.url);
+      const c = el("button", "chip" + (on ? " on" : ""), (on ? "✓ " : "+ ") + sec.title); c.type = "button"; c.disabled = on;
+      c.setAttribute("aria-label", (on ? "Following " : "Add ") + sec.title);
+      c.onclick = async () => {
+        c.disabled = true; c.textContent = "Adding…";
+        try{ const {feed, count} = await addFeed(sec.url, true, "web"); c.textContent = "✓ " + sec.title; c.classList.add("on"); setMsg(`Added ${feed.title} with ${storyCount(count)}.`); }
+        catch(err){ c.disabled = false; c.textContent = "+ " + sec.title; setMsg(err.message, true); }
+      };
+      chips.append(c);
+    });
+    tog.onclick = () => { chips.hidden = !chips.hidden; tog.setAttribute("aria-expanded", String(!chips.hidden)); tog.textContent = chips.hidden ? `${r.sections.length} more section${r.sections.length === 1 ? "" : "s"}` : "Hide sections"; };
+    const wrap = el("div", "rsec-wrap"); wrap.append(tog, chips); li.append(wrap);
+  }
   return li;
 }
 
