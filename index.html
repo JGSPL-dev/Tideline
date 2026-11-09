@@ -5455,7 +5455,7 @@ $("#importFile").addEventListener("change", async e => {
 // The fixed categories. New sources are sorted into one automatically (people can move them);
 // the words are matched against the source's name and address (strongly) and its recent posts (weakly).
 const INTERESTS = [
-  ["News", "news headlines breaking guardian reuters politics political election government minister parliament war police court"],
+  ["News", "news headlines breaking reuters politics political election government minister parliament war police court"],
   ["Sport", "sport sports espn sky|sports bt|sport tnt|sports nfl nba nhl mlb cycling athletics olympics paralympics snooker darts swimming match"],
   ["Cricket", "cricket ashes test|match wisden ecb ipl t20 odi county|championship hundred wicket wickets batting bowler"],
   ["Rugby", "rugby six|nations premiership|rugby rugby|league super|league all|blacks springboks lions try scrum"],
@@ -5491,8 +5491,10 @@ function categorise(feed, items){
   const weak = " " + (items || []).slice(0, 25).map(i => (i.title || "") + " " + (i.summary || "").slice(0, 160)).join(" ").toLowerCase().replace(/[^a-z0-9&+ -]+/g, " ") + " ";
   const has = (hay, w) => { let n = 0, i = 0; const k = " " + w + " "; while ((i = hay.indexOf(k, i)) >= 0 && n < 3){ n++; i += k.length - 1; } return n; };
   const strongHay = strong.replace(/[^a-z0-9&+ -]+/g, " ");
+  // Our own tags for a directory feed say what it's about: they decide ties like "The Guardian – Cricket" (guardian = News, cricket = Cricket)
+  const tagHay = " " + DIRECTORY.filter(([, u]) => u === feed.url).map(([, , tags]) => tags).join(" ").toLowerCase() + " ";
   // Broad categories count for less, so "BBC Sport – Cricket" goes to Cricket rather than Sport
-  const scores = CAT_WORDS.map(([name, words]) => [name, words.reduce((sc, w) => sc + (has(strongHay, w) ? 4 : 0) + has(weak, w), 0) * (BROAD.has(name) ? 0.6 : 1)]).sort((a, b) => b[1] - a[1]);
+  const scores = CAT_WORDS.map(([name, words]) => [name, words.reduce((sc, w) => sc + (has(strongHay, w) ? 4 : 0) + (has(tagHay, w) ? 3 : 0) + has(weak, w), 0) * (BROAD.has(name) ? 0.6 : 1)]).sort((a, b) => b[1] - a[1]);
   // A clear specific match beats its broad family (Sky Sports Golf → Golf, not Sport)
   let pick = scores;
   if (BROAD.has(scores[0][0])){
