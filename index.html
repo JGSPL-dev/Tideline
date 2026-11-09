@@ -470,6 +470,7 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .attn-row .who b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .attn-row .why{color:var(--muted)}
 .attn-btns{display:flex;gap:4px}
+.lock{display:inline-grid;place-items:center;color:var(--muted);margin-left:5px;vertical-align:-1px}
 .ibtn{width:36px;height:36px;border:1px solid color-mix(in srgb,#e8590c 35%,var(--line));background:var(--surface);color:var(--ink);border-radius:9px;display:grid;place-items:center;cursor:pointer;padding:0}
 .ibtn:hover{background:var(--sunk)}
 .ibtn.danger{background:#c92a2a;border-color:#c92a2a;color:#fff}
@@ -602,7 +603,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
       </form>
-      <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>.</p>
+      <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>. Paid podcast? Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</p>
       <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
       <p class="msg" id="addMsg" aria-live="polite"></p>
       <div class="addfolder" id="addFolder" hidden></div>
@@ -652,6 +653,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <button class="btn" type="button" id="exportBtn">Export sources</button>
           <input type="file" id="importFile" hidden>
         </div>
+        <label class="check" for="exportPrivate" id="exportPrivateRow" hidden>
+          <input type="checkbox" id="exportPrivate">
+          <span><b>Include private feeds</b><br><span class="hint">Paid podcast links contain your personal access code. Only tick this for your own backup, never for a file you'll share.</span></span>
+        </label>
         <p class="msg" id="ioMsg" aria-live="polite"></p>
         <div class="fb-chips" id="ioMissing" hidden></div>
       </section>
@@ -872,7 +877,33 @@ function serviceBase(){
   return /^https:\/\//.test(s) ? s : "";
 }
 // Ask the YourFeed service. Errors come back as {error} with a plain-English reason.
+/* ---------- private (paid) feeds ----------
+   Patreon, Supercast, Substack and the like give each subscriber a personal feed address with an access code in it.
+   Those addresses never leave the phone: no YourFeed service, no reports, no export unless asked. */
+const PRIVATE_HOSTS = /(^|\.)(patreon\.com|supercast\.(com|tech)|supportingcast\.fm|memberful\.com|glow\.fm|podbean\.com\/private|substack\.com|plus\.acast\.com|private\.)/i;
+const SECRET_PARAMS = /^(auth|token|access_?token|key|api_?key|secret|sig|signature|password|pass|pwd|code|uid|private|credential)$/i;
+function isPrivateUrl(raw){
+  let u; try{ u = new URL(raw); }catch{ return false; }
+  if (u.username || u.password) return true;
+  if ([...u.searchParams.keys()].some(k => SECRET_PARAMS.test(k))) return true;
+  if (/\/private\//i.test(u.pathname)) return true;
+  if (/patreon\.com$/i.test(u.hostname) && /^\/rss\//.test(u.pathname)) return true;
+  // Paid-podcast hosts put the subscriber's key in the path (a long random segment)
+  if (PRIVATE_HOSTS.test(u.hostname) && u.pathname.split("/").some(seg => /^[\w-]{20,}(\.\w+)?$/.test(seg) && /\d/.test(seg) && /[a-z]/i.test(seg))) return true;
+  return false;
+}
+const isPrivateFeed = f => !!f && (f.private === true || isPrivateUrl(f.url));
+// An address with its access code blanked out, for anything that might be shared
+function redactUrl(raw){
+  let u; try{ u = new URL(raw); }catch{ return raw; }
+  if (u.username || u.password){ u.username = "•••"; u.password = ""; }
+  for (const k of [...u.searchParams.keys()]) if (SECRET_PARAMS.test(k)) u.searchParams.set(k, "•••");
+  u.pathname = u.pathname.split("/").map(seg => /^[\w-]{20,}(\.\w+)?$/.test(seg) && /\d/.test(seg) && /[a-z]/i.test(seg) ? "•••" + (seg.match(/\.\w+$/) || [""])[0] : seg).join("/");
+  return decodeURI(u.href);
+}
 async function viaService(path, params, ms = 14000){
+  // Private feed addresses are never sent to the service, whatever asks
+  if (Object.values(params || {}).some(v => typeof v === "string" && isPrivateUrl(v))) throw new Error(IS_APP ? "skip" : "Private feeds work in the YourFeed app");
   const base = serviceBase();
   if (!base) throw new Error(IS_APP ? "Not available from your phone" : "The website needs the YourFeed service for this");
   const q = path + "?" + new URLSearchParams(params);
@@ -1216,8 +1247,10 @@ async function loadOneFeed(url, feed, logOut){
     log[key] = e && e.message === "skip" ? {skip: true} : {ok: false, err: String(friendlyNetErr(e).message || "Failed").replace(/\.$/, "")};
     throw e;
   });
+  const priv = isPrivateFeed(feed) || isPrivateUrl(url);
+  if (priv && !IS_APP){ const r = [{k: "direct", ok: false, err: "Private feeds work in the YourFeed app"}]; if (logOut) logOut.routes = r; else feed.routes = r; throw new Error("Private feeds work in the YourFeed app"); }
   const direct = take("direct", feedDirect(url, 12000, feed));
-  const hasService = !!serviceBase();
+  const hasService = !!serviceBase() && !priv;
   const gate = () => IS_APP ? direct.then(r => { if (r.items.length || r.unchanged) throw new Error("skip"); }, () => {}) : Promise.resolve();
   const service = hasService ? take("service", gate().then(() => feedViaService(url, 14000))) : null;
   const routes = service ? [direct, service] : [direct];
@@ -1935,7 +1968,10 @@ function toggleSave(it, btn){
   if (view.saved && !on){ if (!state.saved.length){ view.saved = false; view.type = "all"; saveView(); renderChips(); } renderList(); }
 }
 async function sharePost(it){
-  const url = it.link || it.audioUrl;
+  const f = feedById(it.feedId);
+  // A private feed's episode files carry the access code: only share a public page link
+  const url = isPrivateFeed(f) ? (it.link && !isPrivateUrl(it.link) ? it.link : "") : (it.link || it.audioUrl);
+  if (!url){ toast("This episode is from a private feed, so it has no link to share"); return; }
   const data = {title: it.title, text: it.title, url};
   const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
   try{
@@ -2552,10 +2588,10 @@ const PERMANENT = /isn't an RSS|isn't a feed|web page, not a feed|Didn't send a 
 const isPermanent = f => !!f.error && PERMANENT.test(f.error) && !ytChannelOf(f.url) && !redditJsonUrl(f.url);
 // A source needs you only if it has failed for a day, or failed twice in a way that won't fix itself
 const TROUBLE_AFTER = 24 * 3600000;
-const isTroubled = f => !!f.error && (Date.now() - (f.failingSince || f.lastTried || 0) > TROUBLE_AFTER || (isPermanent(f) && (f.fails || 0) >= 2));
+const isTroubled = f => !!f.error && !(isPrivateFeed(f) && !IS_APP) && (Date.now() - (f.failingSince || f.lastTried || 0) > TROUBLE_AFTER || (isPermanent(f) && (f.fails || 0) >= 2));
 // Self-healing: when a website's feed has moved, look for it again from the site's home page (once a day)
 async function healFeed(f){
-  if (!isPermanent(f) || Date.now() - (f.healTried || 0) < 86400000) return null;
+  if (!isPermanent(f) || isPrivateFeed(f) || Date.now() - (f.healTried || 0) < 86400000) return null;
   f.healTried = Date.now();
   try{
     const res = await resolveInput(new URL(f.url).origin);
@@ -2650,6 +2686,8 @@ function attentionList(){
 function checkNow(f){ refreshOne(f); }
 function feedSub(f){
   const sub = el("span", "sub");
+  if (isPrivateFeed(f)) sub.append(lockEl(), document.createTextNode(" "));
+  if (isPrivateFeed(f) && !IS_APP){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
   if (isTroubled(f)){ sub.append(el("span", "er", "Needs a look")); return sub; }
   const bits = [state.organise === "platform" ? folderOf(f) : platformOf(f)];
   if (f.lastFetched) bits.push("checked " + ago(f.lastFetched));
@@ -2657,6 +2695,7 @@ function feedSub(f){
   return sub;
 }
 function renderFeedList(){
+  syncPrivateRow();
   const box = $("#flist"); box.textContent = "";
   if (!state.feeds.length){ box.append(el("p", "hint", "No sources yet. Search or paste a link above to add one.")); return; }
   const pickRow = (src, dotColor, name, sub) => {
@@ -2787,6 +2826,13 @@ const ATTN_ICONS = {
   remove: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   dismiss: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>'
 };
+// Small padlock for private feeds
+function lockEl(){
+  const s = el("span", "lock"); s.title = "Private feed: only fetched from this device, its link is never shared";
+  s.setAttribute("aria-label", "Private feed");
+  s.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  return s;
+}
 function removeFeed(f){
   state.feeds = state.feeds.filter(x => x.id !== f.id);
   state.items = state.items.filter(i => i.feedId !== f.id);
@@ -3034,6 +3080,7 @@ function cleanTitle(t, url){
 async function addFeed(raw, direct, kind){
   const feed = {id: uid(), url: "", title: "", color: nextColor()};
   if (kind === "bluesky" || kind === "mastodon") feed.kind = "social";
+  if (isPrivateUrl(String(raw).trim())) feed.private = true;
   let p;
   if (direct){
     // From search: the feed address is already known, so load it straight away.
@@ -3045,6 +3092,10 @@ async function addFeed(raw, direct, kind){
       feed.url = res.url;
       p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
     }
+  } else if (feed.private){
+    // A private feed link is used exactly as pasted, straight from the phone: no lookups anywhere else
+    feed.url = String(raw).trim();
+    p = await loadFeed(feed.url, feed);
   } else {
     const res = await resolveInput(raw);
     feed.url = res.url;
@@ -3494,11 +3545,11 @@ $("#addForm").addEventListener("submit", async e => {
   setMsg("");
   if (!isAddress(raw)){ startSearch(raw); return; }
   search.q = ""; renderTopResults();
-  btn.disabled = true; setMsg("Looking for the feed…");
+  btn.disabled = true; setMsg(isPrivateUrl(raw) ? "Private feed: loading it straight from this device…" : "Looking for the feed…");
   try{
     const {feed, count} = await addFeed(raw);
     input.value = ""; btn.textContent = "Add";
-    setMsg(`Added ${feed.title} with ${storyCount(count)}.`);
+    setMsg(`Added ${feed.title} with ${storyCount(count)}.` + (feed.private ? " It's private: only this device fetches it, and its link is left out of reports and exports." : ""));
   }catch(err){
     setMsg(err.message.replace(/\.$/, "") + ".", true);
   }finally{ btn.disabled = false; }
@@ -3968,7 +4019,7 @@ function buildReport(){
     ...Object.entries(causes).sort((a, b) => b[1].length - a[1].length).map(([k, rs]) => `  ${rs.length} × ${k}: ${rs.map(r => r.f.title).join(", ")}`),
     "", "Every source:",
     ...rows.sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status) || byName(a.f, b.f))
-      .map(r => `- ${r.f.title} [${platformOf(r.f)}] ${r.status.toUpperCase()}${r.f.error ? ": " + r.f.error : ""}\n    ${r.its} stories${r.newest ? ", newest " + ago(r.newest) : ""}${r.f.lastFetched ? ", checked " + ago(r.f.lastFetched) : ""}${r.f.fails ? `, ${r.f.fails} failed checks in a row` : ""}\n    ${r.f.url}${routeLine(r.f) ? "\n    routes: " + routeLine(r.f) : ""}`)
+      .map(r => `- ${r.f.title} [${platformOf(r.f)}] ${r.status.toUpperCase()}${r.f.error ? ": " + r.f.error : ""}\n    ${r.its} stories${r.newest ? ", newest " + ago(r.newest) : ""}${r.f.lastFetched ? ", checked " + ago(r.f.lastFetched) : ""}${r.f.fails ? `, ${r.f.fails} failed checks in a row` : ""}\n    ${isPrivateFeed(r.f) ? redactUrl(r.f.url) + " (private, access code hidden)" : r.f.url}${routeLine(r.f) ? "\n    routes: " + routeLine(r.f) : ""}`)
   ];
   return {rows, failing, causes, byPlatform, text: lines.join("\n")};
 }
@@ -4016,14 +4067,15 @@ function openReport(focusId){
   R.rows.forEach(r => {
     const li = el("li");
     li.id = "rp-" + r.f.id;
-    const t = el("div", "t"); t.append(el("span", "hdot" + (r.status === "ok" || r.status === "retrying" ? "" : r.status === "not checked" ? " idle" : " warn")), el("span", null, r.f.title || r.f.url));
+    const t = el("div", "t"); t.append(el("span", "hdot" + (r.status === "ok" || r.status === "retrying" ? "" : r.status === "not checked" ? " idle" : " warn")), el("span", null, r.f.title || redactUrl(r.f.url)));
+    if (isPrivateFeed(r.f)) t.append(lockEl());
     li.append(t, el("span", "d", `${platformOf(r.f)} · ${STATUS_WORDS[r.status]} · ${r.its} stories${r.newest ? ", newest " + ago(r.newest) : ""}${r.f.lastFetched ? " · checked " + ago(r.f.lastFetched) : ""}`));
     if (r.status === "failing") li.append(el("span", "e", plainTrouble(r.f)));
     if (r.f.movedFrom) li.append(el("span", "d", "Found again after its feed moved"));
     // The technical detail: what each route answered last time
     const det = el("details", "rp-det"); det.append(el("summary", null, "Details"));
     if (r.f.error) det.append(el("div", "e", "Last error: " + r.f.error + ((r.f.fails || 0) > 1 ? ` (${r.f.fails} checks in a row)` : "")));
-    det.append(el("div", "d", r.f.url));
+    det.append(el("div", "d", isPrivateFeed(r.f) ? redactUrl(r.f.url) : r.f.url));
     (r.f.routes || []).forEach(x => {
       const what = x.ok ? (x.unchanged ? "no change since last check" : `${x.n} stor${x.n === 1 ? "y" : "ies"}` + (x.newest ? `, newest ${ago(x.newest)}` : "")) : x.skip ? "not needed" : x.slow ? "no answer in time" : x.err;
       det.append(el("div", "rt", `${x.ok ? (x.n ? "✓" : "–") : x.skip || x.slow ? "·" : "✕"} ${ROUTE_NAMES[x.k] || x.k}: ${what}`));
@@ -4065,10 +4117,10 @@ async function ytIdForName(name){
   }catch{ return null; }
 }
 const xmlEsc = t => String(t || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-function exportOpml(){
+function exportOpml(withPrivate){
   const line = f => `      <outline type="rss" text="${xmlEsc(f.title)}" title="${xmlEsc(f.title)}" xmlUrl="${xmlEsc(f.url)}"/>`;
   const groups = {};
-  state.feeds.forEach(f => { const g = folderOf(f); (groups[g] = groups[g] || []).push(f); });
+  state.feeds.filter(f => withPrivate || !isPrivateFeed(f)).forEach(f => { const g = folderOf(f); (groups[g] = groups[g] || []).push(f); });
   const body = Object.keys(groups).sort((a, b) => a === UNSORTED ? 1 : b === UNSORTED ? -1 : a.localeCompare(b)).map(g => {
     const rows = groups[g].sort(byName).map(line);
     if (g === UNSORTED) return rows.map(r => r.slice(2)).join("\n");
@@ -4157,10 +4209,17 @@ async function importSources(text){
   });
   if (added){ await refreshAll(); m.textContent = m.textContent.replace(" Loading their stories…", " Done."); }
 }
+function syncPrivateRow(){ const r = $("#exportPrivateRow"); if (r) r.hidden = !state.feeds.some(isPrivateFeed); }
 $("#exportBtn").onclick = async () => {
   const m = $("#ioMsg"); m.className = "msg";
   if (!state.feeds.length){ m.textContent = "You don't follow any sources yet."; return; }
-  try{ const how = await deliverFile("yourfeed-sources.opml", exportOpml(), "text/x-opml"); m.textContent = `${state.feeds.length} sources ${how === "shared" ? "ready to save or send" : "saved to your downloads"}.`; }
+  const priv = state.feeds.filter(isPrivateFeed).length, withPrivate = priv && $("#exportPrivate").checked;
+  const n = state.feeds.length - (priv && !withPrivate ? priv : 0);
+  try{
+    const how = await deliverFile("yourfeed-sources.opml", exportOpml(withPrivate), "text/x-opml");
+    m.textContent = `${n} sources ${how === "shared" ? "ready to save or send" : "saved to your downloads"}.` +
+      (priv ? (withPrivate ? ` Includes ${priv} private feed${priv === 1 ? "" : "s"} with your access code: keep this file to yourself.` : ` ${priv} private feed${priv === 1 ? " was" : "s were"} left out.`) : "");
+  }
   catch(e){ if (!/cancel/i.test(String(e && e.message))){ m.className = "msg err"; m.textContent = "Couldn't export: " + (e && e.message || "unknown error"); } }
 };
 $("#importBtn").onclick = () => $("#importFile").click();
