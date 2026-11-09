@@ -3656,7 +3656,23 @@ function cleanTitle(t, url){
     const name = (m ? m[1] : t.replace(/^@/, "").replace(/\.bsky\.social$/, "")).trim();
     return /^bs\//.test(name) ? name : "bs/" + name;
   }
-  return t;
+  // A site in our list: use the name we know it by
+  const dir = DIRECTORY.find(([, u]) => u === url);
+  if (dir) return dir[0];
+  return /youtube\.com|reddit\.com|news\.google\.com/.test(url || "") ? t : tidySiteName(t);
+}
+// Website feeds often carry filler around the name: "IGN All", "Latest updates - X", "X | RSS Feed", "Home | X", "X: Latest News"
+const FILLER = "(?:all(?: (?:posts|articles|news|content|stories|the latest))?|latest(?: (?:news|articles|posts|stories|updates|headlines|content|from))?|recent (?:posts|articles|news)|rss(?: feed)?|atom(?: feed)?|news ?feed|feed|home(?: ?page)?|homepage|front page|articles|posts|blog posts|top stories|headlines|updates|everything)";
+function tidySiteName(t){
+  const orig = t = (t || "").trim();
+  for (let n = 0; n < 4; n++){
+    const before = t;
+    t = t.replace(new RegExp("\\s*(?:[-–—|:»·]\\s*)?" + FILLER + "\\s*$", "i"), "").trim();
+    t = t.replace(new RegExp("^" + FILLER + "\\s*(?:[-–—|:»·]|from|on)\\s*", "i"), "").trim();
+    t = t.replace(/\s*[-–—|:»·]\s*$/, "").replace(/^\s*[-–—|:»·]\s*/, "").trim();
+    if (t === before) break;
+  }
+  return t.length >= 2 ? t : orig;
 }
 async function addFeed(raw, direct, kind){
   const feed = {id: uid(), url: "", title: "", color: nextColor()};
@@ -5409,6 +5425,11 @@ if (IS_APP){
 initDownloads();
 // Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
 state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
+// Nov 2026: strip filler from website names ("IGN All" → "IGN"), once
+if (!store.get("yf.tidyNames", false)){
+  state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; });
+  store.set("yf.tidyNames", true); save();
+}
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();
 // Opening the app only fetches if the last update is over 10 minutes old (or there's nothing to show yet)
 if (state.forceRefresh) state.feeds.forEach(f => { f.lastFetched = 0; });
