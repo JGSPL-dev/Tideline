@@ -1952,8 +1952,8 @@ if (!store.get("yf.lookedMig2", false)){
 // Hide seen uses a snapshot, taken when you change the filter, refresh or come back, so cards never vanish under your thumb
 state.lookSnap = new Set(state.looked);
 const snapLooked = () => { state.lookSnap = new Set(state.looked); };
-// A card counts as seen once it's mostly on screen (or fills half the screen) for a second
-const LOOK_MS = 1000;
+// A card counts as seen once it's mostly on screen (or fills half the screen) for two seconds
+const LOOK_MS = 2000;
 let lookSave = 0;
 const lookTimers = new Map();
 function markLooked(id){
