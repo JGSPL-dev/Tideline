@@ -2899,8 +2899,16 @@ function renderAttention(){
    the website's favicon, all loaded straight from the publisher. Falls back to the coloured dot. */
 function iconCandidates(f){
   const out = [];
-  if (f.icon && !f.iconFailed) out.push(f.icon);
   const nq = newsQuery(f.url);
+  // Websites: always the site's own tab icon (favicon) first; a feed's logo is often a wide banner
+  if (platformOf(f) === "Websites" && !f.audio && !(isPrivateFeed(f) && !f.icon)){
+    let base = "";
+    try{ base = new URL(nq && nq.site ? "https://" + nq.site.split("/")[0] : (f.site || f.url)).origin; }catch{}
+    if (base) out.push(base + "/favicon.ico", base + "/apple-touch-icon.png");
+    if (f.icon && !f.iconFailed) out.push(f.icon);
+    return out;
+  }
+  if (f.icon && !f.iconFailed) out.push(f.icon);
   if (nq && !nq.site) return out;                               // Google News topics: keep the dot (no calls to Google)
   if (isPrivateFeed(f) && !f.icon) return out;                  // nothing extra for private feeds
   if (!ytChannelOf(f.url) && !redditJsonUrl(f.url) && !/bsky\.app/.test(f.url)){
