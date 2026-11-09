@@ -119,6 +119,7 @@ body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .empty.welcome{text-align:left;padding:28px 12px;display:flex;flex-direction:column;gap:12px;align-items:flex-start}
 .empty.welcome h3{font:800 30px/1.1 "Bricolage Grotesque",var(--ui);letter-spacing:-.02em;margin:0;color:var(--ink)}
 .empty.welcome .accent{color:var(--brand)}
+.empty.welcome p.curated{font:700 18px/1.2 "Bricolage Grotesque",var(--ui);color:var(--ink);margin-top:-4px}
 .empty.welcome p{margin:0;font-size:16px;line-height:1.5;max-width:46ch}
 .onboard{padding:0}
 .ob-inner{max-width:520px;margin:0 auto;padding:28px 18px calc(28px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:14px}
@@ -2389,7 +2390,9 @@ function renderList(){
     else if (!state.feeds.length){
       e.classList.add("welcome");
       const h = el("h3"); h.append(document.createTextNode("Everything you follow, "), el("span", "accent", "in one feed."));
-      e.append(h, el("p", null, "Websites, YouTube channels, subreddits, podcasts, news topics, Bluesky and Mastodon, side by side in one simple feed. No account and no tracking: your list stays on your device."));
+      e.append(h, el("p", "curated", "Curated by you."),
+        el("p", null, "You decide what you see. No recommended posts and no AI-generated channels you never followed: your feed is 100% yours."),
+        el("p", null, "Search for websites, YouTube channels, social feeds, podcasts and news topics, and see them side by side in one simple feed. No account and no tracking: your list stays on your device."));
       const go = el("button", "btn primary", "Get started"); go.type = "button"; go.onclick = startOnboarding;
       const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); setTimeout(() => $("#importBtn").focus(), 250); };
       const row = el("div", "iorow"); row.append(go, imp); e.append(row);
