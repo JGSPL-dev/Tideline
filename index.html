@@ -438,6 +438,33 @@ dialog.fullpage header{gap:10px}
 .pod-t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px}
 .pod-t.dur{text-align:right}
 .pod-range{width:100%;accent-color:var(--brand);height:28px;margin:0}
+/* Full-screen episode player */
+.article-page.is-pod .art-body{display:flex;justify-content:center}
+.pp{width:100%;max-width:520px;margin:0 auto;padding:8px 16px 40px;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;text-align:center;gap:10px}
+.pp-art{width:min(78vw,340px);aspect-ratio:1;border-radius:18px;overflow:hidden;background:var(--sunk);box-shadow:0 14px 36px rgba(0,0,0,.28);display:grid;place-items:center;margin:6px 0 10px}
+.pp-art img{width:100%;height:100%;object-fit:cover;display:block}
+.pp-art .sicon{border-radius:24px}
+.pp-show{display:flex;align-items:center;gap:8px;font:600 14px var(--ui);color:var(--muted)}
+.pp-title{margin:0;font:700 clamp(21px,5.6vw,27px)/1.2 var(--head);letter-spacing:-.01em}
+.pp-when{font-size:13px;color:var(--muted)}
+.art-body .pod-panel.pp-ctl{width:100%;border:0;background:none;padding:6px 0 0;margin:0}
+.pp-ctl .pod-bar{order:-1;margin-bottom:12px}
+.pp-ctl .pod-btn.main{width:76px;height:76px}
+.pp-ctl .pod-btn.main svg{width:30px;height:30px}
+.pp-ctl .pod-btn.back svg,.pp-ctl .pod-btn.fwd svg{width:30px;height:30px}
+.pp-ctl .pod-row{gap:26px;position:relative}
+.pp-ctl .pod-btn.speed{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+.pp-acts{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:6px;width:100%}
+.pp-act,.pp-acts .pp-dl{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:72px;padding:10px 8px;border:1px solid var(--line);border-radius:14px;background:var(--surface);color:var(--ink);font:600 12.5px var(--ui);cursor:pointer;text-decoration:none}
+.pp-act svg{width:22px;height:22px}
+.pp-act[aria-pressed="true"]{color:var(--brand)}
+.pp-acts .pp-dl{justify-content:center;max-width:150px}
+.pp-notes{width:100%;text-align:left;border-top:1px solid var(--line);margin-top:14px;padding-top:14px}
+.pp-notes h2{margin:0 0 6px;font:700 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.pp-notes-text{font-size:15px;line-height:1.55;margin:0}
+.pp-notes-text.clamp{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
+.pp-now{font:700 13px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+#nowBtn.playing{color:var(--brand)}
 .pod-foot{display:flex;flex-wrap:wrap;gap:2px 16px;align-items:center;position:relative;z-index:2;margin-top:4px}
 .pod-foot .pod-more{font-size:13px;padding:6px 0}
 .dl-btn.on{color:var(--ok, #2b8a3e);text-decoration:none}
@@ -611,6 +638,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand-fill)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
         <div class="topacts">
           <button class="btn icon" id="savedBtn" aria-label="Saved posts" aria-pressed="false" title="Saved"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><span class="bcount" id="savedCount" hidden></span></button>
+          <button class="btn icon" id="nowBtn" aria-label="Open the episode that's playing" title="Now playing" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z"/></svg></button>
         </div>
       </div>
       <div class="chips" id="chips" role="toolbar" aria-label="Story types"></div>
@@ -3994,6 +4022,7 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
   addEventListener("scroll", check, {passive: true}); lst.addEventListener("scroll", check, {passive: true});
   tt.onclick = () => { window.scrollTo({top: 0, behavior: "smooth"}); lst.scrollTo({top: 0, behavior: "smooth"}); };
 }
+$("#nowBtn").onclick = () => { if (pod.item) openArticle(pod.item); };
 $("#savedBtn").onclick = () => {
   if (!view.saved && !state.saved.length){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
   view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
@@ -4228,6 +4257,7 @@ function placePodPanel(){
 // Mini player along the bottom, on every page while an episode is loaded
 function renderMini(){
   const m = $("#mini");
+  const nb = $("#nowBtn"); if (nb){ nb.hidden = !pod.item; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); }
   if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
   m.hidden = false; document.body.classList.add("has-mini");
   const f = feedById(pod.item.feedId) || {};
@@ -4350,6 +4380,8 @@ function articleFragment(html, base){
   return wrap;
 }
 async function openArticle(it){
+  if (it.audioUrl && !it.videoId) return openPlayer(it);
+  $("#articlePage").classList.remove("is-pod"); $("#artOpen").style.display = "";
   const page = $("#articlePage"), body = $("#artBody");
   const f = feedById(it.feedId) || {};
   const src = el("div", "meta"); const dot = iconFor(feedById(it.feedId) || f, 16);
@@ -4383,6 +4415,49 @@ async function openArticle(it){
   if (it.link){
     const o = el("p", "orig"); const a = el("a", null, "Read on " + new URL(it.link).hostname.replace(/^www\./, "")); a.href = it.link; a.target = "_blank"; a.rel = "noopener noreferrer"; o.append(a); r.append(o);
   }
+}
+// Episodes open as a full-screen player: artwork, title, controls, then Save / Share / Download / Website, then the notes
+function openPlayer(it){
+  const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
+  page.classList.add("is-pod");
+  $("#artSrc").replaceChildren(el("span", "pp-now", pod.item && pod.item.id === it.id ? "Now playing" : "Episode"));
+  $("#artOpen").style.display = "none";
+  body.textContent = "";
+  const pp = el("div", "pp");
+  const art = el("div", "pp-art");
+  const pic = it.image || f.icon;
+  if (pic){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = hiRes(pic); im.onerror = () => { im.remove(); art.append(srcIcon(f, 120)); }; art.append(im); }
+  else art.append(srcIcon(f, 120));
+  const show = el("div", "pp-show"); show.append(iconFor(f, 18), el("span", null, f.title || it.feedTitle || ""));
+  const h = el("h1", "pp-title", it.title);
+  const when = el("div", "pp-when", [it.date ? new Date(it.date).toLocaleDateString(undefined, {weekday: "short", day: "numeric", month: "short", year: "numeric"}) : "", itemDur(it) ? minsLen(itemDur(it)) : ""].filter(Boolean).join(" · "));
+  const ctl = podControls(it, false); ctl.classList.add("pp-ctl");
+  // Save, Share, Download, Website
+  const acts = el("div", "pp-acts");
+  const act = (label, svg, fn, pressed) => { const b = el("button", "pp-act"); b.type = "button"; b.innerHTML = svg; b.append(el("span", null, label)); if (pressed != null) b.setAttribute("aria-pressed", String(pressed)); b.onclick = () => fn(b); return b; };
+  const sv = act(isSaved(it.id) ? "Saved" : "Save", isSaved(it.id) ? ICON_SAVED : ICON_SAVE, b => {
+    toggleSave(it); const on = isSaved(it.id);
+    b.innerHTML = on ? ICON_SAVED : ICON_SAVE; b.append(el("span", null, on ? "Saved" : "Save")); b.setAttribute("aria-pressed", String(on));
+  }, isSaved(it.id));
+  acts.append(sv, act("Share", ICON_SHARE, () => sharePost(it)));
+  if (CAN_DOWNLOAD){ const d = downloadBtn(it); d.classList.add("pp-dl"); acts.append(d); }
+  if (it.link && it.link !== it.audioUrl && !(isPrivateFeed(f) && isPrivateUrl(it.link))){
+    acts.append(act("Website", '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>', () => IS_APP ? openOutside(it.link) : window.open(it.link, "_blank", "noopener")));
+  }
+  pp.append(art, show, h, when, ctl, acts);
+  // Episode notes, folded to a few lines
+  const notes = (it.summary || "").trim();
+  if (notes){
+    const n = el("section", "pp-notes"); n.append(el("h2", null, "Episode notes"));
+    const p = el("p", "pp-notes-text clamp", notes); n.append(p);
+    if (notes.length > 260){ const more = el("button", "linkbtn", "Show more"); more.type = "button"; more.onclick = () => { const c = p.classList.toggle("clamp"); more.textContent = c ? "Show more" : "Show less"; }; n.append(more); }
+    pp.append(n);
+    if (it.full) artDB.get(it.id).then(saved => { if (saved && saved.html && p.isConnected){ const c = articleFragment(saved.html, saved.base || it.link); p.replaceChildren(...c.childNodes); } }).catch(() => {});
+  }
+  body.append(pp);
+  if (!page.open) page.showModal();
+  syncPod();
+  body.scrollTop = 0;
 }
 $("#artBack").onclick = () => $("#articlePage").close();
 $("#articlePage").addEventListener("close", () => { $("#artBody").textContent = ""; });   // the episode keeps playing in the mini player
