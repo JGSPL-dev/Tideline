@@ -176,6 +176,21 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .toprow{display:grid;grid-template-columns:44px 1fr 44px;align-items:center}
 .toprow > .btn:last-child{justify-self:end}
 .toprow{grid-template-columns:92px 1fr 92px}
+/* Refresh with the health light in its middle, and an (i)/(!) box that opens the summary */
+.statusrow{position:relative}
+.refreshdot{position:relative;width:42px;height:42px;flex:none}
+.refreshdot svg{width:24px;height:24px}
+.refreshdot .hdot{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px 0 0 -4px;box-shadow:0 0 0 2px var(--surface)}
+.refreshdot.spin .hdot{opacity:.35}
+.infobtn{width:26px;height:26px;flex:none;border-radius:7px;border:0;background:#2b8a3e;color:#fff;font:800 14px/1 Georgia,serif;font-style:italic;display:grid;place-items:center;cursor:pointer;padding:0}
+.infobtn.warn{background:#e8590c;font:900 15px/1 var(--ui);font-style:normal}
+.infobtn.idle{background:var(--muted)}
+.statusgap{flex:1}
+.statuspop{position:absolute;left:0;top:calc(100% + 4px);z-index:30;width:min(320px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 26px rgba(14,18,23,.18);padding:10px 12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.statuspop[hidden]{display:none}
+.pop-issues{margin:4px 0 0;padding-left:18px;width:100%;font-size:13px;color:var(--muted)}
+.pop-issues b{color:var(--ink);font-weight:700}
+.statuspop .status{font-size:13.5px;color:var(--ink);display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .topacts{display:flex;gap:6px;justify-self:end}
 .brandtext{display:flex;flex-direction:column;align-items:flex-start;gap:2px}
 .byline{font:600 10.5px/1 var(--ui);letter-spacing:.02em;color:var(--muted);padding-left:1px}
@@ -596,14 +611,17 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand-fill)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
         <div class="topacts">
           <button class="btn icon" id="savedBtn" aria-label="Saved posts" aria-pressed="false" title="Saved"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><span class="bcount" id="savedCount" hidden></span></button>
-          <button class="btn icon" id="refresh" aria-label="Refresh feeds" title="Refresh">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
-          </button>
         </div>
       </div>
       <div class="chips" id="chips" role="toolbar" aria-label="Story types"></div>
       <div class="statusrow">
-        <button type="button" class="status" id="status" aria-live="polite" title="Show your sources"></button>
+        <button type="button" class="btn icon refreshdot" id="refresh" aria-label="Refresh feeds" title="Refresh">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          <span class="hdot" id="healthDot"></span>
+        </button>
+        <button type="button" class="infobtn" id="infoBtn" aria-expanded="false" aria-controls="statusPop" aria-label="How your sources are doing">i</button>
+        <span class="statusgap"></span>
+        <div class="statuspop" id="statusPop" role="status" hidden><div class="status" id="status" aria-live="polite"></div><button type="button" class="linkbtn" id="healthLink" hidden>Open Source health</button></div>
         <button type="button" class="fpill" id="activeFilter" hidden></button>
         <button type="button" class="btn filterbtn" id="filterBtn" aria-expanded="false" aria-controls="filterBox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter<span class="fcount" id="filterCount" hidden></span></button>
       </div>
@@ -1849,6 +1867,7 @@ function updateChipFades(){
   c.classList.toggle("fade-r", c.scrollLeft + c.clientWidth < c.scrollWidth - 4);
 }
 function renderStatus(){
+  paintHealth();
   const s = $("#status"); s.textContent = "";
   if (view.saved){ s.append(el("span", "savedhead", `Saved · ${state.saved.length} post${state.saved.length === 1 ? "" : "s"}, kept until you remove them`)); return; }
   if (state.busy){ s.append(el("span", "hdot idle"), document.createTextNode("Checking for new stories…")); return; }
@@ -1863,7 +1882,31 @@ function renderStatus(){
     const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
   } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
+  // With problems, name them (plain words); the full detail is in Source health
+  const issues = troubled.filter(f => !f.dismissed);
+  if (issues.length){
+    const ul = el("ul", "pop-issues");
+    issues.slice(0, 4).forEach(f => { const li = el("li"); li.append(el("b", null, f.title || "A source"), document.createTextNode(" " + plainTrouble(f))); ul.append(li); });
+    if (issues.length > 4) ul.append(el("li", null, `and ${issues.length - 4} more`));
+    s.append(ul);
+  }
   // YouTube pauses and backup routes fix themselves: they're in Source health, not here
+}
+// The light in the refresh button and the (i)/(!) box beside it
+function paintHealth(){
+  const dot = $("#healthDot"), ib = $("#infoBtn"), link = $("#healthLink");
+  const bad = state.feeds.filter(f => isTroubled(f) && !f.dismissed).length;
+  const idle = state.busy || !state.feeds.length;
+  dot.className = "hdot" + (idle ? " idle" : bad ? " warn" : "");
+  ib.className = "infobtn" + (bad ? " warn" : idle ? " idle" : "");
+  ib.textContent = bad ? "!" : "i";
+  ib.setAttribute("aria-label", bad ? `${bad} source${bad === 1 ? " needs" : "s need"} attention. Show summary` : "All sources working. Show summary");
+  link.hidden = !bad;
+}
+function toggleStatusPop(open){
+  const pop = $("#statusPop"), ib = $("#infoBtn");
+  open = open == null ? pop.hidden : open;
+  pop.hidden = !open; ib.setAttribute("aria-expanded", String(open));
 }
 function renderFilterBar(){
   const pill = $("#activeFilter");
@@ -2003,12 +2046,14 @@ function openFilterBox(){ const box = $("#filterBox"); box.hidden = false; $("#f
 function closeFilterBox(focusBtn){ const box = $("#filterBox"); if (box.hidden) return; box.hidden = true; $("#filterBtn").setAttribute("aria-expanded", "false"); if (focusBtn) $("#filterBtn").focus(); }
 $("#filterBtn").onclick = () => $("#filterBox").hidden ? openFilterBox() : closeFilterBox();
 $("#activeFilter").onclick = () => selectFeed("all");   // clears the source and the type
-// The status line: problems open Settings with Needs attention unfolded
-$("#status").onclick = () => {
-  if (!attentionList().some(a => a.bad)) return openMenu("feeds");
+// (i)/(!) opens the summary; "Open Source health" goes to Settings with Needs attention unfolded
+$("#infoBtn").onclick = e => { e.stopPropagation(); toggleStatusPop(); };
+$("#healthLink").onclick = () => {
+  toggleStatusPop(false);
   state.attnOpen = true; openMenu("settings"); renderAttention();
   setTimeout(() => { const b = $("#attnBox"); if (b && !b.hidden) b.scrollIntoView({block: "center"}); }, 250);
 };
+document.addEventListener("pointerdown", e => { const pop = $("#statusPop"); if (!pop.hidden && !pop.contains(e.target) && !$("#infoBtn").contains(e.target)) toggleStatusPop(false); });
 document.addEventListener("pointerdown", e => { const box = $("#filterBox"); if (!box.hidden && !box.contains(e.target) && !$("#filterBtn").contains(e.target)) closeFilterBox(); });
 document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#filterBox").hidden){ e.preventDefault(); closeFilterBox(true); } });
 
@@ -4677,7 +4722,7 @@ function startOnboarding(){
 const TOUR = [
   ["#manage", "Add your sources here", "Search for websites, YouTube channels, subreddits, podcasts and more, or paste a link."],
   ["#filterBtn", "Choose what you see", "Everything, or just articles, videos, audio or conversations. Pick a category or one feed, how far back, and whether to stack stories."],
-  ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now."]
+  ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now. The light in the middle is green when everything's working; tap the box beside it for details."]
 ];
 function startTour(step = 0){
   document.querySelectorAll(".spot,.spot-tip").forEach(n => n.remove());
