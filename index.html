@@ -640,6 +640,7 @@ a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .check-row.ok .mark{color:var(--cds-ok,#2b8a3e)}
 .check-row.bad .mark{color:var(--danger)}
 .check-row .ms{color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums;text-align:right}
+#dirCheckOut{margin:0;padding-left:16px;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;word-break:break-word;max-height:50vh;overflow:auto}
 .flist .checks li{display:grid;grid-template-columns:18px auto minmax(0,1fr);gap:8px;padding:3px 0;border-top:0;align-items:baseline;font-size:13px}
 .flist .checks .mark{text-align:left}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
@@ -809,6 +810,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <p class="hint">Tests each service from this device, so you can see what's blocked.</p>
         <div><button class="btn" type="button" id="connCheck">Run check</button></div>
         <ul class="checks" id="connResults" hidden></ul>
+      </div>
+      <div class="field">
+        <span class="lbl-strong">Check search list</span>
+        <p class="hint">For testing: tries every site in YourFeed's search list from this device and lists the ones that don't work. Takes a few minutes.</p>
+        <div class="iorow"><button class="btn" type="button" id="dirCheck">Run check</button><button class="btn" type="button" id="dirCheckShare" hidden>Share results</button></div>
+        <p class="msg" id="dirCheckMsg" aria-live="polite"></p>
+        <ul class="checks" id="dirCheckOut" hidden></ul>
       </div>
         </div>
       </details>
@@ -5526,6 +5534,47 @@ document.querySelectorAll(".setfold").forEach(d => d.addEventListener("toggle", 
   document.querySelectorAll(".setfold[open]").forEach(o => { if (o !== d) o.open = false; });
   setTimeout(() => d.scrollIntoView({block: "nearest", behavior: "smooth"}), 30);
 }));
+// Check search list: load every DIRECTORY feed once from this device, report what fails, is empty, or only works via the site's home page
+let dirReport = "";
+$("#dirCheck").onclick = async () => {
+  const btn = $("#dirCheck"), msg = $("#dirCheckMsg"), out = $("#dirCheckOut"), share = $("#dirCheckShare");
+  btn.disabled = true; share.hidden = true; out.hidden = true; out.textContent = "";
+  const rows = [], list = DIRECTORY.map(([name, url]) => ({name, url}));
+  let done = 0;
+  const test = async e => {
+    const t0 = Date.now();
+    try{
+      const p = parseFeed(await fetchFeedText(e.url, 15000), {id: "chk"});
+      const n = (p.items || []).length, newest = Math.max(0, ...(p.items || []).map(i => i.date || 0));
+      e.status = !n ? "empty" : newest && Date.now() - newest > 30 * 86400000 ? "stale" : "ok";
+      e.info = n + " stories" + (newest ? ", newest " + ago(newest) : "");
+    }catch(err){
+      e.status = "fail"; e.info = (err && err.message || String(err)).slice(0, 120);
+      // Would adding it still work, by finding the feed on the site?
+      if (!/news\.google\.com/.test(e.url)){ try{ const r = await resolveInput(new URL(e.url).origin); if (r && r.url){ e.status = "moved"; e.info += " → found " + r.url; } }catch{} }
+    }
+    e.ms = Date.now() - t0; done++;
+    msg.textContent = `Checked ${done} of ${list.length}…`;
+  };
+  // Google News one at a time with a pause (it dislikes bursts); everything else four at a time
+  const gn = list.filter(e => /news\.google\.com/.test(e.url)), rest = list.filter(e => !/news\.google\.com/.test(e.url));
+  await Promise.all([pool(rest, 4, test), (async () => { for (const e of gn){ await test(e); await new Promise(r => setTimeout(r, 900)); } })()]);
+  const by = k => list.filter(e => e.status === k);
+  const head = `YourFeed search list check · ${new Date().toLocaleString()} · ${IS_APP ? "app" : "website"}\n${by("ok").length} working · ${by("fail").length} failing · ${by("moved").length} feed moved · ${by("empty").length} empty · ${by("stale").length} nothing in 30 days`;
+  const lines = ["fail", "moved", "empty", "stale"].flatMap(k => by(k).map(e => `[${k}] ${e.name} — ${e.info} — ${e.url}`));
+  dirReport = head + "\n\n" + (lines.join("\n") || "Everything works.");
+  msg.textContent = head.split("\n")[1];
+  lines.slice(0, 200).forEach(l => out.append(el("li", null, l)));
+  out.hidden = !lines.length; share.hidden = false; btn.disabled = false; btn.textContent = "Run again";
+};
+$("#dirCheckShare").onclick = async () => {
+  const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+  try{
+    if (S && S.share){ await S.share({title: "YourFeed search list check", text: dirReport, dialogTitle: "Share the results"}); return; }
+    if (navigator.share){ await navigator.share({title: "YourFeed search list check", text: dirReport}); return; }
+  }catch(e){ if (/cancel|abort/i.test(String(e && (e.message || e.name)))) return; }
+  try{ await navigator.clipboard.writeText(dirReport); toast("Results copied"); }catch{ toast("Couldn't share the results"); }
+};
 $("#reportBtn").onclick = () => { closeMenu(); openReport(); };
 $("#rpBack").onclick = () => $("#reportPage").close();
 
