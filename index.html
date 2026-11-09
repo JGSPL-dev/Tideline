@@ -2396,9 +2396,31 @@ function placeInline(){
 }
 // Phones: the video plays in the card itself, where its picture was. Tapping the card again stops it.
 function stopCardVideos(except){
-  document.querySelectorAll(".card.vplaying").forEach(c => { if (c === except) return; c.classList.remove("vplaying"); c.querySelector(".vbox")?.remove(); });
+  document.querySelectorAll(".card.vplaying").forEach(c => { if (c === except) return; c.classList.remove("vplaying"); const b = c.querySelector(".vbox"); if (b){ vidSeen.unobserve(b); b.remove(); } });
   if (!except && state.listStale){ state.listStale = false; renderList(); }
 }
+/* ---------- one thing playing at a time ----------
+   YouTube players are told what to do with postMessage (enablejsapi=1) and report back when they start playing. */
+const ytCmd = (f, func) => { try{ f.contentWindow.postMessage(JSON.stringify({event: "command", func, args: []}), "*"); }catch{} };
+function pauseAllVideos(except){ document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed"]').forEach(f => { if (f !== except) ytCmd(f, "pauseVideo"); }); }
+function watchVideo(f){
+  // Ask the player to send its state changes to us
+  f.addEventListener("load", () => { try{ f.contentWindow.postMessage(JSON.stringify({event: "listening", id: "yf", channel: "widget"}), "*"); }catch{} });
+}
+addEventListener("message", e => {
+  if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin)) return;
+  let d; try{ d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; }catch{ return; }
+  const st = d && (d.event === "onStateChange" ? d.info : d.info && d.info.playerState);
+  if (st !== 1) return;                                   // 1 = playing
+  // A video started: pause the podcast and any other video
+  if (pod.item && !pod.audio.paused) pod.audio.pause();
+  const src = [...document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed"]')].find(f => f.contentWindow === e.source);
+  pauseAllVideos(src);
+});
+// Videos in the feed pause once they're scrolled (mostly) out of view
+const vidSeen = new IntersectionObserver(entries => entries.forEach(en => {
+  if (!en.isIntersecting || en.intersectionRatio < 0.25){ const f = en.target.querySelector("iframe"); if (f) ytCmd(f, "pauseVideo"); }
+}), {threshold: [0, 0.25]});
 function playInCard(card, it){
   if (card.classList.contains("vplaying")){ stopCardVideos(); return; }
   stopCardVideos(card);
@@ -2411,7 +2433,9 @@ function playInCard(card, it){
   // In the app, full screen turns the phone to landscape, except for Shorts (upright videos)
   try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!isShortItem(it)); }catch{}
   if (isShortItem(it)) box.classList.add("tall");   // Shorts play upright
+  watchVideo(f);
   box.append(f); card.prepend(box); card.classList.add("vplaying");
+  vidSeen.observe(box);
   requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
 }
 // Full screen: remember which card, and on the way out pause it and put it back where it was on screen
@@ -2479,6 +2503,7 @@ function renderBody(it, body){
     f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1`;
     f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
     f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
+    watchVideo(f);
     box.append(f); body.append(box);
     const r = el("div", "reader");
     r.append(el("h1", null, it.title));
@@ -4251,6 +4276,7 @@ function refreshPodTags(){
   });
 }
 pod.audio.addEventListener("pause", () => setTimeout(refreshPodTags, 50));
+pod.audio.addEventListener("play", () => pauseAllVideos());
 pod.audio.addEventListener("pause", savePos);
 addEventListener("pagehide", savePos);
 $("#miniPlay").onclick = () => { if (pod.item) pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); };
