@@ -9,7 +9,7 @@
 //   GET /youtube/search?q=…       → {channels:[{id, title, avatar}]}
 //   GET /youtube/videos?id=UC…    → {title, videos:[{id, title, date}]} from the channel's Videos page
 //                                   (a fallback for when YouTube's own channel feeds are down)
-//   GET /youtube/latest?id=UC…    → {title, videos:[{id, title, date, dur, short}]} via the official YouTube Data API (dur = seconds; short = it's a YouTube Short)
+//   GET /youtube/latest?id=UC…    → {title, avatar, videos:[{id, title, date, dur, short}]} via the official YouTube Data API (dur = seconds; short = it's a YouTube Short)
 //                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
 //   GET/POST /websub/youtube?id=UC… → YouTube's push hub: confirms subscriptions and delivers new videos
 //                                   (subscribed automatically for channels people follow; needs YF_CACHE + YT_API_KEY)
@@ -82,6 +82,15 @@ async function enrich(videos, env){
   ask.forEach((v, i) => { if (res[i] !== undefined){ v.short = res[i]; learned = true; } });
   videos.forEach(v => { if (v.short === undefined && v.dur > 180){ v.short = false; learned = true; } });
   return learned;
+}
+// The channel's picture, asked once (1 unit) and kept in the shared copy
+async function channelAvatar(id, env){
+  try{
+    const r = await fetchCapped("https://www.googleapis.com/youtube/v3/channels?part=snippet&id=" + id + "&key=" + encodeURIComponent(env.YT_API_KEY), {accept: "application/json"});
+    if (!r.ok) return "";
+    const t = ((JSON.parse(r.text).items || [])[0] || {}).snippet;
+    const th = t && t.thumbnails; return (th && ((th.medium || th.default || th.high || {}).url)) || "";
+  }catch{ return ""; }
 }
 // What the app gets: no placeholders
 const forApp = v => ({id: v.id, title: v.title, date: v.date, ...(v.dur > 0 ? {dur: v.dur} : {}), ...(v.short ? {short: true} : {})});
@@ -294,8 +303,10 @@ async function handle(req, url, origin, env, ctx){
     if (ctx && (!kv || !kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
     if (kv && Date.now() - kv.at < FRESH){
       // Videos YouTube pushed to us arrive without a length or Short flag: fill those in once
-      if (await enrich(kv.videos || [], env)) await kvPut(env, "ytl:" + id, kv, 14 * 86400);
-      const text = JSON.stringify({title: kv.title, videos: (kv.videos || []).map(forApp)});
+      let learned = await enrich(kv.videos || [], env);
+      if (!kv.avatarAt && env && env.YT_API_KEY){ kv.avatar = await channelAvatar(id, env); kv.avatarAt = Date.now(); learned = true; }
+      if (learned) await kvPut(env, "ytl:" + id, kv, 14 * 86400);
+      const text = JSON.stringify({title: kv.title, avatar: kv.avatar || undefined, videos: (kv.videos || []).map(forApp)});
       await edgePut("ytl:" + id, text, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000)));
       return sendJson(origin, text, {"X-YourFeed-Cache": "shared"});
     }
@@ -309,7 +320,7 @@ async function handle(req, url, origin, env, ctx){
     try{ r = await fetchCapped(api, {accept: "application/json"}); j = JSON.parse(r.text); }catch{ r = null; }
     if (!r || !r.ok){
       // API down or today's allowance used up: an older copy is better than nothing
-      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, videos: (kv.videos || []).map(forApp), stale: true}), {"X-YourFeed-Cache": "stale"});
+      if (kv) return sendJson(origin, JSON.stringify({title: kv.title, avatar: kv.avatar || undefined, videos: (kv.videos || []).map(forApp), stale: true}), {"X-YourFeed-Cache": "stale"});
       const reason = j && j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
       return fail(origin, reason === "quotaExceeded" ? 429 : 502, reason === "quotaExceeded" ? "Today's YouTube API allowance is used up" : "YouTube's API answered: " + (reason || (r ? r.status : "no answer")));
     }
@@ -319,13 +330,15 @@ async function handle(req, url, origin, env, ctx){
     // Lengths and Short flags already known come from the shared copy; only new videos are looked up
     const known = new Map(((kv && kv.videos) || []).map(v => [v.id, v]));
     videos.forEach(v => { const k = known.get(v.id); if (k){ if (k.dur) v.dur = k.dur; if (k.short !== undefined) v.short = k.short; } });
-    const learned = await enrich(videos, env);
+    let learned = await enrich(videos, env);
+    let avatar = kv && kv.avatar, avatarAt = kv && kv.avatarAt;
+    if (!avatarAt){ avatar = await channelAvatar(id, env); avatarAt = Date.now(); learned = true; }
     const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || (kv && kv.title) || null;
-    const text = JSON.stringify({title, videos: videos.map(forApp)});
+    const text = JSON.stringify({title, avatar: avatar || undefined, videos: videos.map(forApp)});
     await edgePut("ytl:" + id, text, Math.round(FRESH / 1000));
     // Rewrite the shared copy only when there's a new video (KV writes are the scarcest free resource)
     const top = videos[0] && videos[0].id;
-    if (!kv || kv.top !== top || learned) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
+    if (!kv || kv.top !== top || learned) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, avatar, avatarAt, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
     return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 

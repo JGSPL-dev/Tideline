@@ -953,7 +953,7 @@ async function feedDirect(url, ms = 12000, feed){
   const h = {...ACCEPT_FEED};
   const v = IS_APP && feed && feed.http && feed.http[url];
   const haveStories = feed && state.items.some(i => i.feedId === feed.id);
-  if (v && haveStories){ if (v.etag) h["If-None-Match"] = v.etag; if (v.lm) h["If-Modified-Since"] = v.lm; }
+  if (v && haveStories && feed.iconParsed){ if (v.etag) h["If-None-Match"] = v.etag; if (v.lm) h["If-Modified-Since"] = v.lm; }
   let r;
   try{ r = await fetchWithTimeout(url, ms, h); }catch(e){ throw friendlyNetErr(e); }
   if (r.status === 304 && v && haveStories) return NOT_MODIFIED;
@@ -1154,7 +1154,7 @@ async function ytViaApi(channelId, feed){
   const j = JSON.parse(await viaService("/youtube/latest", {id: channelId}, 15000));
   const list = (j.videos || []).filter(v => /^[\w-]{11}$/.test(v.id || ""));
   if (!list.length) throw new Error("No videos from the YouTube API");
-  return {title: j.title || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: "", dur: v.dur, short: v.short})), everyMin: null};
+  return {title: j.title || "", icon: j.avatar || "", items: list.map(v => makeItem(feed, {title: v.title, link: "https://www.youtube.com/watch?v=" + v.id, videoId: v.id, date: v.date || Date.now(), summary: "", dur: v.dur, short: v.short})), everyMin: null};
 }
 async function loadYouTube(url, feed){
   const channelId = ytChannelOf(url);
@@ -2632,6 +2632,7 @@ async function fetchFeedNow(f){
     f.error = null; f.fails = 0; f.lastFetched = f.lastOk = Date.now(); delete f.failingSince; delete f.dismissed;
     if (p.icon && !/redditstatic\.com/.test(p.icon) && p.icon !== f.icon && !f.iconFixed){ f.icon = p.icon; f.iconFailed = false; }
     if (p.site) f.site = p.site;
+    if (!p.unchanged) f.iconParsed = true;
     if (!f.icon && !f.iconAt) fetchSourceIcon(f);
     f.everyMin = p.everyMin || null;
     if (!f.folder && !f.folderSet && !f.autoCat && p.items.length){ f.autoCat = true; const c = categorise(f, p.items); if (c){ f.folder = makeFolder(c); } }
@@ -3986,7 +3987,8 @@ function podFoot(it){
    Files go in the app's own storage; a downloaded episode is also saved, so it stays after the feed moves on.
    Played downloads are deleted (setting), and everything can be cleared in Settings. */
 const FS = () => IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
-const CAN_DOWNLOAD = !!(IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Filesystem.downloadFile);
+const FT = () => IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FileTransfer;
+const CAN_DOWNLOAD = !!(IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem && (window.Capacitor.Plugins.FileTransfer || window.Capacitor.Plugins.Filesystem.downloadFile));
 const dl = {list: store.get("yf.downloads", {}), busy: {}};
 state.dlWifi = store.get("yf.dlWifi", true); state.dlAutoDelete = store.get("yf.dlAutoDelete", true);
 const saveDl = () => store.set("yf.downloads", dl.list);
@@ -4001,12 +4003,17 @@ async function downloadEpisode(it){
   dl.busy[it.id] = 0; refreshDlButtons(it.id);
   let sub = null;
   try{
-    sub = await FS().addListener("progress", p => {
-      if (p.url !== it.audioUrl || !p.contentLength) return;
-      dl.busy[it.id] = Math.round(p.bytes / p.contentLength * 100); refreshDlButtons(it.id);
-    });
-    await FS().downloadFile({url: it.audioUrl, path, directory: "DATA", recursive: true, progress: true});
+    const onProg = p => { if (!p || !p.contentLength) return; dl.busy[it.id] = Math.round(p.bytes / p.contentLength * 100); refreshDlButtons(it.id); };
+    try{ await FS().mkdir({path: "episodes", directory: "DATA", recursive: true}); }catch{}
     const {uri} = await FS().getUri({path, directory: "DATA"});
+    if (FT()){
+      // Capacitor's File Transfer plugin: streams straight to the file, follows the podcast's redirects
+      sub = await FT().addListener("progress", onProg);
+      await FT().downloadFile({url: it.audioUrl, path: uri, progress: true});
+    } else {
+      sub = await FS().addListener("progress", onProg);
+      await FS().downloadFile({url: it.audioUrl, path, directory: "DATA", recursive: true, progress: true});
+    }
     let size = 0; try{ size = (await FS().stat({path, directory: "DATA"})).size || 0; }catch{}
     dl.list[it.id] = {path, uri, size, at: Date.now(), title: it.title};
     saveDl();
@@ -4014,7 +4021,7 @@ async function downloadEpisode(it){
     toast("Downloaded: " + it.title);
   }catch(e){
     try{ await FS().deleteFile({path, directory: "DATA"}); }catch{}
-    toast("Couldn't download that episode. Check your connection and try again");
+    toast("Couldn't download that episode" + (e && e.message ? ": " + String(e.message).slice(0, 90) : ". Check your connection and try again"));
   }finally{
     delete dl.busy[it.id]; if (sub && sub.remove) sub.remove();
     refreshDlButtons(it.id); renderDlSummary(); refreshPodTags();
