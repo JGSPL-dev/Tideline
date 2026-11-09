@@ -380,6 +380,7 @@ dialog.fullpage header{gap:10px}
 .art-audio{width:100%;margin:0 0 18px}
 .tag-in{border-color:var(--brand);color:var(--brand)}
 .tag-done{background:var(--sunk)}
+.tag-dl{border-color:#2b8a3e;color:#2b8a3e}
 .cont{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px 4px;margin:4px 0 14px}
 .cont h3{margin:0 0 4px;font:700 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .cont-row{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
@@ -387,6 +388,10 @@ dialog.fullpage header{gap:10px}
 .cont-row .pod-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--brand-fill);color:#fff;display:grid;place-items:center;cursor:pointer}
 .cont-row b{display:block;font-size:14.5px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cont-row small{color:var(--muted);font-size:12.5px}
+.cont-toggle{display:block;width:100%;border:0;border-top:1px solid var(--line);background:none;color:var(--accent);font:600 13.5px var(--ui);padding:9px 0 6px;text-align:left;cursor:pointer}
+.cont-toggle::after{content:" ▾"}
+.cont-toggle[aria-expanded="true"]::after{content:" ▴"}
+.cont-row[hidden]{display:none}
 .cont-bar{height:3px;background:var(--sunk);border-radius:2px;margin-top:5px;overflow:hidden}
 .cont-bar i{display:block;height:100%;background:var(--brand-fill)}
 .card.pod[aria-expanded="true"]{background:var(--surface);border-color:var(--line);border-bottom-left-radius:0;border-bottom-right-radius:0}
@@ -403,6 +408,8 @@ dialog.fullpage header{gap:10px}
 .pod-t{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:44px}
 .pod-t.dur{text-align:right}
 .pod-range{width:100%;accent-color:var(--brand);height:28px;margin:0}
+.pod-foot{display:flex;flex-wrap:wrap;gap:4px 16px;align-items:center}
+.dl-btn.on{color:var(--ok, #2b8a3e);text-decoration:none}
 .pod-more{align-self:flex-start;border:0;background:none;color:var(--accent);font:600 14px var(--ui);padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
 .mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
@@ -603,7 +610,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
       </form>
-      <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>. Paid podcast? Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</p>
+      <p class="hint">Search websites, YouTube, Reddit, podcasts, news topics and Bluesky or Mastodon, or paste a site, feed link, <b>r/name</b> or YouTube <b>@name</b>. Paid subscription? Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</p>
       <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
       <p class="msg" id="addMsg" aria-live="polite"></p>
       <div class="addfolder" id="addFolder" hidden></div>
@@ -639,6 +646,12 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <input type="checkbox" id="podQueue">
         <span><b>Play saved episodes one after another</b><br><span class="hint">When an episode you saved finishes, the next one in Saved → Audio starts, in the order you saved them.</span></span>
       </label>
+      <div id="dlSettings" hidden>
+        <p class="hint"><b>Downloads</b> let you listen with no signal. Tap Download under any episode; downloaded episodes are kept in Saved.</p>
+        <div class="iorow" id="dlSummary"><span id="dlCount"></span><button class="btn" type="button" id="dlClear">Delete all downloads</button></div>
+        <label class="check" for="dlWifi"><input type="checkbox" id="dlWifi"><span><b>Download on Wi-Fi only</b></span></label>
+        <label class="check" for="dlAutoDelete"><input type="checkbox" id="dlAutoDelete"><span><b>Delete downloads once played</b><br><span class="hint">Frees up space when you finish an episode.</span></span></label>
+      </div>
       </section>
       <section class="set-sec" aria-labelledby="sh-rep">
         <h3 id="sh-rep">Source health</h3>
@@ -1615,6 +1628,7 @@ function flagsEl(it){
     const st = podStatus(it.id);
     f.append(st.played ? el("span", "tag tag-done", "Played") : st.pos ? el("span", "tag tag-in", "Continue" + (st.left ? ` · ${st.left} left` : "")) : el("span", "tag", "Listen"));
     if (len && !st.pos) f.append(el("span", "tag len", minsLen(len)));
+    if (isDownloaded(it.id)) f.append(el("span", "tag tag-dl", "Downloaded"));
   } else f.append(el("span", "tag", typeOf(it) === "conversations" ? "Comment" : "Read"));
   return f;
 }
@@ -2182,11 +2196,13 @@ function renderList(){
 // Episodes you've started and not finished, most recent first
 function continueListening(){
   const pool = new Map([...state.saved, ...state.items].filter(i => i.audioUrl && !i.videoId).map(i => [i.id, i]));
-  const eps = [...pool.values()].filter(i => podStatus(i.id).pos).sort((a, b) => (pod.last[b.id] || 0) - (pod.last[a.id] || 0)).slice(0, 5);
+  // Every episode you've started, most recent first: the latest is on show, the rest drop down
+  const eps = [...pool.values()].filter(i => podStatus(i.id).pos).sort((a, b) => (pod.last[b.id] || 0) - (pod.last[a.id] || 0));
   if (!eps.length) return null;
   const box = el("section", "cont"); box.setAttribute("aria-label", "Continue listening");
   box.append(el("h3", null, "Continue listening"));
-  eps.forEach(it => {
+  const rows = el("div", "cont-rows");
+  eps.forEach((it, n) => {
     const st = podStatus(it.id), f = feedById(it.feedId) || {};
     const row = el("div", "cont-row");
     const b = el("button", "pod-btn"); b.type = "button"; b.innerHTML = ICONS.play; b.setAttribute("aria-label", "Continue " + it.title);
@@ -2194,8 +2210,16 @@ function continueListening(){
     const txt = el("div"); txt.style.minWidth = "0";
     txt.append(el("b", null, it.title), el("small", null, [f.title || it.feedTitle || "", st.left ? st.left + " left" : ""].filter(Boolean).join(" · ")));
     const bar = el("div", "cont-bar"), fill = el("i"); fill.style.width = st.dur ? Math.min(100, st.pos / st.dur * 100) + "%" : "8%"; bar.append(fill); txt.append(bar);
-    row.append(b, txt); box.append(row);
+    if (n > 0 && !state.contOpen) row.hidden = true;
+    row.append(b, txt); rows.append(row);
   });
+  box.append(rows);
+  if (eps.length > 1){
+    const t = el("button", "cont-toggle"); t.type = "button";
+    const label = () => { t.textContent = state.contOpen ? "Show less" : `${eps.length - 1} more started`; t.setAttribute("aria-expanded", String(!!state.contOpen)); };
+    t.onclick = () => { state.contOpen = !state.contOpen; [...rows.children].forEach((r, i) => { if (i) r.hidden = !state.contOpen; }); label(); };
+    label(); box.append(t);
+  }
   return box;
 }
 function addSentinel(total){
@@ -3004,6 +3028,18 @@ dlg.addEventListener("focusin", e => {
 });
 $("#hideShorts").addEventListener("change", e => { state.hideShorts = e.target.checked; store.set("yf.hideShorts", state.hideShorts); state.shown = PAGE; renderChips(); renderList(); });
 $("#videoInApp").addEventListener("change", e => { state.videoInApp = e.target.checked; store.set("yf.videoInApp", state.videoInApp); });
+function initDownloads(){
+  if (!CAN_DOWNLOAD) return;
+  $("#dlSettings").hidden = false; $("#dlWifi").checked = state.dlWifi; $("#dlAutoDelete").checked = state.dlAutoDelete; renderDlSummary();
+  $("#dlWifi").addEventListener("change", e => { state.dlWifi = e.target.checked; store.set("yf.dlWifi", state.dlWifi); });
+  $("#dlAutoDelete").addEventListener("change", e => { state.dlAutoDelete = e.target.checked; store.set("yf.dlAutoDelete", state.dlAutoDelete); });
+  let armed = false;
+  $("#dlClear").onclick = async () => {
+    if (!armed){ armed = true; $("#dlClear").textContent = "Tap again to delete all"; setTimeout(() => { armed = false; $("#dlClear").textContent = "Delete all downloads"; }, 4000); return; }
+    for (const id of Object.keys(dl.list)) await deleteDownload(id, true);
+    armed = false; $("#dlClear").textContent = "Delete all downloads"; toast("All downloads deleted");
+  };
+}
 $("#podQueue").addEventListener("change", e => { state.podQueue = e.target.checked; store.set("yf.podQueue", state.podQueue); });
 $("#keepBrowser").addEventListener("change", e => {
   state.keepInBrowser = e.target.checked; store.set("tl.keepbrowser", state.keepInBrowser);
@@ -3698,6 +3734,7 @@ function podStatus(id){
   return {pos: t, dur: d, left: left ? (left >= 60 ? `${Math.floor(left / 60)} h ${left % 60} min` : `${left} min`) : ""};
 }
 function markPlayed(id){
+  if (state.dlAutoDelete && dl.list[id]) deleteDownload(id, true);
   pod.played.add(id); delete pod.pos[id];
   store.set("yf.played", [...pod.played].slice(-500)); store.set("tl.podPos", pod.pos);
 }
@@ -3733,7 +3770,9 @@ function playEpisode(it){
   savePos();
   pod.item = it;
   if (pod.played.has(it.id)){ pod.played.delete(it.id); store.set("yf.played", [...pod.played]); }
-  pod.audio.src = it.audioUrl;
+  const local = isDownloaded(it.id) && dlSrc(it.id);
+  pod.audio.src = local || it.audioUrl;
+  if (local) pod.audio.addEventListener("error", () => { if (pod.item === it && pod.audio.src !== it.audioUrl){ delete dl.list[it.id]; saveDl(); pod.audio.src = it.audioUrl; pod.audio.play().catch(() => {}); } }, {once: true});
   pod.audio.playbackRate = pod.speed;
   const resume = pod.pos[it.id] || 0;
   if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
@@ -3793,11 +3832,83 @@ function podControls(it, withDescription){
   bar.append(t1, range, t2);
   box.append(row, bar);
   if (withDescription){
+    const foot = el("div", "pod-foot");
     const more = el("button", "pod-more", "Read description"); more.type = "button";
     more.onclick = e => { e.stopPropagation(); openArticle(it); };
-    box.append(more);
+    foot.append(more);
+    // The episode's page on the podcast's own website
+    if (it.link && !(isPrivateFeed(feedById(it.feedId)) && isPrivateUrl(it.link)) && it.link !== it.audioUrl){
+      const web = el("a", "pod-more", "Website ↗"); web.href = it.link; web.target = "_blank"; web.rel = "noopener";
+      web.onclick = e => { e.stopPropagation(); if (IS_APP){ e.preventDefault(); openOutside(it.link); } };
+      foot.append(web);
+    }
+    if (CAN_DOWNLOAD) foot.append(downloadBtn(it));
+    box.append(foot);
   }
   return box;
+}
+/* ---------- downloads for offline listening (app only) ----------
+   Files go in the app's own storage; a downloaded episode is also saved, so it stays after the feed moves on.
+   Played downloads are deleted (setting), and everything can be cleared in Settings. */
+const FS = () => IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
+const CAN_DOWNLOAD = !!(IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem && window.Capacitor.Plugins.Filesystem.downloadFile);
+const dl = {list: store.get("yf.downloads", {}), busy: {}};
+state.dlWifi = store.get("yf.dlWifi", true); state.dlAutoDelete = store.get("yf.dlAutoDelete", true);
+const saveDl = () => store.set("yf.downloads", dl.list);
+const isDownloaded = id => !!dl.list[id];
+const dlSrc = id => { const d = dl.list[id]; try{ return d && window.Capacitor.convertFileSrc(d.uri); }catch{ return null; } };
+function dlName(it){ let h = 0; for (const c of it.id) h = (h * 31 + c.charCodeAt(0)) >>> 0; return "episodes/" + h.toString(36) + "-" + Date.now().toString(36) + "." + ((it.audioUrl.match(/\.(mp3|m4a|aac|ogg|opus|wav)(\?|$)/i) || [, "mp3"])[1].toLowerCase()); }
+async function downloadEpisode(it){
+  if (!CAN_DOWNLOAD || dl.busy[it.id] || isDownloaded(it.id)) return;
+  const c = navigator.connection;
+  if (state.dlWifi && c && c.type === "cellular"){ toast("Downloads are set to Wi-Fi only (Settings → Podcasts)"); return; }
+  const path = dlName(it);
+  dl.busy[it.id] = 0; refreshDlButtons(it.id);
+  let sub = null;
+  try{
+    sub = await FS().addListener("progress", p => {
+      if (p.url !== it.audioUrl || !p.contentLength) return;
+      dl.busy[it.id] = Math.round(p.bytes / p.contentLength * 100); refreshDlButtons(it.id);
+    });
+    await FS().downloadFile({url: it.audioUrl, path, directory: "DATA", recursive: true, progress: true});
+    const {uri} = await FS().getUri({path, directory: "DATA"});
+    let size = 0; try{ size = (await FS().stat({path, directory: "DATA"})).size || 0; }catch{}
+    dl.list[it.id] = {path, uri, size, at: Date.now(), title: it.title};
+    saveDl();
+    if (!isSaved(it.id)) toggleSave(it);          // keep it, even after it drops out of the feed
+    toast("Downloaded: " + it.title);
+  }catch(e){
+    try{ await FS().deleteFile({path, directory: "DATA"}); }catch{}
+    toast("Couldn't download that episode. Check your connection and try again");
+  }finally{
+    delete dl.busy[it.id]; if (sub && sub.remove) sub.remove();
+    refreshDlButtons(it.id); renderDlSummary(); refreshPodTags();
+  }
+}
+async function deleteDownload(id, quiet){
+  const d = dl.list[id]; if (!d) return;
+  try{ await FS().deleteFile({path: d.path, directory: "DATA"}); }catch{}
+  delete dl.list[id]; saveDl();
+  if (!quiet) toast("Download removed");
+  refreshDlButtons(id); renderDlSummary(); refreshPodTags();
+}
+function downloadBtn(it){
+  const b = el("button", "pod-more dl-btn"); b.type = "button"; b.dataset.dlFor = it.id;
+  b.onclick = e => { e.stopPropagation(); if (dl.busy[it.id] != null) return; isDownloaded(it.id) ? deleteDownload(it.id) : downloadEpisode(it); };
+  paintDl(b, it.id); return b;
+}
+function paintDl(b, id){
+  const busy = dl.busy[id];
+  b.textContent = busy != null ? `Downloading ${busy}%` : isDownloaded(id) ? "Downloaded ✓ · Remove" : "Download";
+  b.setAttribute("aria-label", busy != null ? `Downloading, ${busy} percent` : isDownloaded(id) ? "Downloaded. Tap to remove the download" : "Download for offline listening");
+  b.classList.toggle("on", isDownloaded(id));
+}
+function refreshDlButtons(id){ document.querySelectorAll(`[data-dl-for="${CSS.escape(id)}"]`).forEach(b => paintDl(b, id)); }
+function renderDlSummary(){
+  const box = $("#dlSummary"); if (!box) return;
+  const ids = Object.keys(dl.list), mb = Math.round(ids.reduce((n, id) => n + (dl.list[id].size || 0), 0) / 1048576);
+  $("#dlCount").textContent = ids.length ? `${ids.length} episode${ids.length === 1 ? "" : "s"} downloaded · ${mb} MB` : "No episodes downloaded";
+  $("#dlClear").disabled = !ids.length;
 }
 function togglePodPanel(it){
   pod.open = pod.open === it.id ? null : it.id;
@@ -4361,6 +4472,7 @@ if (IS_APP){
 }
 
 /* ---------- start ---------- */
+initDownloads();
 // Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
 state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
 renderChips(); renderStatus(); renderPaneEmpty(); renderList();
