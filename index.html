@@ -1908,7 +1908,8 @@ function platformOf(f){
   if (/reddit\.com/.test(u)) return "Reddit";
   if (f.audio) return "Podcasts";
   if (/news\.google\.com/.test(u)) return (newsQuery(u) || {}).site ? "Websites" : "News topics";
-  if (f.kind === "social" || /bsky\.app\/profile\/|bsky\.brid\.gy|\/@[\w.-]+\.rss$|\/users\/[\w.-]+\.rss$/.test(u)) return "Social";
+  if (f.kind === "web" || /flipboard\.(com|social)/.test(u)) return "Websites";   // Flipboard magazines are articles
+  if (f.kind === "social" || /bsky\.app\/profile\/|bsky\.brid\.gy|\/@[\w.-]+\.rss$|\/users\/[\w.-]+\.rss$|\/feeds\/c\/[\w.-]+\.xml/.test(u)) return "Social";
   return "Websites";
 }
 const folderOf = f => f.folder && state.folders.includes(f.folder) ? f.folder : UNSORTED;
@@ -1925,6 +1926,7 @@ const TYPE_HELP = {
 function typeOf(it){
   if (it.videoId) return "videos";
   const f = feedById(it.feedId), p = f ? platformOf(f) : "";
+  if (f && f.kind === "video") return "videos";            // PeerTube channels
   if (p === "Reddit" || p === "Social") return "conversations";
   // A website that sometimes posts an episode (e.g. a blog with a weekly podcast) stays in Articles
   if (it.audioUrl && (!f || f.audio)) return "audio";
@@ -3753,7 +3755,9 @@ function tidySiteName(t){
 }
 async function addFeed(raw, direct, kind){
   const feed = {id: uid(), url: "", title: "", color: nextColor()};
-  if (kind === "bluesky" || kind === "mastodon") feed.kind = "social";
+  if (kind === "bluesky" || kind === "mastodon" || kind === "lemmy") feed.kind = "social";
+  if (kind === "peertube") feed.kind = "video";
+  if (kind === "flipboard") feed.kind = "web";
   if (isPrivateUrl(String(raw).trim())) feed.private = true;
   let p;
   if (direct){
@@ -4593,7 +4597,7 @@ const SOURCES = [
   {key: "news",     label: "News topics"},
   {key: "social",   label: "Bluesky & Mastodon"}
 ];
-const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "Google News", bluesky: "Bluesky", mastodon: "Mastodon"};
+const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "Google News", bluesky: "Bluesky", mastodon: "Mastodon", flipboard: "Flipboard", lemmy: "Lemmy", peertube: "PeerTube"};
 const decodeAmp = u => (u || "").replace(/&amp;/g, "&");
 
 async function searchWebAll(q){
@@ -4700,17 +4704,65 @@ async function searchSocial(q){
         if (posts.size) actors = actors.filter(a => (posts.get(a.did) || 0) >= 10);
       }
     }catch{}
-    for (const a of actors) out.push({kind: "bluesky", title: a.displayName || a.handle, url: `https://bsky.app/profile/${a.did}/rss`,
-      website: `https://bsky.app/profile/${a.handle}`, site: "@" + a.handle, desc: htmlToText(a.description || ""), icon: safeUrl(a.avatar || ""), person: true});
+    for (const a of actors){
+      const r = {kind: "bluesky", title: a.displayName || a.handle, url: `https://bsky.app/profile/${a.did}/rss`,
+        website: `https://bsky.app/profile/${a.handle}`, site: "@" + a.handle, desc: htmlToText(a.description || ""), icon: safeUrl(a.avatar || ""), person: true};
+      const h = a.handle || "";
+      if (/\.ap\.brid\.gy$/.test(h)) continue;                                                      // a fediverse account copied in: Mastodon search finds the original
+      if (/\.web\.brid\.gy$/.test(h)){ out.push(directFor(r.title, h.replace(/\.web\.brid\.gy$/, ""))); continue; }   // a website copied in
+      const bot = (a.labels || []).some(l => l.val === "bot") || MIRROR_NOTE.test(r.desc);
+      if (bot && MIRROR_WHAT.test(r.desc + " " + r.title)){ out.push(directFor(r.title, "")); continue; }
+      out.push(r);
+    }
   });
   const masto = getJSON("https://mastodon.social/api/v2/search?type=accounts&limit=15&q=" + encodeURIComponent(q)).then(j => {
-    for (const a of j.accounts || []) if (a.url && !/threads\.(net|com)/i.test(a.url) && (a.statuses_count || 0) >= 10) out.push({kind: "mastodon", title: a.display_name || a.username, url: a.url.replace(/\/$/, "") + ".rss",
-      website: a.url, site: "@" + a.acct + (a.acct.includes("@") ? "" : "@mastodon.social"), desc: htmlToText(a.note || ""),
-      followers: a.followers_count || 0, icon: safeUrl(a.avatar_static || a.avatar || ""), person: true});
+    for (const a of j.accounts || []){
+      if (!a.url || /threads\.(net|com)/i.test(a.url) || (a.statuses_count || 0) < 10) continue;
+      const r = {kind: "mastodon", title: a.display_name || a.username, url: a.url.replace(/\/$/, "") + ".rss",
+        website: a.url, site: "@" + a.acct + (a.acct.includes("@") ? "" : "@mastodon.social"), desc: htmlToText(a.note || ""),
+        followers: a.followers_count || 0, icon: safeUrl(a.avatar_static || a.avatar || ""), person: true};
+      out.push(sortSocial(r, {bot: !!a.bot, group: !!a.group, acct: a.acct || "", name: a.username || ""}));
+    }
   });
   const res = await Promise.allSettled([bsky, masto]);
   if (!out.length && res.every(r => r.status === "rejected")) throw new Error("unreachable");
-  return out;
+  // Mirrors removed, and one result per address
+  const seen = new Set();
+  return out.filter(r => r && !seen.has(r.url) && seen.add(r.url));
+}
+// Social search turns up copies of things we can read directly. Sort each result:
+//  · bridges (brid.gy) and feed-bot copies of a publisher → the publisher itself (our directory, else its website)
+//  · Bluesky accounts bridged into the fediverse → the Bluesky account; fediverse accounts bridged into Bluesky → left to Mastodon search
+//  · Flipboard (kept: its magazines are curated) → filed as articles
+//  · Lemmy communities → their own feed (Conversations); PeerTube channels → their video feed (Videos); WordPress blogs → the blog's feed (Articles)
+const MIRROR_NOTE = /\b(unofficial|automated|auto-?post(s|ed|ing)?|rss|bot|mirror)\b/i, MIRROR_WHAT = /\b(feed|headlines|articles|news|posts|links|stories)\b/i;
+function directFor(name, domain){
+  const sq = squash(name || ""), d = (domain || "").replace(/^www\./, "");
+  const hit = DIRECTORY.find(([n, u]) => (sq && squash(n) === sq) || (d && siteOf(u).split("/")[0] === d));
+  if (hit) return {kind: "web", title: hit[0], url: hit[1], site: siteOf(hit[1]) || "News topic", website: siteOf(hit[1]) ? "https://" + siteOf(hit[1]).split("/")[0] : undefined, desc: "Read straight from the publisher"};
+  if (d && /\./.test(d)) return {kind: "web", title: name || d, url: "https://" + d + "/", site: d, website: "https://" + d + "/", desc: "The website itself, read directly"};
+  return null;
+}
+function sortSocial(r, m){
+  let host = ""; try{ host = new URL(r.website || r.url).hostname.replace(/^www\./, ""); }catch{}
+  const user = (m.acct || "").split("@")[0], acctHost = (m.acct || "").split("@")[1] || host;
+  // Bridges
+  if (/(^|\.)web\.brid\.gy$/.test(acctHost) || /\.web\.brid\.gy$/.test(user)) return directFor(r.title, user.replace(/\.web\.brid\.gy$/, ""));
+  if (/(^|\.)bsky\.brid\.gy$/.test(acctHost)) return {...r, kind: "bluesky", url: `https://bsky.app/profile/${user}/rss`, website: `https://bsky.app/profile/${user}`, site: "@" + user};
+  if (/\.ap\.brid\.gy$/.test(user) || /(^|\.)ap\.brid\.gy$/.test(acctHost)) return null;
+  // Flipboard: kept, filed as articles
+  if (/flipboard\.(com|social)$/.test(acctHost)) return {...r, kind: "flipboard", person: false, site: "Flipboard · @" + m.acct};
+  // Lemmy community
+  const lc = (r.website || "").match(/^https?:\/\/([^/]+)\/c\/([\w.-]+)\/?$/);
+  if (lc && m.group) return {...r, kind: "lemmy", url: `https://${lc[1]}/feeds/c/${lc[2]}.xml?sort=New`, site: `Lemmy · ${lc[2]}@${lc[1]}`, person: false};
+  // PeerTube channel
+  const pt = (r.website || "").match(/^https?:\/\/([^/]+)\/(?:video-channels|c)\/([\w.-]+)\/?$/);
+  if (pt && (m.group || /video-channels/.test(r.website))) return {...r, kind: "peertube", url: `https://${pt[1]}/feeds/videos.xml?videoChannelName=${pt[2]}`, site: `PeerTube · ${pt[2]}@${pt[1]}`, person: false};
+  // WordPress blog on the fediverse
+  if (/\/author\/[\w.-]+\/?$/.test(r.website || "") || (user && user === acctHost)) return {...directFor(r.title, acctHost), desc: r.desc || "The blog itself, read directly"};
+  // A bot reposting a publisher's feed → the publisher
+  if ((m.bot || MIRROR_NOTE.test(r.desc)) && MIRROR_WHAT.test(r.desc + " " + r.title)) return directFor(r.title, "") || null;
+  return r;
 }
 const SEARCHERS = {web: searchWebAll, youtube: searchYouTubeAll, reddit: searchReddit, podcasts: searchPodcasts, news: searchNews, social: searchSocial};
 
