@@ -160,6 +160,7 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .set-sec{display:flex;flex-direction:column;gap:12px}
 .addhint{margin:2px 0 0;padding:0 0 0 16px;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
 .addhint b{color:var(--ink)}
+.addhint li{text-wrap:pretty}
 .set-sec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 0}
 #panelSettings>.setfold{display:block;border-top:1px solid var(--line)}
 #panelSettings>.setfold:first-child{border-top:0}
@@ -720,12 +721,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
     </div>
     <div class="inner" id="panelFeeds" role="tabpanel" aria-labelledby="tab-feeds">
       <form id="addForm" class="addrow" autocomplete="off">
-        <input id="addInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
+        <input id="addInput" type="search" enterkeyhint="search" placeholder="Paste a link or search" aria-label="Search for a feed or paste an address" autocapitalize="off" autocorrect="off">
         <button class="btn primary" id="addBtn" type="submit">Add</button>
       </form>
       <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
       <ul class="addhint">
-        <li>Search, or paste a link, <b>r/name</b> or <b>@channel</b>.</li>
+        <li><b>Paste a link</b> to a site, feed or channel.</li>
+        <li><b>Search</b> for sites, channels, subreddits and more.</li>
         <li><b>Paid subscription?</b> Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</li>
       </ul>
       <p class="msg" id="addMsg" aria-live="polite"></p>
@@ -895,7 +897,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
     </header>
     <div class="inner">
       <form id="spForm" class="addrow" autocomplete="off">
-        <input id="spInput" type="search" enterkeyhint="search" placeholder="Search, or paste a site, feed or channel" aria-label="Search for something to follow" autocapitalize="off" autocorrect="off">
+        <input id="spInput" type="search" enterkeyhint="search" placeholder="Paste a link or search" aria-label="Search for something to follow" autocapitalize="off" autocorrect="off">
         <button class="btn primary" type="submit">Search</button>
       </form>
       <div class="chips sfilters" id="spFilters" role="toolbar" aria-label="Search in"></div>
