@@ -366,11 +366,54 @@ async function handle(req, url, origin, env, ctx){
   if (p === "/discover"){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target) return fail(origin, 400, "Not a public web address");
+    const res = await findFeeds(target, env);
+    return res.error ? fail(origin, res.status, res.error) : json(origin, res);
+  }
+
+  // ---- Community list: websites people paste and add, shared once several different people have added the same one ----
+  // Only the site's address (e.g. bbcgoodfood.com) is sent. Different people are told apart by a short one-way code made
+  // from their connection and the month, kept only until the site is approved, then thrown away.
+  if (p === "/community/add"){
+    const d = communityDomain(url.searchParams.get("domain") || "");
+    if (!d) return fail(origin, 400, "Not a website address");
+    const key = "cm:" + d, rec = (await kvGet(env, key)) || {n: 0, h: []};
+    const need = Number(env.COMMUNITY_MIN) || COMMUNITY_MIN;
+    if (rec.ok && rec.n >= need) return json(origin, {ok: true, listed: true});
+    const month = new Date().toISOString().slice(0, 7);
+    const who = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("yourfeed-community:" + (req.headers.get("CF-Connecting-IP") || "?") + ":" + month + ":" + (env.YT_API_KEY || "")))).slice(0, 10);
+    if (rec.h.includes(who)) return json(origin, {ok: true, listed: false});
+    // First time: check the site really has a feed
+    if (!rec.ok){ const f = await findFeeds(new URL("https://" + d + "/"), env); if (f.error) return fail(origin, 422, "No feed found on that site"); rec.ok = true; }
+    rec.n++; rec.h.push(who); rec.h = rec.h.slice(-30); rec.at = Date.now();
+    const listed = rec.n >= need;
+    if (listed){
+      rec.h = [];                                             // approved: the codes aren't needed any more
+      const idx = (await kvGet(env, "cm:index")) || [];
+      if (!idx.includes(d)){ idx.push(d); await kvPut(env, "cm:index", idx.slice(-5000), 365 * 86400); }
+    }
+    await kvPut(env, key, rec, 180 * 86400);
+    return json(origin, {ok: true, listed});
+  }
+  if (p === "/community/list"){
+    const idx = (await kvGet(env, "cm:index")) || [];
+    return sendJson(origin, JSON.stringify({sites: idx}), {"Cache-Control": "public, max-age=3600"});
+  }
+  return handleRest(req, url, origin, env, ctx);
+}
+const COMMUNITY_MIN = 3;           // different people before a site is shared (raise at launch, e.g. 10, or set COMMUNITY_MIN)
+const COMMUNITY_SKIP = /(^|\.)(google|youtube|youtu|reddit|bsky|bluesky|mastodon|threads|instagram|facebook|tiktok|x|twitter|patreon|supercast|substack|apple|spotify|localhost)\.[a-z.]+$/;
+function communityDomain(raw){
+  const d = String(raw).trim().toLowerCase().replace(/^https?:\/\//, "").replace(/[/?#].*$/, "").replace(/^(www|feeds?|rss)\./, "");
+  if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) || d.length > 100 || /^\d+(\.\d+){3}$/.test(d) || COMMUNITY_SKIP.test(d)) return null;
+  return d;
+}
+async function findFeeds(target, env){
+  {
     const dkey = "disc:" + target.href.toLowerCase();
     const known = await kvGet(env, dkey);
-    if (known) return json(origin, known);
+    if (known) return known;
     const r = await fetchCapped(target.href, {ua: UA_BROWSER});
-    if (r.ok && looksLikeFeed(r.text)){ await kvPut(env, dkey, {feeds: [r.url], title: null}, 7 * 86400); return json(origin, {feeds: [r.url], title: null}); }
+    if (r.ok && looksLikeFeed(r.text)){ await kvPut(env, dkey, {feeds: [r.url], title: null}, 7 * 86400); return {feeds: [r.url], title: null}; }
     const feeds = [];
     let title = null;
     if (r.ok){
@@ -387,10 +430,13 @@ async function handle(req, url, origin, env, ctx){
         try{ const t = await fetchCapped(new URL(g, target.origin).href); if (t.ok && looksLikeFeed(t.text)){ feeds.push(t.url); break; } }catch{}
       }
     }
-    if (!feeds.length) return fail(origin, 404, r.ok ? "No feed found on that site" : "The site answered with error " + r.status);
+    if (!feeds.length) return {error: r.ok ? "No feed found on that site" : "The site answered with error " + r.status, status: 404};
     await kvPut(env, dkey, {feeds: feeds.slice(0, 5), title}, 7 * 86400);
-    return json(origin, {feeds: feeds.slice(0, 5), title});
+    return {feeds: feeds.slice(0, 5), title};
   }
+}
+async function handleRest(req, url, origin, env, ctx){
+  const p = url.pathname.replace(/\/+$/, "") || "/";
 
   if (p === "/youtube/channel"){
     const target = publicUrl(url.searchParams.get("url") || "");

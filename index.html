@@ -787,6 +787,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <button class="btn" type="button" id="exportBtn">Export sources</button>
           <input type="file" id="importFile" hidden>
         </div>
+        <label class="check" for="shareSites">
+          <input type="checkbox" id="shareSites">
+          <span><b>Help improve search</b><br><span class="hint">When a website you paste works, share its address (like bbcgoodfood.com) so others can find it. Nothing else is sent, and never private feeds or social accounts.</span></span>
+        </label>
         <label class="check" for="exportPrivate" id="exportPrivateRow" hidden>
           <input type="checkbox" id="exportPrivate">
           <span><b>Include private feeds</b><br><span class="hint">Paid podcast links contain your personal access code. Only tick this for your own backup, never for a file you'll share.</span></span>
@@ -833,6 +837,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <li><b>No account, no tracking.</b> Your sources, saved posts and settings stay on this device.</li>
           <li><b>Straight from the publisher.</b> Feeds are read directly, or through our own YourFeed service. No other companies see what you follow.</li>
           <li><b>Private feeds stay private.</b> Paid subscription links never leave this device and are left out of reports, shares and exports.</li>
+          <li><b>Help improve search (optional).</b> When a website you paste works, only its address is shared, so other people can find it. A site is listed for everyone once several different people have added it. Turn this off in Settings → Sources.</li>
           <li><b>Content belongs to its publishers.</b> YourFeed shows headlines and previews and links to the original.</li>
           <li><b>YouTube.</b> Videos play in YouTube's own player and are covered by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
         </ul>
@@ -3804,7 +3809,22 @@ async function addFeed(raw, direct, kind){
   state.items = mergeHistory(state.items, p.items).map(i => i.feedId === feed.id ? {...i, seen: Math.min(i.seen || 0, state.baseline)} : i);
   save(); renderFeedList(); renderChips(); renderStatus(); renderList();
   showFolderNote(feed);
+  if (!direct) shareSite(feed, raw);
   return {feed, count: state.items.filter(i => i.feedId === feed.id).length};
+}
+// Community list: when a pasted website works, tell our service its address only (e.g. bbcgoodfood.com), nothing else.
+// Never private feeds, social accounts, YouTube, Reddit, podcasts or Google News; off with Settings → Sources → Help improve search
+function siteDomain(u){ try{ return new URL(/^https?:/i.test(u) ? u : "https://" + u).hostname.toLowerCase().replace(/^(www|feeds?|rss)\./, ""); }catch{ return ""; } }
+function shareSite(feed, raw){
+  if (!store.get("yf.shareSites", true) || !serviceBase() || feed.private || isPrivateUrl(String(raw)) || platformOf(feed) !== "Websites" || /news\.google\.com/.test(feed.url)) return;
+  const d = siteDomain(feed.site || raw) || siteDomain(feed.url);
+  if (!d || DIRECTORY.some(([, u]) => siteOf(u).split("/")[0].replace(/^(www|feeds?|rss)\./, "") === d)) return;   // already in our list
+  viaService("/community/add", {domain: d}, 15000).catch(() => {});
+}
+// The approved community list, refreshed at most once a day and searched on the phone like our own list
+function loadCommunity(){
+  if (!serviceBase() || Date.now() - store.get("yf.communityAt", 0) < 86400000) return;
+  viaService("/community/list", {}, 15000).then(t => { const j = JSON.parse(t); if (Array.isArray(j.sites)){ store.set("yf.community", j.sites.slice(0, 5000)); store.set("yf.communityAt", Date.now()); } }).catch(() => {});
 }
 const storyCount = n => `${n} stor${n === 1 ? "y" : "ies"}`;
 // Is this something to add directly, rather than words to search for?
@@ -4552,6 +4572,11 @@ function searchDirectory(q){
   const sqq = squash(q), nameHit = r => squash(r.title).includes(sqq) ? 0 : 1;
   found = found.map((r, n) => [r, n]).sort((a, b) => nameHit(a[0]) - nameHit(b[0]) || a[1] - b[1]).map(([r]) => r);
   found = groupPublishers(q, found);
+  // Sites other YourFeed users added, not already in our list
+  const known = new Set(DIRECTORY.map(([, u]) => siteOf(u).split("/")[0].replace(/^(www|feeds?|rss)\./, "")));
+  const sqc = squash(q);
+  store.get("yf.community", []).filter(d => !known.has(d) && sqc.length >= 3 && (squash(d).includes(sqc) || dirMatch(q, d.replace(/\.[a-z.]+$/, "").replace(/[.-]/g, " "), d))).slice(0, 8)
+    .forEach(d => found.push({title: d, url: "https://" + d + "/", site: d, website: "https://" + d + "/", desc: "Added by other YourFeed users"}));
   // A publisher with no feed: first when you search for it by name ("bbc food"), after the real feeds for a subject ("food")
   for (const [title, site, tags] of NO_FEED.filter(([t, site]) => dirMatch(q, t, site))){
     const sq = squash(q), named = sq.length >= squash(title).length * 0.6 && (squash(title).startsWith(sq) || squash(site).startsWith(sq));
@@ -5702,6 +5727,9 @@ function openReport(focusId){
   if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
 }
 document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
+$("#shareSites").checked = store.get("yf.shareSites", true);
+$("#shareSites").onchange = e => store.set("yf.shareSites", e.target.checked);
+setTimeout(loadCommunity, 4000);
 renderFaqs();
 // One settings folder open at a time: opening one folds the rest
 document.querySelectorAll(".setfold").forEach(d => d.addEventListener("toggle", () => {
