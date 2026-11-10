@@ -144,7 +144,9 @@ async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept} = {}){
 const looksLikeFeed = t => {
   const s = t.slice(0, 3000).trimStart();
   if (/^\{/.test(s) && /"version"\s*:\s*"https:\/\/jsonfeed\.org/.test(s)) return true;
-  return /<(rss|feed|rdf:RDF)[\s>]/i.test(s);
+  if (/<(rss|feed|rdf:RDF)[\s>]/i.test(s)) return true;
+  // A news sitemap (a site's list of latest articles for search engines) is read like a feed
+  return /<urlset[\s>]/i.test(t.slice(0, 5000)) && /<news:news[\s>]|sitemap-news\/|<image:image[\s>]/i.test(t.slice(0, 30000));
 };
 const blocked = t => /Just a moment|cf-chl|challenge-platform|Attention Required|captcha/i.test(t.slice(0, 5000));
 

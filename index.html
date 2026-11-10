@@ -814,7 +814,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <div class="field">
         <span class="lbl-strong">Check search list</span>
         <p class="hint">For testing: tries every site in YourFeed's search list from this device and lists the ones that don't work. Takes a few minutes.</p>
-        <div class="iorow"><button class="btn" type="button" id="dirCheck">Run check</button><button class="btn" type="button" id="dirCheckShare" hidden>Share results</button></div>
+        <div class="iorow"><button class="btn" type="button" id="dirCheck">Run check</button><button class="btn" type="button" id="smCheck">Find news sitemaps</button><button class="btn" type="button" id="dirCheckShare" hidden>Share results</button></div>
         <p class="msg" id="dirCheckMsg" aria-live="polite"></p>
         <ul class="checks" id="dirCheckOut" hidden></ul>
       </div>
@@ -1646,11 +1646,29 @@ function parseFeed(xml, feed){
     icon = (it && attr(it, "href")) || txt(kid(kid(ch, "image") || ch, "url")) || "";
     site = txt(kid(ch, "link"));
     items = deep(root, "item").map(e => rssItem(e, feed));
-  } else throw new Error("That address isn't an RSS or Atom feed");
+  } else if (rn === "urlset"){
+    // News sitemap: <url><loc> + <news:news> (title, date, publication) + <image:image>
+    const only = ((feed && feed.url || "").match(/#only=([^&]+)/) || [])[1];
+    const urls = kids(root, "url").filter(u => !only || (txt(kid(u, "loc")).match(/^https?:\/\/[^/]+(\/.*)$/) || [])[1]?.startsWith(decodeURIComponent(only)));
+    const nn = urls.map(u => deep(u, "news:news")[0]).find(Boolean);
+    title = nn ? txt(deep(nn, "news:name")[0]) : "";
+    const first = urls.map(u => txt(kid(u, "loc"))).find(Boolean); if (first){ try{ site = new URL(first).origin; }catch{} }
+    items = urls.map(u => {
+      const loc = txt(kid(u, "loc")), n = deep(u, "news:news")[0], im = deep(u, "image:image")[0];
+      let t = n ? txt(deep(n, "news:title")[0]) : "";
+      if (!t && im) t = txt(deep(im, "image:title")[0]);
+      if (!t){ const slug = (loc.split(/[?#]/)[0].replace(/\/$/, "").split("/").pop() || "").replace(/\.[a-z]+$/i, "").replace(/[-_]+/g, " ").replace(/\b\d{5,}\b/g, "").trim(); t = slug ? slug[0].toUpperCase() + slug.slice(1) : ""; }
+      const d = Date.parse(n ? txt(deep(n, "news:publication_date")[0]) : "") || Date.parse(txt(kid(u, "lastmod"))) || 0;
+      return makeItem(feed, {title: htmlToText(t), link: loc, date: d, image: im ? txt(deep(im, "image:loc")[0]) : "", summary: ""});
+    });
+  } else if (rn === "sitemapindex") throw new Error("That's a list of sitemaps, not the news sitemap itself");
+  else throw new Error("That address isn't an RSS or Atom feed");
   items = items.filter(i => i.link || i.title).sort((a, b) => b.date - a.date).slice(0, 40);
   return {title: htmlToText(title), items, everyMin: feedHintMinutes(root), icon: safeUrl((icon || "").trim()) || "", site: safeUrl((site || "").trim()) || ""};
 }
-const looksLikeFeed = t => /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000));
+// A news sitemap (the list of latest articles sites publish for search engines) counts as a feed too
+const isNewsSitemap = t => /<urlset[\s>]/i.test(t.slice(0, 5000)) && /<news:news[\s>]|sitemap-news\/|<image:image[\s>]/i.test(t.slice(0, 30000));
+const looksLikeFeed = t => /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000)) || isNewsSitemap(t);
 
 // Find a YouTube channel ID from a channel or video page. Tries several routes at once.
 function channelIdIn(text, isVideo){
@@ -1713,6 +1731,31 @@ async function findChannel(page){
 }
 async function findChannelId(page){ const c = await findChannel(page); return c && c.id; }
 // Find a website's feed: from its page's feed links, else common feed addresses
+// A site with no feed often still publishes a news sitemap: listed in robots.txt, or at a usual address
+const NEWS_SITEMAP_GUESSES = ["/news-sitemap.xml", "/sitemap_news.xml", "/sitemap-news.xml", "/news_sitemap.xml", "/sitemaps/news.xml", "/sitemap/news.xml", "/googlenews.xml"];
+async function findNewsSitemap(origin){
+  if (!IS_APP) return null;
+  const get = async url => { const r = await fetchWithTimeout(url, 12000, {"Accept": "application/xml,text/xml,*/*"}); if (!r.ok) throw new Error("error " + r.status); return r.text(); };
+  let cands = [];
+  try{
+    const robots = await get(origin + "/robots.txt");
+    cands = [...robots.matchAll(/^\s*sitemap:\s*(\S+)/gim)].map(m => m[1]).filter(x => /news|google/i.test(x));
+  }catch{}
+  cands.push(...NEWS_SITEMAP_GUESSES.map(g => origin + g));
+  for (const c of [...new Set(cands)].slice(0, 10)){
+    try{
+      let t = await get(c), url = c;
+      if (/<sitemapindex[\s>]/i.test(t.slice(0, 3000))){
+        // An index of several: take the newest news one
+        const locs = [...t.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map(m => m[1].replace(/&amp;/g, "&"));
+        const pick = locs.find(l => /news/i.test(l)) || locs[0]; if (!pick) continue;
+        t = await get(pick); url = pick;
+      }
+      if (isNewsSitemap(t)) return {url, text: t};
+    }catch{}
+  }
+  return null;
+}
 async function discoverFeed(u){
   const GUESSES = ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"];
   if (IS_APP){
@@ -1724,6 +1767,8 @@ async function discoverFeed(u){
       if (l && l.getAttribute("href")) return {url: new URL(l.getAttribute("href"), u.href).href};
     }catch{}
     try{ return await Promise.any(GUESSES.map(g => { const f = new URL(g, u.origin).href; return feedDirect(f, 10000).then(t => ({url: f, text: t})); })); }catch{}
+    // No feed at all: the site's news sitemap
+    try{ const sm = await findNewsSitemap(u.origin); if (sm) return sm; }catch{}
   } else {
     // A feed address pasted straight in can work from the browser
     try{ const t = await feedDirect(u.href, 8000); return {url: u.href, text: t}; }catch{}
@@ -5568,6 +5613,36 @@ $("#dirCheck").onclick = async () => {
   msg.textContent = head.split("\n")[1];
   lines.slice(0, 200).forEach(l => out.append(el("li", null, l)));
   out.hidden = !lines.length; share.hidden = false; btn.disabled = false; btn.textContent = "Run again";
+};
+// Find news sitemaps: for every site we read through Google News, look for the site's own news sitemap
+$("#smCheck").onclick = async () => {
+  const btn = $("#smCheck"), msg = $("#dirCheckMsg"), out = $("#dirCheckOut"), share = $("#dirCheckShare");
+  if (!IS_APP){ msg.textContent = "This check needs the app: it reads each site directly."; return; }
+  btn.disabled = true; share.hidden = true; out.hidden = true; out.textContent = "";
+  const list = DIRECTORY.map(([name, url]) => ({name, url, nq: newsQuery(url)})).filter(e => e.nq && e.nq.site);
+  const bySite = new Map(); list.forEach(e => { const d = e.nq.site.split("/")[0]; if (!bySite.has(d)) bySite.set(d, []); bySite.get(d).push(e); });
+  let done = 0; const lines = [];
+  await pool([...bySite.entries()], 4, async ([domain, es]) => {
+    let sm = null;
+    try{ sm = await findNewsSitemap("https://" + (domain.startsWith("www.") ? domain : "www." + domain)) || await findNewsSitemap("https://" + domain); }catch{}
+    for (const e of es){
+      const path = e.nq.site.slice(domain.length);
+      if (!sm){ lines.push(`[none] ${e.name} — ${e.nq.site}`); continue; }
+      const url = sm.url + (path && path !== "/" ? "#only=" + encodeURIComponent(path.endsWith("/") ? path : path + "/") : "");
+      try{
+        const p = parseFeed(sm.text, {id: "chk", url});
+        const pics = p.items.filter(i => i.image).length, newest = Math.max(0, ...p.items.map(i => i.date || 0));
+        lines.push(`[${p.items.length ? "sitemap" : "sitemap-empty"}] ${e.name} — ${p.items.length} articles, ${pics} with pictures${newest ? ", newest " + ago(newest) : ""} — ${url}`);
+      }catch(err){ lines.push(`[sitemap-bad] ${e.name} — ${err.message} — ${url}`); }
+    }
+    done++; msg.textContent = `Checked ${done} of ${bySite.size} sites…`;
+  });
+  lines.sort();
+  const found = lines.filter(l => l.startsWith("[sitemap]")).length;
+  dirReport = `YourFeed news sitemap check · ${new Date().toLocaleString()}\n${found} of ${list.length} Google-routed sources have a usable news sitemap\n\n` + lines.join("\n");
+  msg.textContent = `${found} of ${list.length} have a usable news sitemap`;
+  lines.slice(0, 300).forEach(l => out.append(el("li", null, l)));
+  out.hidden = false; share.hidden = false; btn.disabled = false;
 };
 $("#dirCheckShare").onclick = async () => {
   const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
