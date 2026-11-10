@@ -3655,12 +3655,12 @@ function newsQuery(url){
 function cleanTitle(t, url){
   t = (t || "").replace(/\s+/g, " ").trim();
   const nq = newsQuery(url);
-  // A feed from our list: the name we know it by (Google News site feeds keep "via Google")
+  // A feed from our list: the name we know it by (Google News is just the route for sites without a feed)
   const dirName = (DIRECTORY.find(([, u]) => u === url) || [])[0];
-  if (dirName) return nq && nq.site ? dirName + " via Google" : dirName;
+  if (dirName) return dirName;
   if (nq && nq.site){
     const known = NO_FEED.find(([, s]) => s === nq.site) || DIRECTORY.find(([, u]) => u.includes(nq.site));
-    return (known ? known[0] : nq.site.replace(/^www\./, "").split("/")[0]) + " via Google";
+    return known ? known[0] : nq.site.replace(/^www\./, "").split("/")[0];
   }
   if (nq && nq.q && (/google news/i.test(t) || !t)) return "g/" + nq.q;
   const sub = (url || "").match(/reddit\.com\/r\/(\w+)/i);
@@ -4397,26 +4397,28 @@ const DIRECTORY = [
   ["Homebuilding & Renovating", "https://news.google.com/rss/search?q=site%3Ahomebuilding.co.uk&hl=en-GB&gl=GB&ceid=GB:en", "home renovation diy"],
   ["Gardening news", "https://news.google.com/rss/search?q=gardening&hl=en-GB&gl=GB&ceid=GB:en", "gardening garden topic"],
   ["The Independent – Business", "https://www.independent.co.uk/news/business/rss", "business economy"],
-  ["Daily Mail – Premier League", "https://www.dailymail.co.uk/sport/premierleague/index.rss", "football premier league"]
+  ["Daily Mail – Premier League", "https://www.dailymail.co.uk/sport/premierleague/index.rss", "football premier league"],
+  ["Associated Press", "https://news.google.com/rss/search?q=site%3Aapnews.com&hl=en-GB&gl=GB&ceid=GB:en", "news us world ap"],
+  ["Reuters", "https://news.google.com/rss/search?q=site%3Areuters.com&hl=en-GB&gl=GB&ceid=GB:en", "news world business"],
+  ["Bloomberg", "https://news.google.com/rss/search?q=site%3Abloomberg.com&hl=en-GB&gl=GB&ceid=GB:en", "business news money markets"],
+  ["The Athletic", "https://news.google.com/rss/search?q=site%3Anytimes.com/athletic&hl=en-GB&gl=GB&ceid=GB:en", "sport football"],
+  ["The Times", "https://news.google.com/rss/search?q=site%3Athetimes.com&hl=en-GB&gl=GB&ceid=GB:en", "news uk"],
+  ["Nintendo", "https://news.google.com/rss/search?q=site%3Anintendo.com&hl=en-GB&gl=GB&ceid=GB:en", "games nintendo switch"],
+  ["BBC Food", "https://news.google.com/rss/search?q=site%3Abbc.co.uk/food&hl=en-GB&gl=GB&ceid=GB:en", "food recipes cooking bbc"],
+  ["The Irish Times", "https://news.google.com/rss/search?q=site%3Airishtimes.com&hl=en-GB&gl=GB&ceid=GB:en", "news ireland"]
 ];
 // Big publishers that offer no feed at all. Searching for them explains that and offers what works instead:
 // their stories through Google News, or their accounts on Bluesky/Mastodon.
-const NO_FEED = [
-  ["Associated Press", "apnews.com", "ap associated press news us world"],
-  ["Reuters", "reuters.com", "reuters news world business"],
-  ["Bloomberg", "bloomberg.com", "bloomberg news business money"],
-  ["The Athletic", "nytimes.com/athletic", "athletic sport football"],
-  ["The Times", "thetimes.com", "times news uk"],
-  ["Nintendo (official)", "nintendo.com", "nintendo switch games"],
-  ["BBC Food", "bbc.co.uk/food", "bbc food recipes cooking"]
-];
+// Publishers with no feed of their own are now ordinary DIRECTORY entries read through Google News (Nov 2026)
+const NO_FEED = [];
 const squash = t => (t || "").toLowerCase().replace(/[^a-z0-9]/g, "");
 // Matches "bbc sport", "BBCSport", "bbcsport.com" or a tag word alike
 function dirMatch(q, title, extra){
   const words = q.toLowerCase().split(/\s+/).filter(Boolean), hay = (title + " " + extra).toLowerCase();
-  if (words.every(w => hay.includes(w))) return true;
+  // Each word must start a word in the name, site or tags ("ipl" finds IPL, not Kiplinger)
+  if (words.every(w => new RegExp("(^|[^a-z0-9])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).test(hay))) return true;
   const sq = squash(q.replace(/\.(com|co\.uk|org|net)\b.*$/i, ""));
-  return sq.length >= 3 && (squash(title).includes(sq) || squash(extra.split(" ")[0]).includes(sq));
+  return sq.length >= 3 && (squash(title).startsWith(sq) || squash(title.replace(/^the\s+/i, "")).startsWith(sq) || squash(extra.split(" ")[0]).startsWith(sq));
 }
 const newsSite = site => `https://news.google.com/rss/search?q=${encodeURIComponent("site:" + site)}&hl=en-GB&gl=GB&ceid=GB:en`;
 // Publishers with many section feeds show as one result, with their sections to pick from
@@ -4433,6 +4435,9 @@ const PUBLISHERS = [
 ];
 const pubOf = url => PUBLISHERS.find(([, test]) => test(url));
 const sectionName = (title, pub) => title.replace(/^(The Guardian|BBC (News|Sport)|Sky News|Sky Sports|ESPN|The Independent|Daily Mail|The Telegraph)\s*[–-]\s*/, "").trim() || "Top stories";
+// Sites read through Google News show and match as the site itself; Google is only the route ("" for a news topic)
+function siteOf(url){ const gq = /news\.google\.com/.test(url) ? newsQuery(url) : null;
+  return gq ? (gq.site ? gq.site.replace(/^www\./, "") : "") : new URL(url).hostname.replace(/^www\.|^feeds?\./, ""); }
 function groupPublishers(q, found){
   const sq = squash(q), out = [], groups = new Map();
   found.forEach(r => {
@@ -4450,15 +4455,15 @@ function groupPublishers(q, found){
     if (all.length === 1) return x.hits[0];
     const lead = named ? (all.find(r => r.url === main) || all[0]) : x.hits[0];
     const rest = all.filter(r => r !== lead && r.url !== lead.url);
-    return {title: named ? name : lead.title, url: lead.url, site: new URL(lead.url).hostname.replace(/^www\.|^feeds\./, ""),
+    return {title: named ? name : lead.title, url: lead.url, site: siteOf(lead.url) || "News topic",
       desc: named ? "Top stories. Or pick sections below." : `${name} section. More ${name} sections below.`,
       sections: rest.map(r => ({title: sectionName(r.title), url: r.url})).sort((a, b) => a.title.localeCompare(b.title))};
   });
 }
 function searchDirectory(q){
-  let found = DIRECTORY.filter(([t, url, tags]) => dirMatch(q, t, new URL(url).hostname.replace(/^www\./, "") + " " + tags))
-    .map(([title, url]) => { const gq = /news\.google\.com/.test(url) ? newsQuery(url) : null;
-      return {title, url, site: gq ? (gq.site ? gq.site.replace(/^www\./, "") + " · via Google News" : "Google News topic") : new URL(url).hostname.replace(/^www\./, "")}; });
+  let found = DIRECTORY.filter(([t, url, tags]) => dirMatch(q, t, siteOf(url) + " " + tags))
+    .map(([title, url]) => { const site = siteOf(url);
+      return site ? {title, url, site, website: "https://" + site.split("/")[0]} : {title, url, site: "News topic", desc: "Headlines about this from many publishers."}; });
   found = groupPublishers(q, found);
   // A publisher with no feed: first when you search for it by name ("bbc food"), after the real feeds for a subject ("food")
   for (const [title, site, tags] of NO_FEED.filter(([t, site]) => dirMatch(q, t, site))){
@@ -5862,6 +5867,11 @@ if (IS_APP){
 initDownloads();
 // Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
 state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
+// Nov 2026: sites read through Google News lose the "via Google" tag, once
+if (!store.get("yf.noViaGoogle", false)){
+  state.feeds.forEach(f => { if (/ via Google$/.test(f.title || "") && /news\.google\.com/.test(f.url)) f.title = f.title.replace(/ via Google$/, ""); });
+  store.set("yf.noViaGoogle", true); save();
+}
 // Nov 2026: strip filler from website names ("IGN All" → "IGN"), once
 if (!store.get("yf.tidyNames", false)){
   state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; });
