@@ -3613,7 +3613,11 @@ function closeMenu(){
   if (matchMedia("(prefers-reduced-motion:reduce)").matches){ done(); return; }
   dlg.classList.add("closing"); setTimeout(done, 180);
 }
-dlg.addEventListener("close", () => $("#manage").setAttribute("aria-expanded", "false"));
+dlg.addEventListener("close", () => {
+  $("#manage").setAttribute("aria-expanded", "false");
+  // The "Added to X · Change" note is for the moment you add something: gone once the menu closes
+  const fn = $("#addFolder"); fn.hidden = true; fn.textContent = "";
+});
 dlg.addEventListener("cancel", e => { e.preventDefault(); closeMenu(); });
 $("#manage").onclick = () => openMenu("feeds");
 $("#dlgClose").onclick = closeMenu;
