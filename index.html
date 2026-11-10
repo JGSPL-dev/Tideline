@@ -1004,6 +1004,7 @@ if (state.folders.includes("Boxing & MMA")){
   state.feeds.forEach(f => { if (f.folder === "Boxing & MMA") f.folder = "Combat Sports"; }); store.set("tl.feeds", state.feeds);
 }
 state.organise = store.get("tl.organise", "category");
+if (state.organise === "platform") state.organise = "type";   // "Organise by Platform" became "by Type" (Nov 2026)
 state.collapsed = new Set(store.get("tl.collapsed", []));
 state.stackShown = {};
 // Saved posts are kept whole, so they stay after the story drops out of the feed's history
@@ -1915,10 +1916,11 @@ function platformOf(f){
 const folderOf = f => f.folder && state.folders.includes(f.folder) ? f.folder : UNSORTED;
 const byName = (a, b) => (a.title || "").localeCompare(b.title || "", undefined, {sensitivity: "base", numeric: true});
 const saveFolders = () => { store.set("tl.folders", state.folders); };
-const TYPES = [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["conversations", "Conversations"], ["audio", "Audio"]];
+const TYPES = [["all", "Everything"], ["articles", "Articles"], ["topics", "Topics"], ["videos", "Videos"], ["audio", "Audio"], ["conversations", "Conversations"]];
 // What each tab holds, shown the first time it's opened
 const TYPE_HELP = {
-  articles: "Pieces straight from websites, blogs and news feeds, including Google News topics.",
+  articles: "Pieces straight from websites, blogs, newsletters and news feeds.",
+  topics: "Headlines about the subjects you follow, gathered from many publishers through Google News.",
   videos: "Videos from any source you follow: YouTube channels, and video posts from other feeds.",
   conversations: "Community chat and social posts: Reddit, Bluesky and Mastodon.",
   audio: "Podcasts and radio feeds. Tap play to listen; YourFeed remembers where you stopped."
@@ -1927,6 +1929,7 @@ function typeOf(it){
   if (it.videoId) return "videos";
   const f = feedById(it.feedId), p = f ? platformOf(f) : "";
   if (f && f.kind === "video") return "videos";            // PeerTube channels
+  if (p === "News topics") return "topics";
   if (p === "Reddit" || p === "Social") return "conversations";
   // A website that sometimes posts an episode (e.g. a blog with a weekly podcast) stays in Articles
   if (it.audioUrl && (!f || f.audio)) return "audio";
@@ -1934,10 +1937,20 @@ function typeOf(it){
 }
 // A podcast feed: most of its posts are something to listen to
 const isPodcastFeed = items => { const n = items.length, a = items.filter(i => i.audio).length; return a > 0 && a >= n * 0.6; };
-// Groups shown in the menu and the filter box: folders (A–Z, Unsorted last) or platforms
+// What a source mostly brings: the same five types as the filter and search
+const SOURCE_TYPES = ["Articles", "Topics", "Videos", "Audio", "Conversations"];
+function sourceType(f){
+  const p = platformOf(f);
+  if (p === "News topics") return "Topics";
+  if (p === "YouTube" || f.kind === "video") return "Videos";
+  if (p === "Reddit" || p === "Social") return "Conversations";
+  if (p === "Podcasts") return "Audio";
+  return "Articles";
+}
+// Groups shown in the menu and the filter box: folders (A–Z, Unsorted last) or types
 function groupList(mode = state.organise){
-  if (mode === "platform"){
-    return PLATFORMS.map(p => [p, state.feeds.filter(f => platformOf(f) === p).sort(byName)]).filter(([, fs]) => fs.length);
+  if (mode === "type"){
+    return SOURCE_TYPES.map(t => [t, state.feeds.filter(f => sourceType(f) === t).sort(byName)]).filter(([, fs]) => fs.length);
   }
   const names = [...state.folders].sort((a, b) => a.localeCompare(b, undefined, {sensitivity: "base"}));
   const out = names.map(n => [n, state.feeds.filter(f => folderOf(f) === n).sort(byName)]);
@@ -1983,7 +1996,7 @@ function dupeIds(){
   const keep = new Map(), out = new Set();
   const viaGN = i => /news\.google\.com/.test((feedById(i.feedId) || {}).url || "");
   const rank = i => (viaGN(i) ? 1e15 : 0) + (i.seen || 0);
-  [...state.items].filter(i => typeOf(i) === "articles").sort((a, b) => rank(a) - rank(b)).forEach(i => {
+  [...state.items].filter(i => ["articles", "topics"].includes(typeOf(i))).sort((a, b) => rank(a) - rank(b)).forEach(i => {
     const keys = [["l", linkKey(i.link)], ["t", storyKey(i)]].filter(([, k]) => k).map(([p, k]) => p + ":" + k);
     const hit = keys.find(k => keep.has(k) && keep.get(k).feedId !== i.feedId);
     if (hit){ out.add(i.id); return; }
@@ -2207,7 +2220,7 @@ function renderFilterBox(){
   const sec = el("div", "fb-sec"); const sl = el("span", "fb-lbl", "Show"); sl.id = "fbl-show"; sec.append(sl);
   const grid = el("div", "fb-types"); grid.setAttribute("role", "group"); grid.setAttribute("aria-labelledby", sl.id);
   const base = view.saved ? state.saved : baseItems();
-  [["all", "Everything"], ["articles", "Articles"], ["videos", "Videos"], ["audio", "Audio"], ["conversations", "Conversations"]].forEach(([k, label]) => {
+  [["all", "Everything"], ["articles", "Articles"], ["topics", "Topics"], ["videos", "Videos"], ["audio", "Audio"], ["conversations", "Conversations"]].forEach(([k, label]) => {
     const its = k === "all" ? base : base.filter(i => typeOf(i) === k);
     const n = view.saved ? its.length : its.filter(isNew).length;
     const b = el("button", "fb-type"); b.type = "button"; b.id = "fb-type-" + k;
@@ -3189,7 +3202,7 @@ function feedSub(f){
   if (isPrivateFeed(f)) sub.append(lockEl(), document.createTextNode(" "));
   if (isPrivateFeed(f) && !IS_APP){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
   if (isTroubled(f)){ sub.append(el("span", "er", "Needs a look")); return sub; }
-  const bits = [state.organise === "platform" ? folderOf(f) : platformOf(f)];
+  const bits = [state.organise === "type" ? folderOf(f) : platformOf(f)];
   if (f.lastFetched) bits.push("checked " + ago(f.lastFetched));
   sub.append(el("span", "url", bits.join(" · ")));
   return sub;
@@ -3268,7 +3281,7 @@ function renderFeedList(){
   // Organise by
   const org = el("div", "org-row"); const ol = el("span", "fb-lbl", "Organise by"); ol.id = "org-lbl"; org.append(ol);
   const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-labelledby", "org-lbl");
-  [["category", "Category"], ["platform", "Platform"]].forEach(([v, t]) => {
+  [["category", "Category"], ["type", "Type"]].forEach(([v, t]) => {
     const b = el("button", null, t); b.type = "button"; b.id = "org-" + v; b.setAttribute("aria-pressed", String(state.organise === v));
     b.onclick = () => { state.organise = v; store.set("tl.organise", v); renderFeedList(); $("#org-" + v).focus(); };
     seg.append(b);
@@ -3277,7 +3290,7 @@ function renderFeedList(){
   // Groups, channels A–Z inside each
   const mode = state.organise;
   groupList().forEach(([name, feeds], gi) => {
-    const key = (mode === "platform" ? "plat:" : "cat:") + name;
+    const key = (mode === "type" ? "type:" : "cat:") + name;
     const open = !state.collapsed.has(key);
     const sec = el("section", "group"); sec.setAttribute("aria-label", name);
     const h = el("button", "ghead"); h.type = "button"; h.id = "gh-" + gi; h.setAttribute("aria-expanded", String(open));
@@ -4597,7 +4610,25 @@ const SOURCES = [
   {key: "news",     label: "News topics"},
   {key: "social",   label: "Bluesky & Mastodon"}
 ];
-const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "Google News", bluesky: "Bluesky", mastodon: "Mastodon", flipboard: "Flipboard", lemmy: "Lemmy", peertube: "PeerTube"};
+// Search pills match the feed's own types; each type gathers results from the searches that can produce it
+const PILLS = [
+  {key: "articles",      label: "Articles",      from: ["web", "social"]},
+  {key: "topics",        label: "Topics",        from: ["news", "web"]},
+  {key: "videos",        label: "Videos",        from: ["youtube", "social"]},
+  {key: "audio",         label: "Audio",         from: ["podcasts"]},
+  {key: "conversations", label: "Conversations", from: ["reddit", "social"]}
+];
+function pillOf(r){
+  if (r.kind === "news" || r.site === "News topic") return "topics";
+  if (r.kind === "youtube" || r.kind === "peertube") return "videos";
+  if (["reddit", "lemmy", "bluesky", "mastodon"].includes(r.kind)) return "conversations";
+  if (r.kind === "podcasts") return "audio";
+  return "articles";
+}
+const listFor = p => { const P = PILLS.find(x => x.key === p); return P ? P.from.flatMap(k => search.results[k] || []).filter(r => pillOf(r) === p) : []; };
+const pillLoading = p => { const P = PILLS.find(x => x.key === p); return !!P && P.from.some(k => search.status[k] === "loading"); };
+const pillError = p => { const P = PILLS.find(x => x.key === p); return !!P && P.from.every(k => search.status[k] === "error"); };
+const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "News topic", bluesky: "Bluesky", mastodon: "Mastodon", flipboard: "Flipboard", lemmy: "Lemmy", peertube: "PeerTube"};
 const decodeAmp = u => (u || "").replace(/&amp;/g, "&");
 
 async function searchWebAll(q){
@@ -4606,8 +4637,6 @@ async function searchWebAll(q){
   try{ web = (await searchWeb(q)).map(r => ({...r, kind: "web"})); }catch(e){ if (!local.length) throw e; }
   const seen = new Set(local.map(r => r.url));
   const out = [...local, ...web.filter(r => !seen.has(r.url))];
-  // Nothing in our list: offer the subject as a news topic so a search never comes back empty
-  if (!out.length && q.trim().length >= 3) return (await searchNews(q.trim())).slice(0, 1).map(r => ({...r, kind: "news", suggested: true, desc: "No websites in our list match this yet. Follow it as a news topic instead."}));
   return out;
 }
 async function searchYouTubeAll(q){
@@ -4757,6 +4786,7 @@ function sortSocial(r, m){
   if (lc && m.group) return {...r, kind: "lemmy", url: `https://${lc[1]}/feeds/c/${lc[2]}.xml?sort=New`, site: `Lemmy · ${lc[2]}@${lc[1]}`, person: false};
   // PeerTube channel
   const pt = (r.website || "").match(/^https?:\/\/([^/]+)\/(?:video-channels|c)\/([\w.-]+)\/?$/);
+  if (pt && /\b(mirror|re-?upload(s|ed)?|archive[sd]?)\b/i.test(r.desc + " " + r.title) && /youtube|yt\b/i.test(r.desc + " " + r.title)) return null;   // a copy of a YouTube channel
   if (pt && (m.group || /video-channels/.test(r.website))) return {...r, kind: "peertube", url: `https://${pt[1]}/feeds/videos.xml?videoChannelName=${pt[2]}`, site: `PeerTube · ${pt[2]}@${pt[1]}`, person: false};
   // WordPress blog on the fediverse
   if (/\/author\/[\w.-]+\/?$/.test(r.website || "") || (user && user === acctHost)) return {...directFor(r.title, acctHost), desc: r.desc || "The blog itself, read directly"};
@@ -4768,6 +4798,7 @@ const SEARCHERS = {web: searchWebAll, youtube: searchYouTubeAll, reddit: searchR
 
 // One search, shared by the menu's top results and the full "Add to your feed" page
 const search = {q: "", filter: store.get("tl.searchFilter", "all"), seq: 0, results: {}, status: {}};
+if (search.filter !== "all" && !PILLS.some(p => p.key === search.filter)) search.filter = "all";   // old platform pills
 function startSearch(q){
   if (q === search.q && Object.keys(search.status).length){ renderAllResults(); return; }
   const seq = ++search.seq;
@@ -4782,23 +4813,23 @@ function startSearch(q){
 }
 // Mix sources fairly: exact matches first, then take one from each source in turn
 function mixed(keys, limit){
-  const lists = keys.map(k => (search.results[k] || []).slice());
+  const lists = keys.map(k => listFor(k).slice());
   const out = [];
   lists.forEach(l => { for (let i = l.length - 1; i >= 0; i--) if (l[i].exact){ out.push(l[i]); l.splice(i, 1); } });
   while (out.length < limit && lists.some(l => l.length)) for (const l of lists){ if (l.length && out.length < limit) out.push(l.shift()); }
   return out.slice(0, limit);
 }
-function filterKeys(f){ return f === "all" ? SOURCES.map(s => s.key) : [f]; }
-function countFor(f){ return filterKeys(f).reduce((n, k) => n + (search.results[k] || []).length, 0); }
-function loadingNames(f){ return filterKeys(f).filter(k => search.status[k] === "loading").map(k => SOURCES.find(s => s.key === k).label); }
+function filterKeys(f){ return f === "all" ? PILLS.map(s => s.key) : [f]; }
+function countFor(f){ return filterKeys(f).reduce((n, k) => n + listFor(k).length, 0); }
+function loadingNames(f){ return filterKeys(f).filter(pillLoading).map(k => PILLS.find(s => s.key === k).label.toLowerCase()); }
 
 function renderFilterChips(box, onPick){
   box.textContent = "";
-  [{key: "all", label: "All"}, ...SOURCES].forEach(({key, label}) => {
+  [{key: "all", label: "All"}, ...PILLS].forEach(({key, label}) => {
     const b = el("button", "chip"); b.type = "button";
     b.setAttribute("aria-pressed", String(search.filter === key));
     b.append(document.createTextNode(label));
-    if (search.q && search.status[key] !== "loading" && key !== "all") b.append(el("span", "count" + (countFor(key) ? "" : " zero"), String(countFor(key))));
+    if (search.q && !pillLoading(key) && key !== "all") b.append(el("span", "count" + (countFor(key) ? "" : " zero"), String(countFor(key))));
     b.onclick = () => { search.filter = key; store.set("tl.searchFilter", key); onPick(); };
     box.append(b);
   });
@@ -4831,12 +4862,12 @@ function renderFullResults(){
   const box = $("#spResults"); box.textContent = "";
   const keys = filterKeys(search.filter);
   keys.forEach(k => {
-    const label = SOURCES.find(s => s.key === k).label;
-    const list = search.results[k] || [];
+    const label = PILLS.find(s => s.key === k).label;
+    const list = listFor(k);
     const sec = el("section", "rsec");
     sec.append(el("h3", null, label + (list.length ? ` · ${list.length}` : "")));
-    if (search.status[k] === "loading") sec.append(el("p", "rnote-line", "Searching…"));
-    else if (search.status[k] === "error") sec.append(el("p", "rnote-line", `${label} isn't reachable right now. Try again in a minute, or paste an address instead.`));
+    if (pillLoading(k) && !list.length) sec.append(el("p", "rnote-line", "Searching…"));
+    else if (pillError(k)) sec.append(el("p", "rnote-line", `${label} isn't reachable right now. Try again in a minute, or paste an address instead.`));
     else if (!list.length) sec.append(el("p", "rnote-line", "Nothing found."));
     else {
       // On "All", show the first few from each source, with a button to see the rest
@@ -4848,7 +4879,7 @@ function renderFullResults(){
         sec.append(m);
       }
     }
-    if (keys.length > 1 && !list.length && search.status[k] !== "loading") sec.classList.add("quiet");
+    if (keys.length > 1 && !list.length && !pillLoading(k)) sec.classList.add("quiet");
     box.append(sec);
   });
 }
@@ -5865,7 +5896,7 @@ async function importSources(text){
   const box = $("#ioMissing"); box.textContent = ""; box.hidden = !missing.length;
   missing.forEach(name => {
     const b = el("button", "chip", name); b.type = "button";
-    b.onclick = () => { b.remove(); if (!box.children.length) box.hidden = true; showTab("feeds"); $("#addInput").value = name; search.filter = "youtube"; renderFilterChips($("#searchFilters"), renderAllResults); startSearch(name); };
+    b.onclick = () => { b.remove(); if (!box.children.length) box.hidden = true; showTab("feeds"); $("#addInput").value = name; search.filter = "videos"; renderFilterChips($("#searchFilters"), renderAllResults); startSearch(name); };
     box.append(b);
   });
   if (added){ await refreshAll(); m.textContent = m.textContent.replace(" Loading their stories…", " Done."); }
