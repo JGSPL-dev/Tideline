@@ -1104,6 +1104,7 @@ async function feedDirect(url, ms = 12000, feed){
   if (!r.ok) throw new Error("The site answered with error " + r.status);
   const t = await r.text();
   if (t.length > 8e6) throw new Error("That feed is too big to read on a phone");
+  if (/^\x1f\x8b|^\ufffd\x08/.test(t)) throw new Error("The site sent a compressed file the app can't read");
   if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
   if (IS_APP && feed && feed.id !== "probe"){
     const etag = r.headers.get("ETag"), lm = r.headers.get("Last-Modified");
@@ -3077,13 +3078,30 @@ function jitterMin(f){
   let h = 0; for (const c of String(f.id)) h = (h * 31 + c.charCodeAt(0)) | 0;
   return (Math.abs(h) % 1000) / 1000 * everyMin(f) * 0.25;
 }
-const isDue = (f, now = Date.now()) => nextCheck(f) <= now + 30000;
+const isDue = (f, now = Date.now()) => !f.crashPaused && nextCheck(f) <= now + 30000;
+// Crash guard: remember which sources are loading. If the app is closed mid-load (a crash), those sources are
+// suspects; one that was loading during two crashes is paused until checked by hand (Source health → Check)
+const inflight = new Set();
+// Only while the app is on screen: being swiped away or closed in the background isn't a crash
+const saveInflight = () => { try{ if (document.hidden || !inflight.size) localStorage.removeItem("yf.inflight"); else localStorage.setItem("yf.inflight", JSON.stringify([...inflight])); }catch{} };
+document.addEventListener("visibilitychange", saveInflight);
+function crashCheck(){
+  let left = []; try{ left = JSON.parse(localStorage.getItem("yf.inflight") || "[]"); }catch{}
+  try{ localStorage.removeItem("yf.inflight"); }catch{}
+  if (!left.length) return;
+  const paused = [];
+  left.forEach(id => { const f = feedById(id); if (!f) return; f.crashes = (f.crashes || 0) + 1; if (f.crashes >= 2 && !f.crashPaused){ f.crashPaused = true; f.error = "YourFeed closed while loading this, so it's paused. Tap Check to try again."; paused.push(f.title); } });
+  save();
+  if (paused.length) setTimeout(() => toast(`Paused ${paused.join(", ")}: YourFeed closed while loading ${paused.length === 1 ? "it" : "them"}`), 1500);
+}
 function soonestCheck(){ return Math.min(...state.feeds.map(nextCheck)); }
 
 async function fetchFeedNow(f){
   f.lastTried = Date.now();
+  inflight.add(f.id); saveInflight();
   try{
     const p = await loadFeed(f.url, f);
+    f.crashes = 0; f.crashPaused = false;
     if (!f.title && p.title) f.title = cleanTitle(p.title, f.url);
     f.error = null; f.fails = 0; f.lastFetched = f.lastOk = Date.now(); delete f.failingSince; delete f.dismissed;
     if (p.icon && !/redditstatic\.com/.test(p.icon) && p.icon !== f.icon && !f.iconFixed){ f.icon = p.icon; f.iconFailed = false; }
@@ -3095,11 +3113,12 @@ async function fetchFeedNow(f){
     if (p.items.length) f.audio = isPodcastFeed(p.items);
     return p.items;
   }catch(e){
+    if (f.crashPaused) return null;
     f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now();
     if (!f.failingSince) f.failingSince = Date.now();
     const healed = await healFeed(f);
     return healed;
-  }
+  }finally{ inflight.delete(f.id); saveInflight(); }
 }
 // Errors that won't clear by waiting: the address is no longer a feed, or it's gone
 const PERMANENT = /isn't an RSS|isn't a feed|web page, not a feed|Didn't send a feed|error 410|error 404|no stories/i;
@@ -3134,6 +3153,7 @@ function plainTrouble(f){
 // Check one source straight away, whatever its schedule
 async function refreshOne(f){
   if (f._checking) return;
+  if (f.crashPaused){ f.crashPaused = false; f.crashes = 1; }
   f._checking = true; renderFeedList();
   const items = await fetchFeedNow(f);
   f._checking = false;
@@ -6105,6 +6125,7 @@ if (IS_APP){
 
 /* ---------- start ---------- */
 initDownloads();
+crashCheck();
 // Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
 state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
 // Nov 2026: sites read through Google News lose the "via Google" tag, once
