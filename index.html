@@ -1626,6 +1626,18 @@ function feedHintMinutes(root){
   if (per){ const freq = parseInt(txt(deep(root, "sy:updatefrequency")[0]), 10) || 1; return Math.round(per / freq); }
   return null;
 }
+// Is this headline English? Other scripts → no; Latin-script headlines → by their small everyday words
+const EN_WORDS = new Set("the a an of to in and for on is are was with at by from as after how why what who new over into out up about it its this that be has have will says said not more than his her their after before".split(" "));
+const OTHER_WORDS = new Set("de la el los las le les des du und der die das den dem ein eine het een van il di della dei gli lo por para con que una uno del al och och för på är et est sur dans pour avec nel nella sono não com uma em ao ist auf mit für zu nicht wie gegen nach bei vom zum zur aus über noch auch sich im met voor naar bij per contro dopo contra tras sobre após contre après sans très".split(" "));
+function looksEnglish(title){
+  const t = (title || "").replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");
+  if (/[\u0370-\u03ff\u0400-\u04ff\u0590-\u05ff\u0600-\u06ff\u0900-\u0dff\u0e00-\u0e7f\u1100-\u11ff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(t)) return false;
+  const words = t.toLowerCase().match(/[\p{L}']+/gu) || [];
+  if (words.length < 4) return true;
+  const en = words.filter(w => EN_WORDS.has(w)).length, other = words.filter(w => OTHER_WORDS.has(w)).length;
+  const accents = (t.match(/[à-ÿ]/gi) || []).length / Math.max(1, t.length);
+  return !(other >= 2 && other > en) && !(accents > 0.06 && en === 0);
+}
 function parseFeed(xml, feed){
   const doc = new DOMParser().parseFromString(xml.replace(/^﻿/, "").trim(), "application/xml");
   const root = doc.documentElement;
@@ -1663,7 +1675,10 @@ function parseFeed(xml, feed){
     });
   } else if (rn === "sitemapindex") throw new Error("That's a list of sitemaps, not the news sitemap itself");
   else throw new Error("That address isn't an RSS or Atom feed");
-  items = items.filter(i => i.link || i.title).sort((a, b) => b.date - a.date).slice(0, 40);
+  items = items.filter(i => i.link || i.title);
+  // Google News topics: English only (its English edition still mixes in other languages now and then)
+  if (feed && /news\.google\.com/.test(feed.url || "") && !/site%3A|site:/i.test(feed.url || "")) items = items.filter(i => looksEnglish(i.title));
+  items = items.sort((a, b) => b.date - a.date).slice(0, 40);
   return {title: htmlToText(title), items, everyMin: feedHintMinutes(root), icon: safeUrl((icon || "").trim()) || "", site: safeUrl((site || "").trim()) || ""};
 }
 // A news sitemap (the list of latest articles sites publish for search engines) counts as a feed too
