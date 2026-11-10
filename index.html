@@ -411,6 +411,9 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .editform .row{display:flex;gap:8px;flex-wrap:wrap}
 .sfilters{margin:-4px 0 0;padding-block:2px}
 .sfilters .chip{padding:4px 10px;font-size:12.5px}
+.ssub{margin:0 0 8px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.ssub .chip{padding:3px 9px;font-size:12px;flex:none}
+.ssub .count{min-width:16px;height:16px;padding:0 4px;border-radius:99px;background:var(--sunk);color:var(--muted);font-size:10.5px;font-weight:700;display:inline-grid;place-items:center;margin-left:4px}
 .sfilters .count{min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:var(--sunk);color:var(--muted);font-size:11px;font-weight:700;display:inline-grid;place-items:center;margin-right:-4px}
 .sfilters .chip[aria-pressed="true"] .count{background:color-mix(in srgb,var(--bg) 25%,transparent);color:var(--bg)}
 .msg:empty{display:none}
@@ -4679,7 +4682,25 @@ function pillOf(r){
   if (r.kind === "podcasts") return "audio";
   return "articles";
 }
-const listFor = p => { const P = PILLS.find(x => x.key === p); return P ? P.from.flatMap(k => search.results[k] || []).filter(r => pillOf(r) === p) : []; };
+const listFor = p => { const P = PILLS.find(x => x.key === p); const all = P ? P.from.flatMap(k => search.results[k] || []).filter(r => pillOf(r) === p) : [];
+  // Conversations can be narrowed to one service
+  return p === "conversations" && search.sub ? all.filter(r => r.kind === search.sub) : all; };
+const SERVICES = [["reddit", "Reddit"], ["bluesky", "Bluesky"], ["mastodon", "Mastodon"], ["lemmy", "Lemmy"]];
+// Only under Conversations: a row to pick one service, with how many each found
+function serviceBar(onPick){
+  const bar = el("div", "chips ssub"); bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Service");
+  const sub = search.sub; search.sub = "";
+  const all = listFor("conversations"); search.sub = sub;
+  [["", "All"], ...SERVICES].forEach(([k, label]) => {
+    const n = k ? all.filter(r => r.kind === k).length : all.length;
+    if (k && !n && search.sub !== k) return;
+    const b = el("button", "chip"); b.type = "button"; b.setAttribute("aria-pressed", String((search.sub || "") === k));
+    b.append(document.createTextNode(label), el("span", "count", String(n)));
+    b.onclick = () => { search.sub = k; onPick(); };
+    bar.append(b);
+  });
+  return bar;
+}
 const pillLoading = p => { const P = PILLS.find(x => x.key === p); return !!P && P.from.some(k => search.status[k] === "loading"); };
 const pillError = p => { const P = PILLS.find(x => x.key === p); return !!P && P.from.every(k => search.status[k] === "error"); };
 const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "News topic", bluesky: "Bluesky", mastodon: "Mastodon", flipboard: "Flipboard", lemmy: "Lemmy", peertube: "PeerTube"};
@@ -4874,7 +4895,7 @@ function mixed(keys, limit){
   return out.slice(0, limit);
 }
 function filterKeys(f){ return f === "all" ? PILLS.map(s => s.key) : [f]; }
-function countFor(f){ return filterKeys(f).reduce((n, k) => n + listFor(k).length, 0); }
+function countFor(f){ const sub = search.sub; search.sub = ""; const n = filterKeys(f).reduce((n, k) => n + listFor(k).length, 0); search.sub = sub; return n; }
 function loadingNames(f){ return filterKeys(f).filter(pillLoading).map(k => PILLS.find(s => s.key === k).label.toLowerCase()); }
 
 function renderFilterChips(box, onPick){
@@ -4884,7 +4905,7 @@ function renderFilterChips(box, onPick){
     b.setAttribute("aria-pressed", String(search.filter === key));
     b.append(document.createTextNode(label));
     if (search.q && !pillLoading(key) && key !== "all") b.append(el("span", "count" + (countFor(key) ? "" : " zero"), String(countFor(key))));
-    b.onclick = () => { search.filter = key; store.set("tl.searchFilter", key); onPick(); };
+    b.onclick = () => { search.filter = key; search.sub = ""; store.set("tl.searchFilter", key); onPick(); };
     box.append(b);
   });
 }
@@ -4897,6 +4918,7 @@ function renderTopResults(){
   renderFilterChips($("#searchFilters"), renderAllResults);
   if (!search.q){ box.hidden = true; return; }
   box.hidden = false; box.textContent = "";
+  if (search.filter === "conversations") box.append(serviceBar(renderAllResults));
   const list = mixed(filterKeys(search.filter), 10);
   const waiting = loadingNames(search.filter);
   const ul = el("ul", "rlist");
@@ -4914,6 +4936,7 @@ function renderTopResults(){
 function renderFullResults(){
   renderFilterChips($("#spFilters"), renderAllResults);
   const box = $("#spResults"); box.textContent = "";
+  if (search.filter === "conversations") box.append(serviceBar(renderAllResults));
   const keys = filterKeys(search.filter);
   keys.forEach(k => {
     const label = PILLS.find(s => s.key === k).label;
