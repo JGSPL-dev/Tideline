@@ -5947,7 +5947,6 @@ if (!store.get("yf.noViaGoogle", false)){
   state.feeds.forEach(f => { if (/ via Google$/.test(f.title || "") && /news\.google\.com/.test(f.url)) f.title = f.title.replace(/ via Google$/, ""); });
   store.set("yf.noViaGoogle", true); save();
 }
-if (changedRoutes) save();
 let changedRoutes = false;
 // A source added through Google News whose site now has a direct route in our list (e.g. its news sitemap): switch it over
 state.feeds.forEach(f => {
@@ -5955,6 +5954,7 @@ state.feeds.forEach(f => {
   const d = DIRECTORY.find(([n, u]) => n === f.title && !/news\.google\.com/.test(u));
   if (d && !state.feeds.some(g => g.url === d[1])){ f.url = d[1]; f.http = {}; f.nextCheck = 0; f.error = null; changedRoutes = true; }
 });
+if (changedRoutes) save();
 // Nov 2026: strip filler from website names ("IGN All" → "IGN"), once
 if (!store.get("yf.tidyNames", false)){
   state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; });
