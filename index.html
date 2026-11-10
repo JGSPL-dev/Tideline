@@ -4544,24 +4544,28 @@ function siteOf(url){ const gq = /news\.google\.com/.test(url) ? newsQuery(url) 
   return gq ? (gq.site ? gq.site.replace(/^www\./, "") : "") : new URL(url).hostname.replace(/^www\.|^feeds?\./, ""); }
 function groupPublishers(q, found){
   const sq = squash(q), out = [], groups = new Map();
+  const isNamed = ([name, , , word]) => squash(word).includes(sq) || sq.includes(squash(word)) || (sq.length >= 3 && squash(name).includes(sq));
   found.forEach(r => {
-    const pub = pubOf(r.url); if (!pub){ out.push(r); return; }
-    // Searching for the publisher itself ("guardian", "bbc sport"): all its sections; otherwise only the matching ones
+    const pub = pubOf(r.url);
+    // Only a search for the publisher itself ("guardian", "bbc sport") groups its sections; a subject search keeps each one in place
+    if (!pub || !isNamed(pub)){ out.push(r); return; }
     let g = groups.get(pub[0]);
     if (!g){ g = {pub, hits: []}; groups.set(pub[0], g); out.push(g); }
     g.hits.push(r);
   });
-  return out.map(x => {
-    if (!x.pub) return x;
+  return out.flatMap(x => {
+    if (!x.pub) return [x];
     const [name, test, main, word] = x.pub;
     const named = squash(word).includes(sq) || sq.includes(squash(word)) || (sq.length >= 3 && squash(name).includes(sq));
-    const all = named ? DIRECTORY.filter(([, u]) => test(u)).map(([title, url]) => ({title, url})) : x.hits;
-    if (all.length === 1) return x.hits[0];
-    const lead = named ? (all.find(r => r.url === main) || all[0]) : x.hits[0];
+    // Searching a subject ("football", "food"): every matching section on its own. Only a search for the publisher groups them
+    if (!named) return x.hits;
+    const all = DIRECTORY.filter(([, u]) => test(u)).map(([title, url]) => ({title, url}));
+    if (all.length === 1) return [x.hits[0]];
+    const lead = all.find(r => r.url === main) || all[0];
     const rest = all.filter(r => r !== lead && r.url !== lead.url);
-    return {title: named ? name : lead.title, url: lead.url, site: siteOf(lead.url) || "News topic",
-      desc: named ? "Top stories. Or pick sections below." : `${name} section. More ${name} sections below.`,
-      sections: rest.map(r => ({title: sectionName(r.title), url: r.url})).sort((a, b) => a.title.localeCompare(b.title))};
+    return [{title: name, url: lead.url, site: siteOf(lead.url) || "News topic",
+      desc: "Adds the top stories, or choose sections below.",
+      sections: rest.map(r => ({title: sectionName(r.title), url: r.url})).sort((a, b) => a.title.localeCompare(b.title))}];
   });
 }
 function searchDirectory(q){
@@ -4570,7 +4574,10 @@ function searchDirectory(q){
       return site ? {title, url, site, website: "https://" + site.split("/")[0]} : {title, url, site: "News topic", desc: "Headlines about this from many publishers."}; });
   // Names that contain the whole search ("good food" → BBC Good Food) before ones that only match on tags
   const sqq = squash(q), nameHit = r => squash(r.title).includes(sqq) ? 0 : 1;
-  found = found.map((r, n) => [r, n]).sort((a, b) => nameHit(a[0]) - nameHit(b[0]) || a[1] - b[1]).map(([r]) => r);
+  // Spread publishers out: each publisher's first match, then each one's second, and so on (so one publisher's sections don't fill the top)
+  const pubKey = r => { const P = pubOf(r.url); return P ? P[0] : r.url; }, nth = new Map();
+  const rank = found.map((r, n) => { const k = nameHit(r) + ":" + pubKey(r), i = nth.get(k) || 0; nth.set(k, i + 1); return [r, nameHit(r), i, n]; });
+  found = rank.sort((a, b) => a[1] - b[1] || a[2] - b[2] || a[3] - b[3]).map(([r]) => r);
   found = groupPublishers(q, found);
   // Sites other YourFeed users added, not already in our list
   const known = new Set(DIRECTORY.map(([, u]) => siteOf(u).split("/")[0].replace(/^(www|feeds?|rss)\./, "")));
@@ -4987,7 +4994,7 @@ function resultEl(r, showKind){
   li.append(ic, info, b);
   if (r.sections && r.sections.length){
     // "N sections": chips to add any of the publisher's section feeds
-    const tog = el("button", "linkbtn rsec-tog", `${r.sections.length} more section${r.sections.length === 1 ? "" : "s"}`); tog.type = "button";
+    const tog = el("button", "linkbtn rsec-tog", `Choose sections (${r.sections.length})`); tog.type = "button";
     tog.setAttribute("aria-expanded", "false");
     const chips = el("div", "fb-chips rsec-chips"); chips.hidden = true;
     r.sections.forEach(sec => {
@@ -5001,7 +5008,7 @@ function resultEl(r, showKind){
       };
       chips.append(c);
     });
-    tog.onclick = () => { chips.hidden = !chips.hidden; tog.setAttribute("aria-expanded", String(!chips.hidden)); tog.textContent = chips.hidden ? `${r.sections.length} more section${r.sections.length === 1 ? "" : "s"}` : "Hide sections"; };
+    tog.onclick = () => { chips.hidden = !chips.hidden; tog.setAttribute("aria-expanded", String(!chips.hidden)); tog.textContent = chips.hidden ? `Choose sections (${r.sections.length})` : "Hide sections"; };
     const wrap = el("div", "rsec-wrap"); wrap.append(tog, chips); li.append(wrap);
   }
   return li;
