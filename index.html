@@ -1103,6 +1103,7 @@ async function feedDirect(url, ms = 12000, feed){
   if (r.status === 304 && v && haveStories) return NOT_MODIFIED;
   if (!r.ok) throw new Error("The site answered with error " + r.status);
   const t = await r.text();
+  if (t.length > 8e6) throw new Error("That feed is too big to read on a phone");
   if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
   if (IS_APP && feed && feed.id !== "probe"){
     const etag = r.headers.get("ETag"), lm = r.headers.get("Last-Modified");
@@ -1669,7 +1670,8 @@ function parseFeed(xml, feed){
   } else if (rn === "urlset"){
     // News sitemap: <url><loc> + <news:news> (title, date, publication) + <image:image>
     const only = ((feed && feed.url || "").match(/#only=([^&]+)/) || [])[1];
-    const urls = kids(root, "url").filter(u => !only || (txt(kid(u, "loc")).match(/^https?:\/\/[^/]+(\/.*)$/) || [])[1]?.startsWith(decodeURIComponent(only)));
+    // Big sitemaps (thousands of entries): only the newest few hundred are needed
+    const urls = kids(root, "url").filter(u => !only || (txt(kid(u, "loc")).match(/^https?:\/\/[^/]+(\/.*)$/) || [])[1]?.startsWith(decodeURIComponent(only))).slice(0, 400);
     const nn = urls.map(u => deep(u, "news:news")[0]).find(Boolean);
     title = nn ? txt(deep(nn, "news:name")[0]) : "";
     const first = urls.map(u => txt(kid(u, "loc"))).find(Boolean); if (first){ try{ site = new URL(first).origin; }catch{} }
