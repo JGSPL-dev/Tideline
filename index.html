@@ -4525,6 +4525,9 @@ function searchDirectory(q){
   let found = DIRECTORY.filter(([t, url, tags]) => dirMatch(q, t, siteOf(url) + " " + tags))
     .map(([title, url]) => { const site = siteOf(url);
       return site ? {title, url, site, website: "https://" + site.split("/")[0]} : {title, url, site: "News topic", desc: "Headlines about this from many publishers."}; });
+  // Names that contain the whole search ("good food" → BBC Good Food) before ones that only match on tags
+  const sqq = squash(q), nameHit = r => squash(r.title).includes(sqq) ? 0 : 1;
+  found = found.map((r, n) => [r, n]).sort((a, b) => nameHit(a[0]) - nameHit(b[0]) || a[1] - b[1]).map(([r]) => r);
   found = groupPublishers(q, found);
   // A publisher with no feed: first when you search for it by name ("bbc food"), after the real feeds for a subject ("food")
   for (const [title, site, tags] of NO_FEED.filter(([t, site]) => dirMatch(q, t, site))){
