@@ -4621,7 +4621,27 @@ async function searchReddit(q){
   return ex ? [ex, ...rest] : rest;
 }
 async function searchRedditList(q){
-  try{ return await searchRedditDirect(q); }catch{ return []; }
+  // Reddit's JSON search is often refused to apps and cloud servers; its RSS version of the same search usually isn't
+  const [j, r] = await Promise.all([searchRedditDirect(q).catch(() => []), searchRedditRss(q).catch(() => [])]);
+  const seen = new Set(j.map(x => x.url.toLowerCase()));
+  return [...j, ...r.filter(x => !seen.has(x.url.toLowerCase()))];
+}
+async function searchRedditRss(q){
+  const name = q.replace(/^r\//i, "").replace(/\s+/g, "");
+  const xml = await fetchFeedText("https://www.reddit.com/subreddits/search.rss?include_over_18=0&limit=25&q=" + encodeURIComponent(q), 12000);
+  const doc = new DOMParser().parseFromString(xml, "application/xml");
+  const out = [];
+  for (const e of [...doc.getElementsByTagName("entry")]){
+    const l = [...e.getElementsByTagName("link")].map(x => x.getAttribute("href") || "").find(h => /\/r\/\w+/.test(h)) || "";
+    const sub = (l.match(/\/r\/(\w+)/) || [])[1]; if (!sub) continue;
+    const head = (e.getElementsByTagName("title")[0] || {}).textContent || "";
+    const body = htmlToText(((e.getElementsByTagName("content")[0] || {}).textContent || "")).replace(/\s+/g, " ").trim();
+    if (/\bnsfw\b|over ?18/i.test(head + " " + body)) continue;
+    out.push({kind: "reddit", title: "r/" + sub, url: `https://www.reddit.com/r/${sub}/.rss`, website: `https://www.reddit.com/r/${sub}/`,
+      site: head && head.toLowerCase() !== sub.toLowerCase() && head.toLowerCase() !== "r/" + sub.toLowerCase() ? head : "",
+      desc: body.slice(0, 160), exact: sub.toLowerCase() === name.toLowerCase()});
+  }
+  return out;
 }
 async function searchRedditDirect(q){
   const out = [];
