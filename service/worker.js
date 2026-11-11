@@ -13,14 +13,20 @@
 //                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
 //   GET/POST /websub/youtube?id=UC… → YouTube's push hub: confirms subscriptions and delivers new videos
 //                                   (subscribed automatically for channels people follow; needs YF_CACHE + YT_API_KEY)
+//   POST /community/add {domain}  → counts a website someone added; shared once enough people have and the owner approves
+//   GET /community/list           → {sites:[…]} approved websites
+//   POST /community/admin         → owner only (ADMIN_KEY): list pending, approve, deny, remove
 //   GET /health                   → {ok:true, youtubeApi:true|false}
+//
+// Secrets and settings (Cloudflare → Worker → Settings): YT_API_KEY, WEBSUB_SECRET (signs YouTube push deliveries),
+// ADMIN_KEY (community approvals), optional COMMUNITY_MIN. Optional binding LIMITER (Workers rate limiting) on top of the
+// built-in per-instance limit; a Cloudflare WAF rate-limiting rule on the whole host is the strongest protection.
 
 const ALLOWED_ORIGINS = [
   "https://yourfeed.appsforus.co.uk",
   "https://jgspl-dev.github.io",
   "https://localhost",            // the Android app
-  "capacitor://localhost",        // the iPhone app, later
-  "http://localhost:8765"         // local testing
+  "capacitor://localhost"         // the iPhone app, later
 ];
 const JSON_HOSTS = ["itunes.apple.com", "www.reddit.com", "old.reddit.com", "public.api.bsky.app", "mastodon.social"];
 const MAX_BYTES = 5 * 1024 * 1024;          // 5 MB per upstream answer
@@ -30,13 +36,32 @@ const UA_BROWSER = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36
 const UA_FEEDS = "YourFeed/1.0 (+https://yourfeed.appsforus.co.uk; feed reader)";
 
 const hits = new Map();
-function limited(ip){
+// Cloudflare's rate-limiting binding (shared across instances) when it's set up; this per-instance count either way
+async function overLimit(env, ip, bucket = "all", max){
+  if (limited(bucket + ":" + ipKey(ip), max)) return true;
+  if (env && env.LIMITER && env.LIMITER.limit){ try{ const {success} = await env.LIMITER.limit({key: bucket + ":" + ip}); if (!success) return true; }catch{} }
+  return false;
+}
+// IPv6: a home or phone usually gets a whole /64 block, so count the block, not each address in it
+function ipKey(ip){
+  ip = String(ip || "?").toLowerCase();
+  if (!ip.includes(":")) return ip;
+  const [head, tail = ""] = ip.split("::");
+  const h = head ? head.split(":") : [], t = tail ? tail.split(":") : [];
+  const full = [...h, ...Array(Math.max(0, 8 - h.length - t.length)).fill("0"), ...t];
+  return full.slice(0, 4).map(x => x.replace(/^0+(?=.)/, "")).join(":") + "::/64";
+}
+async function readJson(req){
+  try{ const t = await req.text(); return t.length > 4000 ? null : JSON.parse(t); }catch{ return null; }
+}
+function limited(ip, max = RATE.perMinute){
+  ip = ipKey(ip);
   const now = Date.now(), win = 60000;
   const h = hits.get(ip) || {t: now, n: 0};
   if (now - h.t > win){ h.t = now; h.n = 0; }
   h.n++; hits.set(ip, h);
   if (hits.size > 5000) hits.clear();
-  return h.n > RATE.perMinute;
+  return h.n > max;
 }
 
 function headers(origin, type){
@@ -109,19 +134,36 @@ function publicUrl(raw){
   if (h === "localhost" || h.endsWith(".local") || h.endsWith(".internal") || h.endsWith(".localhost") || !h.includes(".")) return null;
   if (/^\d+\.\d+\.\d+\.\d+$/.test(h)){
     const [a, b] = h.split(".").map(Number);
-    if (a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224) return null;
+    if (a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a >= 224
+        || (a === 100 && b >= 64 && b <= 127) || (a === 192 && b === 0) || (a === 198 && (b === 18 || b === 19))) return null;
   }
   if (h.startsWith("[")) return null;                       // no raw IPv6 addresses
   return u;
 }
 
+// Addresses that look like they carry a password or personal key (paid podcast feeds and the like) are refused:
+// they belong only on the person's own device. The app checks this too; this is the second line.
+const SECRET_WORDS = new Set(["token", "auth", "key", "apikey", "secret", "sig", "signature", "pass", "password", "passwd", "private", "session", "sid", "uid", "user", "member", "access", "hash", "code"]);
+const secretName = k => /token|secret|passw|auth/i.test(k) || k.toLowerCase().split(/[^a-z]+/).some(w => SECRET_WORDS.has(w));
+// A random-looking code: a UUID, or a long run of letters and digits with no word breaks (not a YouTube channel or playlist ID)
+const randomCode = v => /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(v)
+  || (/^[A-Za-z0-9_]{20,}$/.test(v) && (v.match(/\d/g) || []).length >= 3 && (v.match(/[a-z]/gi) || []).length >= 3 && !/^(UC|UU|PL|FL)[\w-]{16,}$/.test(v));
+const PUBLIC_CODES = /(^|\.)(news\.google\.com|youtube\.com|reddit\.com|bsky\.app)$/i;
+function looksPrivate(u){
+  const pub = PUBLIC_CODES.test(u.hostname);
+  for (const [k, v] of u.searchParams) if (secretName(k) || (!pub && randomCode(v))) return true;
+  return (!pub && !/\/public\//i.test(u.pathname) && u.pathname.split("/").some(v => randomCode(v.replace(/\.\w{2,5}$/, ""))))
+    || /(^|\.)(patreon|supercast|memberful|glow\.fm|hello-audio|passport)\b/.test(u.hostname) || /\/private\//i.test(u.pathname);
+}
 async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept} = {}){
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try{
     const h = {"User-Agent": ua, "Accept": accept || "application/rss+xml, application/atom+xml, application/xml, text/xml, application/json, text/html;q=0.8, */*;q=0.5", "Accept-Language": "en-GB,en;q=0.9"};
     if (cookie) h.Cookie = cookie;
-    const r = await fetch(url, {headers: h, redirect: "follow", signal: ctrl.signal, cf: {cacheTtl: 300, cacheEverything: true}});
+    // Shared caching only for plain addresses: anything with a query string may be personal
+    const plain = !/\?/.test(url);
+    const r = await fetch(url, {headers: h, redirect: "follow", signal: ctrl.signal, ...(plain ? {cf: {cacheTtl: 300, cacheEverything: true}} : {})});
     if (!publicUrl(r.url || url)) throw new Error("Redirected somewhere not allowed");
     const len = +r.headers.get("content-length") || 0;
     if (len > MAX_BYTES) throw new Error("Too large");
@@ -141,12 +183,15 @@ async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept} = {}){
   } finally { clearTimeout(t); }
 }
 
+// Judged by the document's first element (after the XML declaration, comments, stylesheet and doctype),
+// so a web page that merely mentions <rss> is never passed through
+const rootOf = t => t.slice(0, 20000).replace(/^\uFEFF/, "").replace(/^(\s+|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>]*>)+/i, "");
 const looksLikeFeed = t => {
-  const s = t.slice(0, 3000).trimStart();
-  if (/^\{/.test(s) && /"version"\s*:\s*"https:\/\/jsonfeed\.org/.test(s)) return true;
-  if (/<(rss|feed|rdf:RDF)[\s>]/i.test(s)) return true;
+  const s = rootOf(t);
+  if (/^\{/.test(s) && /"version"\s*:\s*"https:\/\/jsonfeed\.org/.test(s.slice(0, 3000))) return true;
+  if (/^<(rss|feed|rdf:RDF)[\s>]/i.test(s)) return true;
   // A news sitemap (a site's list of latest articles for search engines) is read like a feed
-  return /<urlset[\s>]/i.test(t.slice(0, 5000)) && /<news:news[\s>]|sitemap-news\/|<image:image[\s>]/i.test(t.slice(0, 30000));
+  return /^<urlset[\s>]/i.test(s) && /<news:news[\s>]|sitemap-news\/|<image:image[\s>]/i.test(t.slice(0, 30000));
 };
 const blocked = t => /Just a moment|cf-chl|challenge-platform|Attention Required|captcha/i.test(t.slice(0, 5000));
 
@@ -189,9 +234,16 @@ const sendJson = (origin, text, extra) => { const h = headers(origin, "applicati
 const HUB = "https://pubsubhubbub.appspot.com/subscribe";
 const topicFor = id => "https://www.youtube.com/xml/feeds/videos.xml?channel_id=" + id;
 const hex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
-async function pushSecret(env, id){
-  // Per-channel secret the hub signs deliveries with; derived from the API key, so nothing extra to set up
-  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("yourfeed-websub:" + env.YT_API_KEY + ":" + id))).slice(0, 40);
+// Per-channel secret the hub signs deliveries with, from WEBSUB_SECRET. Subscriptions made before that secret existed
+// used one derived from the API key; those signatures are still accepted until the subscriptions renew (within 10 days).
+async function pushSecret(env, id, old = false){
+  const base = old || !env.WEBSUB_SECRET ? "yourfeed-websub:" + env.YT_API_KEY : "yourfeed-websub2:" + env.WEBSUB_SECRET;
+  return hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(base + ":" + id))).slice(0, 40);
+}
+function sameText(a, b){
+  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
+  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return d === 0;
 }
 async function hmacSha1(secret, body){
   const k = await crypto.subtle.importKey("raw", new TextEncoder().encode(secret), {name: "HMAC", hash: "SHA-1"}, false, ["sign"]);
@@ -217,8 +269,11 @@ async function handlePush(req, url, env){
   if (req.method === "GET"){
     // The hub checks we really asked for this subscription
     const mode = url.searchParams.get("hub.mode"), topic = url.searchParams.get("hub.topic"), challenge = url.searchParams.get("hub.challenge") || "";
-    if (topic !== topicFor(id) || !/^(subscribe|unsubscribe)$/.test(mode || "")) return plain("no", 404);
-    if (mode === "subscribe"){
+    // Only confirm a subscription this service asked for in the last day (we never ask to unsubscribe)
+    if (topic !== topicFor(id) || mode !== "subscribe") return plain("no", 404);
+    const asked = await kvGet(env, "push:" + id);
+    if (!asked || !asked.asked || Date.now() - asked.asked > 86400000) return plain("no", 404);
+    {
       const lease = Math.min(864000, +url.searchParams.get("hub.lease_seconds") || 432000);
       const until = Date.now() + lease * 1000;
       await kvPut(env, "push:" + id, {until}, 30 * 86400);
@@ -232,7 +287,8 @@ async function handlePush(req, url, env){
   if (body.byteLength > 1024 * 1024) return plain("too big", 413);
   // Only deliveries signed with our secret are accepted
   const sig = (req.headers.get("X-Hub-Signature") || "").replace(/^sha1=/, "");
-  if (!sig || sig !== await hmacSha1(await pushSecret(env, id), body)) return plain("ok");   // ignore, but don't help guessers
+  const good = sig && (sameText(sig, await hmacSha1(await pushSecret(env, id), body)) || (env.WEBSUB_SECRET && sameText(sig, await hmacSha1(await pushSecret(env, id, true), body))));
+  if (!good) return plain("ok");   // ignore, but don't help guessers
   const xml = new TextDecoder().decode(body);
   const kv = await kvGet(env, "ytl:" + id);
   if (!kv) return plain("ok");                                                  // nobody has asked for this channel yet
@@ -294,15 +350,17 @@ async function handle(req, url, origin, env, ctx){
     //  - this location's copy is checked first (free, no KV read),
     //  - the shared copy is read once per miss, and only rewritten when there's a new video,
     //  - push status lives inside the shared copy, so it costs no extra read.
-    // 1. This location's copy
+    // 1. This location's copy (or a recent "no such channel", so made-up IDs can't spend API units over and over)
     const edge = await edgeGet("ytl:" + id);
     if (edge) return sendJson(origin, edge, {"X-YourFeed-Cache": "edge"});
+    if (await edgeGet("ytmiss:" + id)) return fail(origin, 404, "YouTube has no uploads for that channel");
     // 2. The shared copy. While YouTube pushes this channel's new videos to us it stays current on its own,
     //    so it's only re-checked every 6 hours (a safety net); otherwise every 30 minutes.
     const kv = await kvGet(env, "ytl:" + id);
     const pushing = kv && kv.pushUntil > Date.now();
     const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
-    if (ctx && (!kv || !kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
+    // Push subscriptions only for channels the API has confirmed exist (a shared copy means it has)
+    if (ctx && kv && (!kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
     if (kv && Date.now() - kv.at < FRESH){
       // Videos YouTube pushed to us arrive without a length or Short flag: fill those in once
       let learned = await enrich(kv.videos || [], env);
@@ -324,9 +382,11 @@ async function handle(req, url, origin, env, ctx){
       // API down or today's allowance used up: an older copy is better than nothing
       if (kv) return sendJson(origin, JSON.stringify({title: kv.title, avatar: kv.avatar || undefined, videos: (kv.videos || []).map(forApp), stale: true}), {"X-YourFeed-Cache": "stale"});
       const reason = j && j.error && j.error.errors && j.error.errors[0] && j.error.errors[0].reason;
+      if (r && r.status === 404){ await edgePut("ytmiss:" + id, "1", 6 * 3600); return fail(origin, 404, "YouTube has no uploads for that channel"); }
       return fail(origin, reason === "quotaExceeded" ? 429 : 502, reason === "quotaExceeded" ? "Today's YouTube API allowance is used up" : "YouTube's API answered: " + (reason || (r ? r.status : "no answer")));
     }
     const items = j.items || [];
+    if (!items.length && !kv){ await edgePut("ytmiss:" + id, "1", 3600); return fail(origin, 404, "YouTube has no uploads for that channel"); }
     const videos = items.map(i => i.snippet).filter(s => s && s.resourceId && s.resourceId.videoId)
       .map(s => ({id: s.resourceId.videoId, title: s.title, date: Date.parse(s.publishedAt) || 0}));
     // Lengths and Short flags already known come from the shared copy; only new videos are looked up
@@ -341,12 +401,15 @@ async function handle(req, url, origin, env, ctx){
     // Rewrite the shared copy only when there's a new video (KV writes are the scarcest free resource)
     const top = videos[0] && videos[0].id;
     if (!kv || kv.top !== top || learned) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, avatar, avatarAt, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
+    // The channel is real (the API answered with its uploads): ask YouTube to push its new videos to us
+    if (ctx && !kv) ctx.waitUntil(ensurePush(env, id, url.origin));
     return sendJson(origin, text, {"X-YourFeed-Cache": "fresh"});
   }
 
   if (p === "/feed"){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target) return fail(origin, 400, "Not a public web address");
+    if (looksPrivate(target)) return fail(origin, 403, "That looks like a private feed link, so it's only read from your own device");
     const isReddit = /(^|\.)reddit\.com$/.test(target.hostname);
     const r = await fetchCapped(target.href, {ua: isReddit ? UA_FEEDS : UA_BROWSER});
     if (!r.ok) return fail(origin, 502, "The site answered with error " + r.status);
@@ -366,37 +429,71 @@ async function handle(req, url, origin, env, ctx){
   if (p === "/discover"){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target) return fail(origin, 400, "Not a public web address");
+    if (looksPrivate(target)) return fail(origin, 403, "That looks like a private link, so it's only read from your own device");
     const res = await findFeeds(target, env);
     return res.error ? fail(origin, res.status, res.error) : json(origin, res);
   }
 
-  // ---- Community list: websites people paste and add, shared once several different people have added the same one ----
-  // Only the site's address (e.g. bbcgoodfood.com) is sent. Different people are told apart by a short one-way code made
-  // from their connection and the month, kept only until the site is approved, then thrown away.
+  // ---- Community list: websites people paste and add, shared once several different people have added the same one
+  // and the owner has approved it. Only the site's address (e.g. bbcgoodfood.com) is sent. Different people are told
+  // apart by a short one-way code made from their connection (a home's whole IPv6 block counts once) and the month,
+  // kept only until the site reaches the threshold, then thrown away. Sites that never get there expire after 30 days.
   if (p === "/community/add"){
-    const d = communityDomain(url.searchParams.get("domain") || "");
-    if (!d) return fail(origin, 400, "Not a website address");
+    if (req.method !== "POST") return fail(origin, 405, "POST only");
+    const body = await readJson(req);
+    const d = communityDomain(body && body.domain || "");
+    if (!d || !publicUrl("https://" + d + "/")) return fail(origin, 400, "Not a website address");
+    if (((await kvGet(env, "cm:deny")) || []).includes(d)) return json(origin, {ok: true, listed: false});
     const key = "cm:" + d, rec = (await kvGet(env, key)) || {n: 0, h: []};
+    if (rec.state === "listed" || (rec.ok && !rec.state && rec.n >= (Number(env.COMMUNITY_MIN) || COMMUNITY_MIN))) return json(origin, {ok: true, listed: true});
+    if (rec.state === "pending") return json(origin, {ok: true, listed: false, pending: true});
+    if (rec.state === "removed") return json(origin, {ok: true, listed: false});
     const need = Number(env.COMMUNITY_MIN) || COMMUNITY_MIN;
-    if (rec.ok && rec.n >= need) return json(origin, {ok: true, listed: true});
     const month = new Date().toISOString().slice(0, 7);
-    const who = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("yourfeed-community:" + (req.headers.get("CF-Connecting-IP") || "?") + ":" + month + ":" + (env.YT_API_KEY || "")))).slice(0, 10);
+    const who = hex(await crypto.subtle.digest("SHA-256", new TextEncoder().encode("yourfeed-community:" + ipKey(req.headers.get("CF-Connecting-IP") || "?") + ":" + month + ":" + (env.YT_API_KEY || "")))).slice(0, 10);
     if (rec.h.includes(who)) return json(origin, {ok: true, listed: false});
     // First time: check the site really has a feed
     if (!rec.ok){ const f = await findFeeds(new URL("https://" + d + "/"), env); if (f.error) return fail(origin, 422, "No feed found on that site"); rec.ok = true; }
     rec.n++; rec.h.push(who); rec.h = rec.h.slice(-30); rec.at = Date.now();
-    const listed = rec.n >= need;
-    if (listed){
-      rec.h = [];                                             // approved: the codes aren't needed any more
-      const idx = (await kvGet(env, "cm:index")) || [];
-      if (!idx.includes(d)){ idx.push(d); await kvPut(env, "cm:index", idx.slice(-5000), 365 * 86400); }
+    if (rec.n >= need){
+      rec.state = "pending"; rec.h = [];                      // waiting for the owner; the codes aren't needed any more
+      const pend = (await kvGet(env, "cm:pending")) || [];
+      if (!pend.includes(d)){ pend.push(d); await kvPut(env, "cm:pending", pend.slice(-500), 365 * 86400); }
     }
-    await kvPut(env, key, rec, 180 * 86400);
-    return json(origin, {ok: true, listed});
+    await kvPut(env, key, rec, (rec.state === "pending" ? 180 : 30) * 86400);
+    return json(origin, {ok: true, listed: false, pending: rec.state === "pending"});
   }
   if (p === "/community/list"){
     const idx = (await kvGet(env, "cm:index")) || [];
     return sendJson(origin, JSON.stringify({sites: idx}), {"Cache-Control": "public, max-age=3600"});
+  }
+  // Owner only: Authorization: Bearer <ADMIN_KEY>. {action: "pending" | "approve" | "deny" | "remove", domain}
+  if (p === "/community/admin"){
+    if (req.method !== "POST") return fail(origin, 405, "POST only");
+    if (!env.ADMIN_KEY) return fail(origin, 501, "ADMIN_KEY isn't set up on this service");
+    if (await overLimit(env, req.headers.get("CF-Connecting-IP") || "?", "admin", 20)) return fail(origin, 429, "Too many tries, wait a minute");
+    if (!sameText((req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, ""), env.ADMIN_KEY)) return fail(origin, 403, "Wrong owner key");
+    const body = (await readJson(req)) || {};
+    const pend = (await kvGet(env, "cm:pending")) || [], idx = (await kvGet(env, "cm:index")) || [], deny = (await kvGet(env, "cm:deny")) || [];
+    if (body.action === "pending"){
+      const rows = [];
+      for (const d of pend.slice(-100)){ const r = await kvGet(env, "cm:" + d); rows.push({domain: d, people: r ? r.n : 0, at: r ? r.at : 0}); }
+      return json(origin, {pending: rows, listed: idx.length, denied: deny.length});
+    }
+    const d = communityDomain(body.domain || "");
+    if (!d) return fail(origin, 400, "Not a website address");
+    const without = (list, x) => list.filter(y => y !== x);
+    if (body.action === "approve"){
+      const rec = (await kvGet(env, "cm:" + d)) || {n: 0, h: [], ok: true};
+      await kvPut(env, "cm:" + d, {...rec, state: "listed", h: []}, 365 * 86400);
+      if (!idx.includes(d)) await kvPut(env, "cm:index", [...idx, d].slice(-5000), 365 * 86400);
+    } else if (body.action === "deny" || body.action === "remove"){
+      await kvPut(env, "cm:" + d, {n: 0, h: [], state: "removed"}, 30 * 86400);
+      if (idx.includes(d)) await kvPut(env, "cm:index", without(idx, d), 365 * 86400);
+      if (body.action === "deny" && !deny.includes(d)) await kvPut(env, "cm:deny", [...deny, d].slice(-5000), 365 * 86400);
+    } else return fail(origin, 400, "Unknown action");
+    if (pend.includes(d)) await kvPut(env, "cm:pending", without(pend, d), 365 * 86400);
+    return json(origin, {ok: true});
   }
   return handleRest(req, url, origin, env, ctx);
 }
@@ -409,11 +506,12 @@ function communityDomain(raw){
 }
 async function findFeeds(target, env){
   {
-    const dkey = "disc:" + target.href.toLowerCase();
+    // Remembered by site and page (not the query string, so made-up variations can't each cost a KV write)
+    const dkey = "disc:" + (target.origin + target.pathname).toLowerCase().slice(0, 300);
     const known = await kvGet(env, dkey);
     if (known) return known;
     const r = await fetchCapped(target.href, {ua: UA_BROWSER});
-    if (r.ok && looksLikeFeed(r.text)){ await kvPut(env, dkey, {feeds: [r.url], title: null}, 7 * 86400); return {feeds: [r.url], title: null}; }
+    if (r.ok && looksLikeFeed(r.text)) return {feeds: [r.url], title: null};          // already a feed: nothing worth remembering
     const feeds = [];
     let title = null;
     if (r.ok){
@@ -501,18 +599,24 @@ export default {
     const url = new URL(req.url);
     // YouTube's push hub: no Origin, POSTs, and must not be rate-limited
     if (url.pathname === "/websub/youtube"){
+      // Confirmations (GET) are limited per connection; deliveries (POST) are checked by signature
+      if (req.method === "GET" && await overLimit(env, req.headers.get("CF-Connecting-IP") || "?", "push", 60)) return new Response("slow down", {status: 429});
       try{ return await handlePush(req, url, env); }catch{ return new Response("error", {status: 500}); }
     }
     const origin = req.headers.get("Origin") || "";
     if (req.method === "OPTIONS"){
-      const h = headers(origin, "text/plain"); h.set("Access-Control-Allow-Methods", "GET"); h.set("Access-Control-Max-Age", "86400");
+      const h = headers(origin, "text/plain"); h.set("Access-Control-Allow-Methods", "GET, POST"); h.set("Access-Control-Allow-Headers", "Content-Type, Authorization"); h.set("Access-Control-Max-Age", "86400");
       return new Response(null, {status: 204, headers: h});
     }
-    if (req.method !== "GET") return fail(origin, 405, "GET only");
+    const posts = /^\/community\/(add|admin)\/?$/.test(url.pathname);
+    if (req.method !== "GET" && !(posts && req.method === "POST")) return fail(origin, 405, posts ? "POST only" : "GET only");
     // Browsers on other websites can't use this service; apps and the YourFeed site can
     if (origin && !ALLOWED_ORIGINS.includes(origin)) return fail(origin, 403, "Not allowed from this website");
-    if (limited(req.headers.get("CF-Connecting-IP") || "?")) return fail(origin, 429, "Too many requests, try again in a minute");
+    if (await overLimit(env, req.headers.get("CF-Connecting-IP") || "?")) return fail(origin, 429, "Too many requests, try again in a minute");
     try{ return await handle(req, url, origin, env, ctx); }
-    catch(e){ return fail(origin, 502, e && e.name === "AbortError" ? "The site took too long to answer" : String(e && e.message || "Failed")); }
+    catch(e){
+      const m = String(e && e.message || "");
+      return fail(origin, 502, e && e.name === "AbortError" ? "The site took too long to answer" : /^(Too large|Redirected somewhere not allowed)$/.test(m) ? m : "Couldn't reach the site");
+    }
   }
 };

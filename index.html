@@ -795,7 +795,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         </div>
         <label class="check" for="shareSites">
           <input type="checkbox" id="shareSites">
-          <span><b>Help improve search</b><br><span class="hint">When a website you paste works, share its address (like bbcgoodfood.com) so others can find it. Nothing else is sent, and never private feeds or social accounts.</span></span>
+          <span><b>Help improve search</b><br><span class="hint">When a website you paste works, share its address (like bbcgoodfood.com) so others can find it. Nothing else is sent, and never private feeds or social accounts. Sites are checked by YourFeed before anyone sees them. You're asked the first time.</span></span>
         </label>
         <label class="check" for="exportPrivate" id="exportPrivateRow" hidden>
           <input type="checkbox" id="exportPrivate">
@@ -830,6 +830,13 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
         <p class="msg" id="dirCheckMsg" aria-live="polite"></p>
         <ul class="checks" id="dirCheckOut" hidden></ul>
       </div>
+      <div class="field">
+        <span class="lbl-strong">Community list approvals</span>
+        <p class="hint">Owner only. Websites that enough people have shared wait here until you approve them. The key is the service's ADMIN_KEY and stays on this device.</p>
+        <div class="iorow"><input type="password" id="adminKey" placeholder="Owner key" autocomplete="off" aria-label="Owner key"><button class="btn" type="button" id="adminLoad">Show waiting sites</button></div>
+        <p class="msg" id="adminMsg" aria-live="polite"></p>
+        <ul class="checks" id="adminOut" hidden></ul>
+      </div>
         </div>
       </details>
       <details class="set-sec setfold" id="sf-faq">
@@ -843,7 +850,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
           <li><b>No account, no tracking.</b> Your sources, saved posts and settings stay on this device.</li>
           <li><b>Straight from the publisher.</b> Feeds are read directly, or through our own YourFeed service. No other companies see what you follow.</li>
           <li><b>Private feeds stay private.</b> Paid subscription links never leave this device and are left out of reports, shares and exports.</li>
-          <li><b>Help improve search (optional).</b> When a website you paste works, only its address is shared, so other people can find it. A site is listed for everyone once several different people have added it. Turn this off in Settings → Sources.</li>
+          <li><b>Help improve search (optional, you're asked first).</b> If you agree, when a website you paste works, only its address is shared, so other people can find it. To count different people without knowing who they are, the service keeps a short one-way code made from your connection and the month, and deletes it once the site has enough people, or after 30 days. A site is listed for everyone only after several different people have added it and YourFeed has checked it. Change this in Settings → Sources.</li>
           <li><b>Content belongs to its publishers.</b> YourFeed shows headlines and previews and links to the original.</li>
           <li><b>YouTube.</b> Videos play in YouTube's own player and are covered by the <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener">YouTube Terms of Service</a> and <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">Google Privacy Policy</a>.</li>
         </ul>
@@ -1140,30 +1147,44 @@ function serviceBase(){
 /* ---------- private (paid) feeds ----------
    Patreon, Supercast, Substack and the like give each subscriber a personal feed address with an access code in it.
    Those addresses never leave the phone: no YourFeed service, no reports, no export unless asked. */
-const PRIVATE_HOSTS = /(^|\.)(patreon\.com|supercast\.(com|tech)|supportingcast\.fm|memberful\.com|glow\.fm|podbean\.com\/private|substack\.com|plus\.acast\.com|private\.)/i;
-const SECRET_PARAMS = /^(auth|token|access_?token|key|api_?key|secret|sig|signature|password|pass|pwd|code|uid|private|credential)$/i;
+const PUBLIC_CODES = /(^|\.)(news\.google\.com|youtube\.com|reddit\.com|bsky\.app)$/i;
+// The same rules run in the service
+// The same rules run in the service (service/worker.js looksPrivate) as a second line: keep the two in step.
+const PRIVATE_HOSTS = /(^|\.)(patreon\.com|supercast\.(com|tech)|supportingcast\.fm|memberful\.com|glow\.fm|substack\.com|plus\.acast\.com|hello-audio\.com|passport\.online|private\.)/i;
+const SECRET_WORDS = new Set(["token", "auth", "key", "apikey", "secret", "sig", "signature", "pass", "password", "passwd", "pwd", "private", "session", "sid", "uid", "user", "member", "access", "hash", "code", "credential"]);
+// A parameter whose name says it's a key: "rss_token", "feedAuth", "api-key"… (but not "keyword")
+const secretName = k => /token|secret|passw|auth|credential/i.test(k) || k.toLowerCase().split(/[^a-z]+/).some(w => SECRET_WORDS.has(w));
+// A random-looking code: a UUID, or a long run of letters and digits with no word breaks (not a YouTube channel or playlist ID)
+const randomCode = v => { v = String(v).replace(/\.\w{2,5}$/, "");
+  return /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(v)
+    || (/^[A-Za-z0-9_]{20,}$/.test(v) && (v.match(/\d/g) || []).length >= 3 && (v.match(/[a-z]/gi) || []).length >= 3 && !/^(UC|UU|PL|FL)[\w-]{16,}$/.test(v)); };
 function isPrivateUrl(raw){
   let u; try{ u = new URL(raw); }catch{ return false; }
   if (u.username || u.password) return true;
-  if ([...u.searchParams.keys()].some(k => SECRET_PARAMS.test(k))) return true;
+  for (const [k, v] of u.searchParams) if (secretName(k) || (randomCode(v) && !PUBLIC_CODES.test(u.hostname))) return true;
   if (/\/private\//i.test(u.pathname)) return true;
   if (/patreon\.com$/i.test(u.hostname) && /^\/rss\//.test(u.pathname)) return true;
-  // Paid-podcast hosts put the subscriber's key in the path (a long random segment)
-  if (PRIVATE_HOSTS.test(u.hostname) && u.pathname.split("/").some(seg => /^[\w-]{20,}(\.\w+)?$/.test(seg) && /\d/.test(seg) && /[a-z]/i.test(seg))) return true;
+  // Public by nature: their long codes are topic, channel or show IDs, not personal keys
+  if (PUBLIC_CODES.test(u.hostname) || /\/public\//i.test(u.pathname)) return false;
+  // A subscriber's key in the path (a long random segment), on any host; paid-podcast hosts with a shorter one too
+  const segs = u.pathname.split("/");
+  if (segs.some(randomCode)) return true;
+  if (PRIVATE_HOSTS.test(u.hostname) && segs.some(seg => /^[\w-]{16,}(\.\w+)?$/.test(seg) && /\d/.test(seg) && /[a-z]/i.test(seg))) return true;
   return false;
 }
+// Private: the link looks like one, or the person switched "Private feed" on for it
 const isPrivateFeed = f => !!f && (f.private === true || isPrivateUrl(f.url));
 // An address with its access code blanked out, for anything that might be shared
 function redactUrl(raw){
   let u; try{ u = new URL(raw); }catch{ return raw; }
   if (u.username || u.password){ u.username = "•••"; u.password = ""; }
-  for (const k of [...u.searchParams.keys()]) if (SECRET_PARAMS.test(k)) u.searchParams.set(k, "•••");
-  u.pathname = u.pathname.split("/").map(seg => /^[\w-]{20,}(\.\w+)?$/.test(seg) && /\d/.test(seg) && /[a-z]/i.test(seg) ? "•••" + (seg.match(/\.\w+$/) || [""])[0] : seg).join("/");
+  for (const [k, v] of [...u.searchParams]) if (secretName(k) || randomCode(v)) u.searchParams.set(k, "•••");
+  u.pathname = u.pathname.split("/").map(seg => randomCode(seg) || (/^[\w-]{20,}(\.\w+)?$/.test(seg) && /\d/.test(seg) && /[a-z]/i.test(seg)) ? "•••" + (seg.match(/\.\w+$/) || [""])[0] : seg).join("/");
   return decodeURI(u.href);
 }
 async function viaService(path, params, ms = 14000){
   // Private feed addresses are never sent to the service, whatever asks
-  if (Object.values(params || {}).some(v => typeof v === "string" && isPrivateUrl(v))) throw new Error(IS_APP ? "skip" : "Private feeds work in the YourFeed app");
+  if (Object.values(params || {}).some(v => typeof v === "string" && (isPrivateUrl(v) || state.feeds.some(f => f.private && f.url === v)))) throw new Error(IS_APP ? "skip" : "Private feeds work in the YourFeed app");
   const base = serviceBase();
   if (!base) throw new Error(IS_APP ? "Not available from your phone" : "The website needs the YourFeed service for this");
   const q = path + "?" + new URLSearchParams(params);
@@ -1177,6 +1198,19 @@ async function viaService(path, params, ms = 14000){
   const t = await r.text();
   if (!r.ok){ let m = ""; try{ m = JSON.parse(t).error; }catch{} throw new Error(m || "The YourFeed service answered with error " + r.status); }
   return t;
+}
+// POST to the service (only for things that change something there, e.g. the community list)
+async function postService(path, body, {ms = 15000, auth} = {}){
+  if (Object.values(body || {}).some(v => typeof v === "string" && isPrivateUrl(v))) throw new Error("skip");
+  const base = serviceBase(); if (!base) throw new Error("No YourFeed service set");
+  const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), ms);
+  try{
+    const r = await fetch(base + path, {method: "POST", body: JSON.stringify(body), signal: ctrl.signal,
+      headers: {"Content-Type": "application/json", ...(auth ? {Authorization: "Bearer " + auth} : {})}});
+    const t2 = await r.text(); let j = {}; try{ j = JSON.parse(t2); }catch{}
+    if (!r.ok) throw new Error(j.error || "The YourFeed service answered with error " + r.status);
+    return j;
+  } finally { clearTimeout(t); }
 }
 const friendlyNetErr = e => e && e.name === "AbortError" ? new Error("Took too long")
   : /Failed to fetch|NetworkError|Load failed/i.test(String(e && e.message)) ? new Error(IS_APP ? "Couldn't connect" : "Blocked by the browser (normal on the website)") : e;
@@ -3734,7 +3768,13 @@ function editForm(f){
   const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
   cancel.onclick = () => { editingId = null; renderFeedList(); };
   row.append(saveB, cancel);
-  form.append(nameF, folder.node, urlF, diag, colF, msg, row);
+  const privF = el("label", "check"); const privC = el("input"); privC.type = "checkbox"; privC.checked = isPrivateFeed(f);
+  const autoPriv = isPrivateUrl(f.url); privC.disabled = autoPriv;
+  const privT = el("span"); privT.append(el("b", null, "Private feed"), el("br"), el("span", "hint", autoPriv
+    ? "This link has a personal key in it, so it's always private: only this device fetches it, and it's left out of reports, sharing and exports."
+    : "For paid or members-only feeds with a personal link. Only this device fetches it, and it's left out of reports, sharing and exports."));
+  privF.append(privC, privT);
+  form.append(nameF, folder.node, urlF, privF, diag, colF, msg, row);
   form.addEventListener("submit", async e => {
     e.preventDefault();
     const newUrl = url.value.trim();
@@ -3752,6 +3792,7 @@ function editForm(f){
       }
       f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
       f.color = color;
+      if (!isPrivateUrl(f.url)){ if (privC.checked) f.private = true; else delete f.private; }
       const fv = folder.value(); f.folder = fv && fv !== UNSORTED ? (makeFolder(fv) || "") : ""; f.folderSet = true;
       editingId = null;
       save(); renderFeedList(); renderChips(); renderStatus(); renderList();
@@ -3995,11 +4036,23 @@ async function addFeed(raw, direct, kind){
 // Never private feeds, social accounts, YouTube, Reddit, podcasts or Google News; off with Settings → Sources → Help improve search
 function siteDomain(u){ try{ return new URL(/^https?:/i.test(u) ? u : "https://" + u).hostname.toLowerCase().replace(/^(www|feeds?|rss)\./, ""); }catch{ return ""; } }
 function shareSite(feed, raw){
-  if (!store.get("yf.shareSites", true) || !serviceBase() || feed.private || isPrivateUrl(String(raw)) || platformOf(feed) !== "Websites" || /news\.google\.com/.test(feed.url)) return;
+  const pref = store.get("yf.shareSites", null);    // null: not asked yet
+  if (pref === false || !serviceBase() || isPrivateFeed(feed) || isPrivateUrl(String(raw)) || platformOf(feed) !== "Websites" || /news\.google\.com/.test(feed.url)) return;
   const d = siteDomain(feed.site || raw) || siteDomain(feed.url);
   if (!d || DIRECTORY.some(([, u]) => siteOf(u).split("/")[0].replace(/^(www|feeds?|rss)\./, "") === d)) return;   // already in our list
-  viaService("/community/add", {domain: d}, 15000).catch(() => {});
+  if (pref === true) return sendSite(d);
+  // First time: ask, under the "Added to" note, and remember the answer (Settings → Sources changes it)
+  const box = $("#addFolder"); if (!box) return;
+  box.hidden = false;
+  const row = el("div", "fnote share-ask");
+  row.append(el("span", null, `Share ${d} so other YourFeed users can find it? Only the address is sent.`));
+  const yes = el("button", "linkbtn", "Share"), no = el("button", "linkbtn", "No thanks"); yes.type = no.type = "button";
+  const done = (on, text) => { store.set("yf.shareSites", on); $("#shareSites").checked = on; row.replaceWith(el("div", "fnote", text)); };
+  yes.onclick = () => { done(true, "Thanks. Change this any time in Settings → Sources."); sendSite(d); };
+  no.onclick = () => done(false, "Not shared. Change this any time in Settings → Sources.");
+  row.append(yes, no); box.append(row);
 }
+function sendSite(d){ postService("/community/add", {domain: d}).catch(() => {}); }
 // The approved community list, refreshed at most once a day and searched on the phone like our own list
 function loadCommunity(){
   if (!serviceBase() || Date.now() - store.get("yf.communityAt", 0) < 86400000) return;
@@ -5934,7 +5987,7 @@ function openReport(focusId){
   if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
 }
 document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
-$("#shareSites").checked = store.get("yf.shareSites", true);
+$("#shareSites").checked = store.get("yf.shareSites", null) === true;
 $("#shareSites").onchange = e => store.set("yf.shareSites", e.target.checked);
 setTimeout(loadCommunity, 4000);
 renderFaqs();
@@ -5978,6 +6031,30 @@ $("#dirCheck").onclick = async () => {
   out.hidden = !lines.length; share.hidden = false; btn.disabled = false; btn.textContent = "Run again";
 };
 // Find news sitemaps: for every site we read through Google News, look for the site's own news sitemap
+// Owner: approve or turn away websites waiting for the community list
+$("#adminKey").value = store.get("yf.adminKey", "");
+async function adminLoad(){
+  const key = $("#adminKey").value.trim(), msg = $("#adminMsg"), out = $("#adminOut");
+  if (!key){ msg.textContent = "Enter the owner key."; msg.className = "msg err"; return; }
+  store.set("yf.adminKey", key);
+  msg.className = "msg"; msg.textContent = "Loading…";
+  try{
+    const j = await postService("/community/admin", {action: "pending"}, {auth: key});
+    out.textContent = ""; out.hidden = !j.pending.length;
+    msg.textContent = `${j.pending.length} waiting · ${j.listed} listed · ${j.denied} turned away`;
+    j.pending.forEach(({domain, people, at}) => {
+      const li = el("li");
+      li.append(el("b", null, domain), el("span", "hint", ` ${people} people · ${at ? ago(at) : ""} `));
+      const act = (label, action) => { const b = el("button", "btn", label); b.type = "button";
+        b.onclick = async () => { b.disabled = true;
+          try{ await postService("/community/admin", {action, domain}, {auth: key}); li.replaceWith(el("li", "hint", `${domain}: ${action === "approve" ? "approved" : "turned away"}`)); }
+          catch(e){ b.disabled = false; toast(e.message); } };
+        return b; };
+      const row = el("div", "iorow"); row.append(act("Approve", "approve"), act("Turn away", "deny")); li.append(row); out.append(li);
+    });
+  }catch(e){ msg.className = "msg err"; msg.textContent = e.message; }
+}
+$("#adminLoad").onclick = adminLoad;
 $("#smCheck").onclick = async () => {
   const btn = $("#smCheck"), msg = $("#dirCheckMsg"), out = $("#dirCheckOut"), share = $("#dirCheckShare");
   if (!IS_APP){ msg.textContent = "This check needs the app: it reads each site directly."; return; }
