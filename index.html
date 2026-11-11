@@ -207,6 +207,9 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .statusgap{flex:1}
 .statuspop{position:absolute;left:0;top:calc(100% + 4px);z-index:30;width:min(320px,calc(100vw - 32px));background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 26px rgba(14,18,23,.18);padding:10px 12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
 .statuspop[hidden]{display:none}
+.pop-note{margin:6px 0 0;font-size:13px;color:var(--muted)}
+.reddit-note{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px;display:flex;flex-direction:column;gap:6px}
+.reddit-note p{margin:0}
 .pop-issues{margin:4px 0 0;padding-left:18px;width:100%;font-size:13px;color:var(--muted)}
 .pop-issues b{color:var(--ink);font-weight:700}
 .statuspop .status{font-size:13.5px;color:var(--ink);display:flex;flex-wrap:wrap;gap:4px;align-items:center}
@@ -2162,6 +2165,7 @@ function renderStatus(){
     const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
   } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
+  if (redditGone() && state.feeds.some(isRedditFeed)) s.append(el("p", "pop-note", "Reddit has stopped letting apps read it, so your Reddit sources are paused. Their saved stories stay."));
   // With problems, name them (plain words); the full detail is in Source health
   const issues = troubled.filter(f => !f.dismissed);
   if (issues.length){
@@ -2190,7 +2194,7 @@ function toggleStatusPop(open){
 }
 function renderFilterBar(){
   const pill = $("#activeFilter");
-  const typeName = {articles: "Articles", videos: "Videos", audio: "Audio", conversations: "Conversations"}[view.type];
+  const typeName = {articles: "Articles", topics: "Topics", videos: "Videos", audio: "Audio", conversations: "Conversations"}[view.type];
   const label = [typeName, view.source !== "all" ? sourceLabel() : ""].filter(Boolean).join(" · ");
   if (!label){ pill.hidden = true; }
   else {
@@ -3081,7 +3085,19 @@ function jitterMin(f){
   let h = 0; for (const c of String(f.id)) h = (h * 31 + c.charCodeAt(0)) | 0;
   return (Math.abs(h) % 1000) / 1000 * everyMin(f) * 0.25;
 }
-const isDue = (f, now = Date.now()) => !f.crashPaused && nextCheck(f) <= now + 30000;
+const isDue = (f, now = Date.now()) => !f.crashPaused && !(redditGone() && isRedditFeed(f)) && nextCheck(f) <= now + 30000;
+// Reddit ends its RSS feeds on 13 Nov 2026 (and its public API by March 2027). Once Reddit sources start failing after
+// that date, all of them are paused together with one plain message instead of each one being flagged a day later.
+const REDDIT_END = Date.UTC(2026, 10, 13);
+const isRedditFeed = f => /(^|\.)reddit\.com\//.test(String(f.url).replace(/^https?:\/\//, ""));
+const redditGone = () => !!store.get("yf.redditGone", 0);
+function noteRedditFailure(f){
+  if (Date.now() < REDDIT_END || redditGone()) return;
+  f.redditFail = Date.now();
+  const rs = state.feeds.filter(isRedditFeed), failing = rs.filter(g => g.redditFail && Date.now() - g.redditFail < 86400000);
+  if (failing.length >= Math.min(2, rs.length)){ store.set("yf.redditGone", Date.now()); renderStatus(); renderAttention(); }
+}
+function redditRetry(){ store.set("yf.redditGone", 0); state.feeds.filter(isRedditFeed).forEach(f => { delete f.redditFail; f.nextCheck = 0; }); save(); refreshAll(); }
 // Crash guard: remember which sources are loading. If the app is closed mid-load (a crash), those sources are
 // suspects; one that was loading during two crashes is paused until checked by hand (Source health → Check)
 const inflight = new Set();
@@ -3117,6 +3133,7 @@ async function fetchFeedNow(f){
     return p.items;
   }catch(e){
     if (f.crashPaused) return null;
+    if (isRedditFeed(f)) noteRedditFailure(f);
     f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now();
     if (!f.failingSince) f.failingSince = Date.now();
     const healed = await healFeed(f);
@@ -3128,7 +3145,7 @@ const PERMANENT = /isn't an RSS|isn't a feed|web page, not a feed|Didn't send a 
 const isPermanent = f => !!f.error && PERMANENT.test(f.error) && !ytChannelOf(f.url) && !redditJsonUrl(f.url);
 // A source needs you only if it has failed for a day, or failed twice in a way that won't fix itself
 const TROUBLE_AFTER = 24 * 3600000;
-const isTroubled = f => !!f.error && !(isPrivateFeed(f) && !IS_APP) && (Date.now() - (f.failingSince || f.lastTried || 0) > TROUBLE_AFTER || (isPermanent(f) && (f.fails || 0) >= 2));
+const isTroubled = f => !!f.error && !(isPrivateFeed(f) && !IS_APP) && !(redditGone() && isRedditFeed(f)) && (Date.now() - (f.failingSince || f.lastTried || 0) > TROUBLE_AFTER || (isPermanent(f) && (f.fails || 0) >= 2));
 // Self-healing: when a website's feed has moved, look for it again from the site's home page (once a day)
 async function healFeed(f){
   if (!isPermanent(f) || isPrivateFeed(f) || Date.now() - (f.healTried || 0) < 86400000) return null;
@@ -3393,7 +3410,20 @@ const ATTN_ICONS = {
 // Needs attention: an expandable bar in Settings, under Source health
 function renderAttention(){
   const box = $("#attnBox"); if (!box) return;
-  const attn = attentionList(); box.textContent = "";
+  const attn = attentionList().filter(a => !(redditGone() && isRedditFeed(a.f))); box.textContent = "";
+  const rs = state.feeds.filter(isRedditFeed);
+  if (redditGone() && rs.length){
+    const r = el("div", "reddit-note");
+    r.append(el("b", null, "Reddit has stopped letting apps read it"), el("p", "hint", `From 13 November 2026 Reddit no longer offers feeds. Your ${rs.length} Reddit source${rs.length === 1 ? " is" : "s are"} paused and ${rs.length === 1 ? "its" : "their"} saved stories stay.`));
+    const row = el("div", "iorow");
+    const again = el("button", "btn", "Try again"); again.type = "button"; again.onclick = redditRetry;
+    const rm = el("button", "btn", `Remove Reddit sources`); rm.type = "button";
+    let armed = false;
+    rm.onclick = () => { if (!armed){ armed = true; rm.textContent = "Tap again to remove"; return; }
+      rs.forEach(removeFeed); setMsg(`Removed ${rs.length} Reddit source${rs.length === 1 ? "" : "s"}.`); renderAttention(); };
+    row.append(again, rm); r.append(row); box.append(r); box.hidden = false;
+  }
+  if (!attn.length){ box.hidden = !box.childElementCount; return; }
   if (!attn.length){ box.hidden = true; return; }
   box.hidden = false;
   const sec = el("details", "attn"); sec.setAttribute("aria-label", "Sources that need attention");
@@ -4728,6 +4758,7 @@ async function redditExact(q){
     followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")), exact: true};
 }
 async function searchReddit(q){
+  if (redditGone()) return [];
   let [ex, list] = await Promise.all([redditExact(q).catch(() => null), searchRedditList(q).catch(() => [])]);
   const name = q.replace(/^r\//i, "").replace(/[^\w]/g, "");
   if (!ex && name.length >= 2 && !list.some(r => r.title.toLowerCase() === "r/" + name.toLowerCase())){
