@@ -1452,9 +1452,12 @@ async function loadOneFeed(url, feed, logOut){
 }
 // Keep a rolling history: everything seen in the last KEEP_DAYS, per feed
 // Same story, different wrapper: a headline without Google News's " - Publisher" tail, lower case, letters and digits only
+// Google News items end their headline with " - Publisher"; nobody else's tail is touched ("Live - Arsenal v PSG" stays whole)
+function isGNItem(i){ return /news\.google\.com/.test(i.link || ""); }
 function storyKey(i){
   if (i.videoId || i.audioUrl) return "";
-  let t = (i.title || "").replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");
+  let t = i.title || "";
+  if (isGNItem(i)) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");
   t = t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   return t.length >= 20 ? t : "";
 }
@@ -1466,6 +1469,9 @@ function linkKey(link){
     u.hash = ""; return u.hostname.replace(/^www\./, "") + u.pathname.replace(/\/$/, "") + (u.search || "");
   }catch{ return ""; }
 }
+// Same headline in the same source = the same story only for Google News (it re-wraps links), or within 20 hours (a re-posted story).
+// A daily "Morning briefing: what you need to know" is a new story each day.
+function sameStory(a, b){ return !!a && (isGNItem(a) || isGNItem(b) || Math.abs((a.date || 0) - (b.date || 0)) < 20 * 3600000); }
 function mergeHistory(oldItems, newItems){
   const now = Date.now(), cutoff = now - KEEP_DAYS * 86400000;
   const byId = new Map();
@@ -1481,12 +1487,12 @@ function mergeHistory(oldItems, newItems){
       i.id = i.feedId + "|" + i.link; vids.set(k, i);
     }
     const sk = storyKey(i);
-    if (sk){ const k = i.feedId + "|" + sk, had = byStory.get(k); if (had && had !== i.id) return; byStory.set(k, i.id); }
+    if (sk){ const k = i.feedId + "|" + sk, had = byStory.get(k); if (had && had !== i.id && sameStory(byId.get(had), i)) return; byStory.set(k, i.id); }
     byId.set(i.id, i);
   });
   newItems.forEach(i => {
     const sk = storyKey(i);
-    if (sk && !byId.has(i.id)){ const had = byStory.get(i.feedId + "|" + sk); if (had && byId.has(had)) i = {...i, id: had, link: byId.get(had).link || i.link}; }
+    if (sk && !byId.has(i.id)){ const had = byStory.get(i.feedId + "|" + sk); if (had && byId.has(had) && sameStory(byId.get(had), i)) i = {...i, id: had, link: byId.get(had).link || i.link}; }
     const prev = byId.get(i.id);
     if (sk) byStory.set(i.feedId + "|" + sk, i.id);
     // Keep a story where it first appeared: updates (live blogs, re-dated news) don't push it back to the top
@@ -2005,27 +2011,37 @@ function videoKind(list){
 }
 // The same story from two sources (e.g. The Guardian and a Google News topic, or two Guardian section feeds):
 // show it once, preferring the publisher's own feed over Google News, then whichever arrived first
-function dupeIds(){
-  if (dupeIds.src === state.items && dupeIds.n === state.items.length) return dupeIds.set;
+// Duplicates are worked out within what's on screen (after the source, date and seen filters), so a story never
+// vanishes from a folder just because its copy lives in another one
+function dupeIds(list = state.items, memoKey = ""){
+  const c = (dupeIds.cache = dupeIds.cache || {})[memoKey ? "view" : "all"];
+  if (!memoKey && c && c.src === list && c.n === list.length) return c.set;
   const keep = new Map(), out = new Set();
   const viaGN = i => /news\.google\.com/.test((feedById(i.feedId) || {}).url || "");
   const rank = i => (viaGN(i) ? 1e15 : 0) + (i.seen || 0);
-  [...state.items].filter(i => ["articles", "topics"].includes(typeOf(i))).sort((a, b) => rank(a) - rank(b)).forEach(i => {
+  [...list].filter(i => ["articles", "topics"].includes(typeOf(i))).sort((a, b) => rank(a) - rank(b)).forEach(i => {
     const keys = [["l", linkKey(i.link)], ["t", storyKey(i)]].filter(([, k]) => k).map(([p, k]) => p + ":" + k);
     const hit = keys.find(k => keep.has(k) && keep.get(k).feedId !== i.feedId);
     if (hit){ out.add(i.id); return; }
     keys.forEach(k => { if (!keep.has(k)) keep.set(k, i); });
   });
-  dupeIds.src = state.items; dupeIds.n = state.items.length; dupeIds.set = out;
+  dupeIds.cache[memoKey ? "view" : "all"] = {src: list, n: list.length, set: out};
   return out;
 }
 function baseItems(){
   let cut = 0;
   if (view.from === "today"){ const d = new Date(); d.setHours(0, 0, 0, 0); cut = d.getTime(); }
   else if (view.from === "week") cut = Date.now() - 7 * 86400000;
-  // Showing one source: everything from it. Otherwise each story once
-  const dup = view.source.startsWith("feed:") ? new Set() : dupeIds();
-  return state.items.filter(i => !dup.has(i.id) && sourceMatch(i.feedId) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut));
+  const shown = state.items.filter(i => sourceMatch(i.feedId) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut));
+  // Showing one source: everything from it. Otherwise each story once, judged within what's shown
+  if (view.source.startsWith("feed:")) return shown;
+  const memo = baseItems.memo || {};
+  const key = [view.source, view.from, view.unread, cut && Math.floor(cut / 60000), state.lookSnap.size, state.read.size].join("|");
+  if (memo.items !== state.items || memo.n !== state.items.length || memo.key !== key){
+    baseItems.memo = {items: state.items, n: state.items.length, key, dup: dupeIds(shown, key)};
+  }
+  const dup = baseItems.memo.dup;
+  return shown.filter(i => !dup.has(i.id));
 }
 function visibleItems(){
   if (view.saved){
@@ -3185,6 +3201,13 @@ async function refreshOne(f){
 }
 async function refreshAll(){
   if (state.busy || !state.feeds.length) return;
+  try{ await refreshAllInner(); }
+  finally{
+    // Whatever happens, Refresh must work again
+    if (state.busy){ state.busy = false; const btn = $("#refresh"); btn.disabled = false; btn.classList.remove("spin"); renderStatus(); }
+  }
+}
+async function refreshAllInner(){
   // Only feeds whose own refresh time has come are fetched; the rest keep what they have
   let due = state.feeds.filter(f => isDue(f));
   // YouTube: none while it's pausing us, and at most 10 channels per round (the rest follow a minute later),
