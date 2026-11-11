@@ -918,7 +918,70 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 </dialog>
 
 <script>
+// Start-up safety net. Kept separate from the app script so it still works if that script fails to start.
+// An error while the app script is starting (before B.started), a failure it reports (B.fail), or a start that hasn't
+// finished after 20 seconds shows a rescue screen. Every other error goes into a short log (yf.errlog).
 (() => {
+  const B = window.__yfBoot = {started: false, done: false, errs: []};
+  const text = e => { try{ return String(e && (e.stack || e.message) || e).slice(0, 600); }catch{ return "Unknown error"; } };
+  const log = msg => { try{ const l = JSON.parse(localStorage.getItem("yf.errlog") || "[]"); l.push({t: Date.now(), m: msg.slice(0, 300)}); localStorage.setItem("yf.errlog", JSON.stringify(l.slice(-20))); }catch{} };
+  const note = e => { const m = text(e); log(m); if (!B.done) B.errs.push(m); if (!B.started) show(); };
+  window.addEventListener("error", e => note(e.error || e.message));
+  window.addEventListener("unhandledrejection", e => note(e.reason));
+  B.finish = () => { B.done = true; clearTimeout(B.timer); };
+  B.fail = e => { const m = text(e); log(m); B.errs.push(m); show(); };
+  window.addEventListener("load", () => { B.timer = setTimeout(() => { if (!B.done){ B.errs.push("Start-up didn't finish within 20 seconds"); show(); } }, 20000); });
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+  async function save(name, body, mime){
+    const P = window.Capacitor && window.Capacitor.Plugins || {};
+    if (P.Filesystem && P.Share){
+      const w = await P.Filesystem.writeFile({path: name, data: body, directory: "CACHE", encoding: "utf8"});
+      return P.Share.share({title: name, files: [w.uri], dialogTitle: "Save or send your sources"});
+    }
+    const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([body], {type: mime})); a.download = name; document.body.append(a); a.click(); a.remove();
+  }
+  function opml(){
+    let feeds = []; try{ feeds = JSON.parse(localStorage.getItem("tl.feeds") || "[]"); }catch{}
+    const x = t => String(t || "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"})[c]);
+    const rows = feeds.filter(f => f && f.url).map(f => `    <outline type="rss" text="${x(f.title)}" title="${x(f.title)}" xmlUrl="${x(f.url)}"${f.folder ? ` category="${x(f.folder)}"` : ""}/>`);
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head><title>YourFeed sources</title></head>\n  <body>\n${rows.join("\n")}\n  </body>\n</opml>\n`;
+  }
+  let shown = false;
+  function show(){
+    if (shown) { const d = document.getElementById("bootErr"); if (d) d.textContent = B.errs.join("\n\n"); return; }
+    if (!document.body) return document.addEventListener("DOMContentLoaded", show);
+    shown = true;
+    const box = document.createElement("div");
+    box.id = "bootFail";
+    box.setAttribute("style", "position:fixed;inset:0;z-index:99999;overflow:auto;background:#fff;color:#222;font:16px/1.45 system-ui,sans-serif;padding:max(24px,env(safe-area-inset-top)) 20px 24px");
+    const btn = "display:block;width:100%;margin:10px 0;padding:12px;border-radius:10px;border:1px solid #ccc;background:#f4f4f4;color:#222;font:inherit;text-align:left";
+    box.innerHTML = `<h2 style="margin:0 0 8px">YourFeed couldn't start</h2>
+      <p style="margin:0 0 12px">Something went wrong while opening. Your sources are still saved on this device.</p>
+      <button data-a="reload" style="${btn};background:#d9480f;color:#fff;border-color:#d9480f">Try again</button>
+      <button data-a="stories" style="${btn}">Clear saved stories and try again<br><small>Keeps your sources and settings; stories load again from your sources</small></button>
+      <button data-a="export" style="${btn}">Save my sources (OPML file)<br><small>Includes any private feed links, so keep the file to yourself</small></button>
+      <button data-a="copy" style="${btn}">Copy error details</button>
+      <pre id="bootErr" style="white-space:pre-wrap;font-size:12px;color:#666;margin-top:14px">${esc(B.errs.join("\n\n"))}</pre>`;
+    box.addEventListener("click", async e => {
+      const a = e.target.closest("button") && e.target.closest("button").dataset.a; if (!a) return;
+      try{
+        if (a === "reload") location.reload();
+        if (a === "stories"){
+          try{ localStorage.removeItem("tl.items"); }catch{}
+          await new Promise(res => { try{ const r = indexedDB.open("yourfeed", 1); r.onupgradeneeded = () => r.result.createObjectStore("kv"); r.onsuccess = () => { const t = r.result.transaction("kv", "readwrite"); t.objectStore("kv").delete("items"); t.oncomplete = t.onerror = res; }; r.onerror = res; }catch{ res(); } });
+          location.reload();
+        }
+        if (a === "export") await save("yourfeed-sources.opml", opml(), "text/x-opml");
+        if (a === "copy") await navigator.clipboard.writeText("YourFeed __APP_BUILD__\n" + navigator.userAgent + "\n\n" + B.errs.join("\n\n"));
+      }catch(err){ alert(String(err && err.message || err)); }
+    });
+    document.body.append(box);
+  }
+})();
+</script>
+<script>
+(() => {
+"use strict";
 // Inside the Android/iPhone app (Capacitor), requests go out natively from the phone: no browser
 // cross-site rules, and sites see an ordinary phone on home or mobile internet. The YourFeed service is the backup.
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
@@ -972,7 +1035,6 @@ function openOutside(url){
   if (B && B.open) B.open({url, toolbarColor: getComputedStyle(document.documentElement).getPropertyValue("--brand").trim() || "#d9480f"}).catch(() => window.open(url, "_blank"));
   else window.open(url, "_blank");
 }
-"use strict";
 const $ = s => document.querySelector(s);
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
@@ -982,6 +1044,8 @@ const store = {
     catch{ if (!store.warned){ store.warned = true; setTimeout(() => typeof toast === "function" && toast("Couldn't save your settings: this device's storage for YourFeed is full or blocked"), 0); } return false; }
   }
 };
+// Errors after start-up go to a short log (see the safety net script above); start-up errors show a rescue screen
+function logError(msg){ try{ const l = store.get("yf.errlog", []); l.push({t: Date.now(), m: String(msg).slice(0, 300)}); localStorage.setItem("yf.errlog", JSON.stringify(l.slice(-20))); }catch{} }
 // Stories live in IndexedDB (no 5 MB limit); localStorage keeps only small settings. One record holds the list.
 const itemsDB = (() => {
   let dbp = null;
@@ -2103,10 +2167,6 @@ const isNew = i => !state.looked.has(i.id) && !state.read.has(i.id);
 // Nov 2026: "new" changed from "arrived since you last pressed Refresh" to "not seen yet". Seen tracking starts now:
 // only stories you've tapped count as seen to begin with (a first try marked everything older than the last refresh,
 // which made Hide seen hide the whole feed)
-if (!store.get("yf.lookedMig2", false)){
-  state.looked = new Set(state.read);
-  store.set("yf.looked", [...state.looked].slice(-6000)); store.set("yf.lookedMig2", true); store.set("yf.lookedMig", true);
-}
 // Hide seen uses a snapshot, taken when you change the filter, refresh or come back, so cards never vanish under your thumb
 state.lookSnap = new Set(state.looked);
 const snapLooked = () => { state.lookSnap = new Set(state.looked); };
@@ -6242,31 +6302,53 @@ if (IS_APP){
 }
 
 /* ---------- start ---------- */
-initDownloads();
-crashCheck();
-// Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
-state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
-// Nov 2026: sites read through Google News lose the "via Google" tag, once
-if (!store.get("yf.noViaGoogle", false)){
-  state.feeds.forEach(f => { if (/ via Google$/.test(f.title || "") && /news\.google\.com/.test(f.url)) f.title = f.title.replace(/ via Google$/, ""); });
-  store.set("yf.noViaGoogle", true); save();
+// One-off changes to saved data, run in order, once each. "yf.migrated" holds the number of the last one done.
+// Each runs on its own: one that fails is logged and skipped, and never stops YourFeed opening.
+// To add one: append [next number, null, () => {...}]. Never renumber or remove old ones.
+// (The middle value is the older yes/no flag each early migration used, so installs that already ran it skip it.)
+const MIGRATIONS = [
+  // Nov 2026: "new" became "not seen yet"; only stories you've tapped count as seen to begin with
+  [1, "yf.lookedMig2", () => { state.looked = new Set(state.read); store.set("yf.looked", [...state.looked].slice(-6000)); }],
+  // Nov 2026: sites read through Google News lose the "via Google" tag
+  [2, "yf.noViaGoogle", () => state.feeds.forEach(f => { if (/ via Google$/.test(f.title || "") && /news\.google\.com/.test(f.url)) f.title = f.title.replace(/ via Google$/, ""); })],
+  // Nov 2026: strip filler from website names ("IGN All" → "IGN")
+  [3, "yf.tidyNames", () => state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; })],
+];
+function runMigrations(){
+  const done = store.get("yf.migrated", 0); let changed = false;
+  for (const [n, legacy, fn] of MIGRATIONS){
+    if (n <= done) continue;
+    if (!(legacy && store.get(legacy, false))){
+      try{ fn(); changed = true; }catch(e){ console.warn("Migration " + n + " failed", e); logError("Migration " + n + ": " + (e && e.message || e)); }
+    }
+    store.set("yf.migrated", n);
+  }
+  if (changed) save();
 }
-let changedRoutes = false;
-// A source added through Google News whose site now has a direct route in our list (e.g. its news sitemap): switch it over
-state.feeds.forEach(f => {
-  const nq = /news\.google\.com/.test(f.url || "") ? newsQuery(f.url) : null; if (!nq || !nq.site) return;
-  const d = DIRECTORY.find(([n, u]) => n === f.title && !/news\.google\.com/.test(u));
-  if (d && !state.feeds.some(g => g.url === d[1])){ f.url = d[1]; f.http = {}; f.nextCheck = 0; f.error = null; changedRoutes = true; }
-});
-if (changedRoutes) save();
-// Nov 2026: strip filler from website names ("IGN All" → "IGN"), once
-if (!store.get("yf.tidyNames", false)){
-  state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; });
-  store.set("yf.tidyNames", true); save();
+// Every-start tidying: a failure here is logged, never fatal
+function startTidy(){
+  // Tidy names saved before cleanTitle existed (Reddit, Bluesky, Google News)
+  state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
+  // A source added through Google News whose site now has a direct route in our list (e.g. its news sitemap): switch it over
+  let changedRoutes = false;
+  state.feeds.forEach(f => {
+    const nq = /news\.google\.com/.test(f.url || "") ? newsQuery(f.url) : null; if (!nq || !nq.site) return;
+    const d = DIRECTORY.find(([n, u]) => n === f.title && !/news\.google\.com/.test(u));
+    if (d && !state.feeds.some(g => g.url === d[1])){ f.url = d[1]; f.http = {}; f.nextCheck = 0; f.error = null; changedRoutes = true; }
+  });
+  if (changedRoutes) save();
 }
+const safely = (name, fn) => { try{ fn(); }catch(e){ console.warn(name, e); logError(name + ": " + (e && e.message || e)); } };
+safely("Downloads", initDownloads);
+safely("Crash check", crashCheck);
+safely("Migrations", runMigrations);
+state.lookSnap = new Set(state.looked);
+safely("Tidy", startTidy);
 renderChips(); renderStatus(); renderPaneEmpty();
 // Stories come from IndexedDB, which answers a moment after start; draw the list once they're in
-itemsReady.then(() => { renderChips(); renderStatus(); renderList(); });
+const boot = window.__yfBoot || {finish(){}, fail(){}};
+boot.started = true;
+itemsReady.then(() => { renderChips(); renderStatus(); renderList(); }).then(() => boot.finish(), e => boot.fail(e));
 // Opening the app only fetches if the last update is over 10 minutes old (or there's nothing to show yet)
 if (state.forceRefresh) state.feeds.forEach(f => { f.lastFetched = 0; });
 refreshAll();   // fetches only the feeds that are due

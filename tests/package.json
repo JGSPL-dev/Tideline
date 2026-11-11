@@ -1,0 +1,13 @@
+{
+  "name": "yourfeed-tests",
+  "private": true,
+  "type": "module",
+  "description": "Start-up smoke test (saved states) and service tests, run on every push by .github/workflows/checks.yml",
+  "scripts": {
+    "smoke": "node smoke.mjs",
+    "worker": "node --test worker.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.63.0"
+  }
+}

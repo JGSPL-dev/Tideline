@@ -1,0 +1,25 @@
+name: Checks
+# Every push: the app must start cleanly from saved data of every era, and the service tests must pass.
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tests
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Start-up smoke test
+        run: node smoke.mjs
+      - name: Service tests
+        run: node --test worker.test.mjs
