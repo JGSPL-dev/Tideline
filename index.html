@@ -1138,6 +1138,31 @@ async function fetchWithTimeout(url, ms, headers){
   const t = setTimeout(() => ctrl.abort(), ms);
   try{ return await fetch(url, headers ? {signal: ctrl.signal, headers} : {signal: ctrl.signal}); } finally { clearTimeout(t); }
 }
+// Read a reply's text with a size limit: refused up front when the site says it's too big, and cut off while
+// reading otherwise, so one huge file can't use up the phone's memory (the likely cause of the 0.2.40 crash)
+const MAX_FEED = 8e6, MAX_PAGE = 3e6;
+async function readCapped(r, max = MAX_FEED, what = "That feed"){
+  const tooBig = () => new Error(`${what} is too big to read on a phone`);
+  if ((+r.headers.get("content-length") || 0) > max) throw tooBig();
+  if (!r.body || !r.body.getReader){ const t = await r.text(); if (t.length > max) throw tooBig(); return t; }
+  const reader = r.body.getReader(), dec = new TextDecoder();
+  let out = "", size = 0;
+  for (;;){
+    const {done, value} = await reader.read();
+    if (done) break;
+    size += value.length;
+    if (size > max){ try{ reader.cancel(); }catch{} throw tooBig(); }
+    out += dec.decode(value, {stream: true});
+  }
+  return out + dec.decode();
+}
+// A news sitemap asked for in part (Range) ends mid-entry: keep the whole entries
+function wholeSitemap(t){
+  if (!/<urlset[\s>]/i.test(t.slice(0, 5000)) || /<\/urlset>\s*$/i.test(t)) return t;
+  const end = t.lastIndexOf("</url>");
+  return end < 0 ? t : t.slice(0, end + 6) + "</urlset>";
+}
+const SITEMAP_RANGE = "bytes=0-2999999";      // news sitemaps: the first 3 MB is plenty (sites list at most 1,000 recent articles)
 const parseJsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a < 0 || b < a) throw new Error("No data"); return JSON.parse(t.slice(a, b + 1)); };
 function serviceBase(){
   const s = (state.service || SERVICE_DEFAULT || "").trim().replace(/\/+$/, "");
@@ -1195,7 +1220,7 @@ async function viaService(path, params, ms = 14000){
     if (base !== SERVICE_DEFAULT || !SERVICE_BACKUP) throw e;
     r = await fetchWithTimeout(SERVICE_BACKUP + q, ms);
   }
-  const t = await r.text();
+  const t = await readCapped(r);
   if (!r.ok){ let m = ""; try{ m = JSON.parse(t).error; }catch{} throw new Error(m || "The YourFeed service answered with error " + r.status); }
   return t;
 }
@@ -1223,12 +1248,13 @@ async function feedDirect(url, ms = 12000, feed){
   const v = IS_APP && feed && feed.http && feed.http[url];
   const haveStories = feed && state.items.some(i => i.feedId === feed.id);
   if (v && haveStories && feed.iconParsed){ if (v.etag) h["If-None-Match"] = v.etag; if (v.lm) h["If-Modified-Since"] = v.lm; }
+  if (feed && feed.sitemap) h.Range = SITEMAP_RANGE;
   let r;
   try{ r = await fetchWithTimeout(url, ms, h); }catch(e){ throw friendlyNetErr(e); }
   if (r.status === 304 && v && haveStories) return NOT_MODIFIED;
   if (!r.ok) throw new Error("The site answered with error " + r.status);
-  const t = await r.text();
-  if (t.length > 8e6) throw new Error("That feed is too big to read on a phone");
+  let t = await readCapped(r);
+  if (feed && feed.sitemap) t = wholeSitemap(t);
   if (/^\x1f\x8b|^\ufffd\x08/.test(t)) throw new Error("The site sent a compressed file the app can't read");
   if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
   if (IS_APP && feed && feed.id !== "probe"){
@@ -1274,7 +1300,7 @@ async function pageDirect(url, ms = 12000){
   }
   const r = await fetchWithTimeout(url, ms, h);
   if (!r.ok) throw new Error("The site answered with error " + r.status);
-  return r.text();
+  return readCapped(r, MAX_PAGE, "That page");
 }
 /* ---------- saved articles ---------- */
 const artDB = (() => {
@@ -1486,7 +1512,7 @@ async function loadFeed(url, feed){
     try{
       const r = await fetchWithTimeout(direct, 15000);
       if (!r.ok) throw new Error("Reddit answered with error " + r.status);
-      const t = await r.text();
+      const t = await readCapped(r);
       if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
       const p = parseFeed(t, feed);
       if (p.items.length){
@@ -1779,6 +1805,12 @@ function looksEnglish(title){
   const accents = (t.match(/[à-ÿ]/gi) || []).length / Math.max(1, t.length);
   return !(other >= 2 && other > en) && !(accents > 0.06 && en === 0);
 }
+// Only the newest few entries are kept, so pick them by date first and process just those
+// (a 300-episode podcast feed would otherwise have every episode cleaned up and then mostly thrown away)
+function newestOf(els, dateOf, n){
+  if (els.length <= n) return els;
+  return els.map((e, i) => [e, dateOf(e) || 0, i]).sort((a, b) => b[1] - a[1] || a[2] - b[2]).slice(0, n).map(x => x[0]);
+}
 function parseFeed(xml, feed){
   const doc = new DOMParser().parseFromString(xml.replace(/^﻿/, "").trim(), "application/xml");
   const root = doc.documentElement;
@@ -1790,7 +1822,7 @@ function parseFeed(xml, feed){
     title = txt(kid(root, "title"));
     icon = txt(kid(root, "icon")) || txt(kid(root, "logo"));
     const alt = kids(root, "link").find(l => !attr(l, "rel") || attr(l, "rel") === "alternate"); site = alt ? attr(alt, "href") : "";
-    items = kids(root, "entry").map(e => atomItem(e, feed));
+    items = newestOf(kids(root, "entry"), e => Date.parse(txt(kid(e, "published")) || txt(kid(e, "updated"))), KEEP_PARSE).map(e => atomItem(e, feed));
   } else if (rn === "rss" || rn.endsWith("rdf")){
     const ch = deep(root, "channel")[0];
     title = txt(kid(ch, "title"));
@@ -1798,12 +1830,14 @@ function parseFeed(xml, feed){
     const it = deep(ch, "itunes:image")[0];
     icon = (it && attr(it, "href")) || txt(kid(kid(ch, "image") || ch, "url")) || "";
     site = txt(kid(ch, "link"));
-    items = deep(root, "item").map(e => rssItem(e, feed));
+    items = newestOf(deep(root, "item"), e => Date.parse(txt(kid(e, "pubdate")) || txt(kid(e, "dc:date"))), KEEP_PARSE).map(e => rssItem(e, feed));
   } else if (rn === "urlset"){
     // News sitemap: <url><loc> + <news:news> (title, date, publication) + <image:image>
     const only = ((feed && feed.url || "").match(/#only=([^&]+)/) || [])[1];
-    // Big sitemaps (thousands of entries): only the newest few hundred are needed
-    const urls = kids(root, "url").filter(u => !only || (txt(kid(u, "loc")).match(/^https?:\/\/[^/]+(\/.*)$/) || [])[1]?.startsWith(decodeURIComponent(only))).slice(0, 400);
+    // Big sitemaps (thousands of entries, sometimes oldest first): only the newest are needed
+    const dateOf = u => { const n = deep(u, "news:news")[0]; return Date.parse(n ? txt(deep(n, "news:publication_date")[0]) : "") || Date.parse(txt(kid(u, "lastmod"))) || 0; };
+    const urls = newestOf(kids(root, "url").filter(u => !only || (txt(kid(u, "loc")).match(/^https?:\/\/[^/]+(\/.*)$/) || [])[1]?.startsWith(decodeURIComponent(only))), dateOf, KEEP_PARSE);
+    if (feed) feed.sitemap = true;
     const nn = urls.map(u => deep(u, "news:news")[0]).find(Boolean);
     title = nn ? txt(deep(nn, "news:name")[0]) : "";
     const first = urls.map(u => txt(kid(u, "loc"))).find(Boolean); if (first){ try{ site = new URL(first).origin; }catch{} }
@@ -1823,6 +1857,7 @@ function parseFeed(xml, feed){
   items = items.sort((a, b) => b.date - a.date).slice(0, 40);
   return {title: htmlToText(title), items, everyMin: feedHintMinutes(root), icon: safeUrl((icon || "").trim()) || "", site: safeUrl((site || "").trim()) || ""};
 }
+const KEEP_PARSE = 80;   // entries processed per feed (40 are kept; the spare allow for filtering)
 // A news sitemap (the list of latest articles sites publish for search engines) counts as a feed too
 const isNewsSitemap = t => /<urlset[\s>]/i.test(t.slice(0, 5000)) && /<news:news[\s>]|sitemap-news\/|<image:image[\s>]/i.test(t.slice(0, 30000));
 const looksLikeFeed = t => /<(rss|feed|rdf:RDF)[\s>]/i.test(t.slice(0, 3000)) || isNewsSitemap(t);
@@ -1892,7 +1927,7 @@ async function findChannelId(page){ const c = await findChannel(page); return c 
 const NEWS_SITEMAP_GUESSES = ["/news-sitemap.xml", "/sitemap_news.xml", "/sitemap-news.xml", "/news_sitemap.xml", "/sitemaps/news.xml", "/sitemap/news.xml", "/googlenews.xml"];
 async function findNewsSitemap(origin){
   if (!IS_APP) return null;
-  const get = async url => { const r = await fetchWithTimeout(url, 12000, {"Accept": "application/xml,text/xml,*/*"}); if (!r.ok) throw new Error("error " + r.status); return r.text(); };
+  const get = async (url, range) => { const r = await fetchWithTimeout(url, 12000, {"Accept": "application/xml,text/xml,*/*", ...(range ? {Range: SITEMAP_RANGE} : {})}); if (!r.ok) throw new Error("error " + r.status); return wholeSitemap(await readCapped(r, MAX_FEED, "That sitemap")); };
   let cands = [];
   try{
     const robots = await get(origin + "/robots.txt");
@@ -1901,12 +1936,12 @@ async function findNewsSitemap(origin){
   cands.push(...NEWS_SITEMAP_GUESSES.map(g => origin + g));
   for (const c of [...new Set(cands)].slice(0, 10)){
     try{
-      let t = await get(c), url = c;
+      let t = await get(c, true), url = c;
       if (/<sitemapindex[\s>]/i.test(t.slice(0, 3000))){
         // An index of several: take the newest news one
         const locs = [...t.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)].map(m => m[1].replace(/&amp;/g, "&"));
         const pick = locs.find(l => /news/i.test(l)) || locs[0]; if (!pick) continue;
-        t = await get(pick); url = pick;
+        t = await get(pick, true); url = pick;
       }
       if (isNewsSitemap(t)) return {url, text: t};
     }catch{}
@@ -2027,14 +2062,19 @@ function metaRow(it, withFlags = true){
   return m;
 }
 let itemsTimer = 0, itemsOk = true, itemsLoaded = false;
-function saveItems(){
+// At most one write every 0.4 s, always of the latest list (frequent small saves can't keep putting it off)
+function saveItems(now){
+  if (itemsTimer && !now) return;
   clearTimeout(itemsTimer);
   itemsTimer = setTimeout(() => {
+    itemsTimer = 0;
     if (!itemsLoaded) return;   // never overwrite the stored list before it has been read
-    itemsDB.put("items", state.items).then(() => { if (!itemsOk){ itemsOk = true; } })
+    itemsDB.put("items", state.items).then(() => { itemsOk = true; })
       .catch(() => { if (itemsOk){ itemsOk = false; toast("Couldn't save stories on this device. They'll load again from your sources."); } });
-  }, 400);
+  }, now ? 0 : 400);
 }
+// Going to the background (or being closed): write straight away
+document.addEventListener("visibilitychange", () => { if (document.hidden && itemsTimer) saveItems(true); });
 // Read stories at start; move an older localStorage copy across once (and free that space)
 const itemsReady = (async () => {
   let list = null;
@@ -3357,7 +3397,13 @@ async function refreshAllInner(){
   state.busy = true; renderStatus();
   const btn = $("#refresh"); btn.disabled = true; btn.classList.add("spin");
   if (!state.items.length) renderList();
-  const results = await pool(due, 4, fetchFeedNow);
+  // Sources that were loading when YourFeed last closed unexpectedly go first, one at a time, so if one of them
+  // brings it down again only that one is blamed (and paused), not the three innocent ones loading beside it
+  const suspects = due.filter(f => f.crashes > 0);
+  if (suspects.length) due = suspects.concat(due.filter(f => !(f.crashes > 0)));
+  const results = [];
+  for (const f of suspects) results.push(await fetchFeedNow(f));
+  results.push(...await pool(due.slice(suspects.length), 4, fetchFeedNow));
   const ids = new Set(state.feeds.map(f => f.id));
   const fresh = new Map(due.map((f, i) => [f.id, results[i]]));
   let incoming = [];
@@ -3933,7 +3979,7 @@ $("#connCheck").onclick = async () => {
   const ul = $("#connResults"); ul.hidden = false; ul.textContent = "";
   const feed = "https://feeds.bbci.co.uk/news/rss.xml";
   const checks = [
-    ["Direct from this device", () => fetchWithTimeout(feed, 8000).then(r => r.text()).then(t => { if (!looksLikeFeed(t)) throw 0; })],
+    ["Direct from this device", () => fetchWithTimeout(feed, 8000).then(r => readCapped(r)).then(t => { if (!looksLikeFeed(t)) throw 0; })],
     ["YourFeed service", () => serviceBase() ? feedViaService(feed).then(t => { if (!looksLikeFeed(t)) throw 0; }) : Promise.reject(new Error("not set up"))],
     ["Reddit search", () => fetchWithTimeout("https://www.reddit.com/subreddits/search.json?limit=1&q=football", 9000).then(r => r.json()).then(j => { if (!j.data) throw 0; })],
     ["Apple podcasts", () => fetchWithTimeout("https://itunes.apple.com/search?media=podcast&limit=1&term=news", 9000).then(r => r.json())],
@@ -6418,6 +6464,11 @@ function startTidy(){
 const safely = (name, fn) => { try{ fn(); }catch(e){ console.warn(name, e); logError(name + ": " + (e && e.message || e)); } };
 safely("Downloads", initDownloads);
 safely("Crash check", crashCheck);
+// Android stopped the page (usually to free memory) and the app restarted it: say so, and keep a note
+safely("Restart note", () => {
+  const r = window.YFNative && window.YFNative.takeRestart && window.YFNative.takeRestart();
+  if (r){ logError("Page restarted: " + r); setTimeout(() => toast("YourFeed restarted: its page " + String(r).replace(/ at \d+$/, "")), 1500); }
+});
 safely("Migrations", runMigrations);
 state.lookSnap = new Set(state.looked);
 safely("Tidy", startTidy);

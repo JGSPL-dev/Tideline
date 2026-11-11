@@ -1,12 +1,18 @@
 package uk.co.appsforus.yourfeed;
 
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
+import android.webkit.RenderProcessGoneDetail;
+import android.webkit.WebView;
 import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
@@ -17,6 +23,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
+import com.getcapacitor.WebViewListener;
 
 // YourFeed: lets videos played inside the app go full screen, turning the phone to landscape
 // (Capacitor's own web view closes full-screen video straight away). Copied in by the Android build.
@@ -49,7 +56,33 @@ public class MainActivity extends BridgeActivity {
                     bars.setAppearanceLightNavigationBars(!dark);
                 });
             }
+
+            // Why the page was last restarted (see onRenderProcessGone below), once; "" if it wasn't
+            @JavascriptInterface
+            public String takeRestart() {
+                SharedPreferences prefs = getSharedPreferences("yourfeed", Context.MODE_PRIVATE);
+                String why = prefs.getString("restart", "");
+                prefs.edit().remove("restart").apply();
+                return why;
+            }
         }, "YFNative");
+        // If Android stops the page's process (usually to free memory), Capacitor lets the whole app close.
+        // Instead: note why, and start the page again. YourFeed then shows the note, and its crash guard
+        // pauses whatever source was loading at the time.
+        bridge.addWebViewListener(new WebViewListener() {
+            @Override
+            public boolean onRenderProcessGone(WebView view, RenderProcessGoneDetail detail) {
+                String why = "stopped";
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && detail != null) {
+                    why = detail.didCrash() ? "crashed" : "was closed by Android to free memory";
+                }
+                Log.e("YourFeed", "Web page process gone: " + why);
+                getSharedPreferences("yourfeed", Context.MODE_PRIVATE).edit()
+                    .putString("restart", why + " at " + System.currentTimeMillis()).apply();
+                runOnUiThread(() -> recreate());
+                return true;
+            }
+        });
         bridge.getWebView().setWebChromeClient(new BridgeWebChromeClient(bridge) {
             @Override
             public void onShowCustomView(View view, CustomViewCallback callback) {
