@@ -61,6 +61,7 @@ Everything lives in `index.html`, served by GitHub Pages at https://jgspl-dev.gi
 - YouTube is touchy about bursts from one connection (it blocks it with 404/500 for hours): requests go one at a time 1.5 s apart (app fetch wrapper), channels are checked every 30 min with a per-source jitter, at most 10 per refresh round, and `ytRefused`/`ytCooling` pause all YouTube requests 30 min→6 h after 4 refusals in a row. Fallbacks (uploads-playlist feed, channel Videos page) only for one-off failures. Imports by name look up one channel at a time.
 - Android back button (`goBack`): closes the open layer, then returns to Everything, then minimises the app.
 - Storage keys keep the old `tl.` prefix (new ones use `yf.`); keep them.
+- Stories live in IndexedDB (DB `yourfeed`, store `kv`, record `items`; `itemsDB`), not localStorage, so a busy feed list can't hit the 5 MB limit. `itemsReady` loads them at start (moving an old `tl.items` copy across once, then deleting it); the list is drawn and `refreshAll` runs only after it resolves, and `saveItems` (debounced 400 ms) never writes before the load. Summaries are cut to 500 characters. A failed save shows one toast (stories, or settings via `store.set`, which now returns false on failure). Full article text is in the separate `tickrss` DB. Tests that read `localStorage['tl.items']` are obsolete: read IndexedDB instead (t126).
 
 ## When checking or adding a publisher
 1. Image sharpness: add `IMAGE_RULES` for bigger images, always keeping the feed's own image as a fallback.

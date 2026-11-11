@@ -976,8 +976,29 @@ function openOutside(url){
 const $ = s => document.querySelector(s);
 const store = {
   get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch{ return d; } },
-  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch{} }
+  // Returns false when the browser refuses (storage full or blocked), and says so once instead of failing silently
+  set(k, v){
+    try{ localStorage.setItem(k, JSON.stringify(v)); return true; }
+    catch{ if (!store.warned){ store.warned = true; setTimeout(() => typeof toast === "function" && toast("Couldn't save your settings: this device's storage for YourFeed is full or blocked"), 0); } return false; }
+  }
 };
+// Stories live in IndexedDB (no 5 MB limit); localStorage keeps only small settings. One record holds the list.
+const itemsDB = (() => {
+  let dbp = null;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    try{ const r = indexedDB.open("yourfeed", 1);
+      r.onupgradeneeded = () => r.result.createObjectStore("kv");
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); r.onblocked = () => rej(new Error("blocked"));
+    }catch(e){ rej(e); }
+  }));
+  const run = async (mode, fn) => { const db = await open(); return new Promise((res, rej) => {
+    const t = db.transaction("kv", mode), st = t.objectStore("kv"); const req = fn(st);
+    t.oncomplete = () => res(req && req.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error); }); };
+  return {
+    get: key => run("readonly", st => st.get(key)),
+    put: (key, value) => run("readwrite", st => st.put(value, key))
+  };
+})();
 const COLORS = ["#d9480f","#1c7ed6","#2b8a3e","#ae3ec9","#e67700","#c2255c","#0c8599","#5f3dc4","#5c940d","#1864ab"];
 const DEFAULT_FEEDS = [
   {id:"bbc", title:"BBC News", url:"https://feeds.bbci.co.uk/news/rss.xml", color:COLORS[0]},
@@ -990,7 +1011,7 @@ const KEEP_DAYS = 7, MAX_PER_FEED = 300, MIN_PER_FEED = 20, MIN_MAX_AGE_DAYS = 1
 
 const state = {
   feeds: store.get("tl.feeds", null) || [],
-  items: mergeHistory(store.get("tl.items", []), []),
+  items: [],   // loaded from IndexedDB at start (itemsReady); older installs had them in localStorage "tl.items"
   read: new Set(store.get("tl.read", [])),
   looked: new Set(store.get("yf.looked", [])),   // stories you've had on screen (seen), not just tapped
   filter: "all",
@@ -1571,7 +1592,7 @@ function makeItem(feed, o){
     title: o.title || postTitle(o.summary || htmlToText(o.html || "")) || "Untitled",
     link,
     date: o.date || 0,
-    summary: (o.summary || "").slice(0, 1000),
+    summary: (o.summary || "").slice(0, 500),
     image: videoId ? `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg` : safeUrl(o.image),
     videoId: videoId || null,
     audio: o.audio || undefined,
@@ -1907,10 +1928,29 @@ function metaRow(it, withFlags = true){
   if (withFlags){ const fl = flagsEl(it); if (fl.childNodes.length) m.append(fl); }
   return m;
 }
+let itemsTimer = 0, itemsOk = true, itemsLoaded = false;
+function saveItems(){
+  clearTimeout(itemsTimer);
+  itemsTimer = setTimeout(() => {
+    if (!itemsLoaded) return;   // never overwrite the stored list before it has been read
+    itemsDB.put("items", state.items).then(() => { if (!itemsOk){ itemsOk = true; } })
+      .catch(() => { if (itemsOk){ itemsOk = false; toast("Couldn't save stories on this device. They'll load again from your sources."); } });
+  }, 400);
+}
+// Read stories at start; move an older localStorage copy across once (and free that space)
+const itemsReady = (async () => {
+  let list = null;
+  try{ list = await itemsDB.get("items"); }catch{}
+  const legacy = store.get("tl.items", null);
+  if (!Array.isArray(list) || (!list.length && legacy && legacy.length)) list = legacy || [];
+  state.items = mergeHistory(list, []);
+  itemsLoaded = true;
+  if (legacy){ try{ await itemsDB.put("items", state.items); localStorage.removeItem("tl.items"); }catch{} }
+})();
 function save(){
   if (state.items.some(i => i._full)) state.items = stashArticles(state.items);   // full text lives in the article store, not here
   store.set("tl.feeds", state.feeds.map(({_checking, _phoneErr, ...f}) => f));
-  store.set("tl.items", state.items);
+  saveItems();
   store.set("tl.read", [...state.read].slice(-3000));
   store.set("tl.updated", state.lastUpdated);
 }
@@ -3200,6 +3240,7 @@ async function refreshOne(f){
   save(); renderChips(); renderStatus(); renderFeedList(); renderList();
 }
 async function refreshAll(){
+  await itemsReady;
   if (state.busy || !state.feeds.length) return;
   try{ await refreshAllInner(); }
   finally{
@@ -6223,7 +6264,9 @@ if (!store.get("yf.tidyNames", false)){
   state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; });
   store.set("yf.tidyNames", true); save();
 }
-renderChips(); renderStatus(); renderPaneEmpty(); renderList();
+renderChips(); renderStatus(); renderPaneEmpty();
+// Stories come from IndexedDB, which answers a moment after start; draw the list once they're in
+itemsReady.then(() => { renderChips(); renderStatus(); renderList(); });
 // Opening the app only fetches if the last update is over 10 minutes old (or there's nothing to show yet)
 if (state.forceRefresh) state.feeds.forEach(f => { f.lastFetched = 0; });
 refreshAll();   // fetches only the feeds that are due
