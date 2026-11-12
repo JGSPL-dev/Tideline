@@ -404,21 +404,43 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .tchip b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:196px}
 .tchip span{font-size:12px;color:var(--muted)}
 .tchip:hover{border-color:var(--brand)}
-.topichead{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 16px;margin:0 0 14px}
-.th-top{display:flex;align-items:center;justify-content:space-between}
-.th-close{width:34px;height:34px;display:grid;place-items:center;border-radius:99px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
-.th-kicker{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);font-weight:700}
-.topichead h2{margin:2px 0 4px;font-size:24px;line-height:1.15}
-.th-rel{margin:0 0 6px;color:var(--ink);font-weight:600}
-.th-stats{margin:0 0 10px;color:var(--muted);font-size:13.5px}
-.th-src{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 12px}
-.th-s{display:inline-flex;align-items:center;gap:6px;font-size:13px}
-.th-mix{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
-.th-mix button{border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:5px 10px;font:inherit;font-size:13.5px;cursor:pointer}
-.th-mix button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.th-mix .count{font-weight:700;opacity:.7}
-.th-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.th-foot .hint{font-size:12.5px}
+.tpage{display:flex;flex-direction:column;gap:12px;margin-bottom:24px}
+.tp-bar{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;background:var(--brand-fill);color:#fff;border-radius:14px;padding:12px 14px}
+.tp-words{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tp-kicker{font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;font-weight:700;opacity:.85}
+.tp-bar h2{margin:0;font-size:24px;line-height:1.15;color:#fff}
+.tp-rel{font-size:13.5px;font-weight:600;opacity:.92}
+.tp-close{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:99px;border:1px solid rgba(255,255,255,.5);background:none;color:#fff;cursor:pointer}
+.tp-stats,.tp-note{margin:-4px 2px 0;color:var(--muted);font-size:13px}
+.tp-h{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:700}
+.tp-video{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px}
+.tp-player{position:sticky;top:0;z-index:3;background:var(--card);margin:0 0 10px}
+.tp-player iframe{display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:10px;background:#000}
+.tp-player.tall iframe{aspect-ratio:9/16;max-height:70vh;width:auto;margin:0 auto}
+.tp-cap{display:flex;flex-direction:column;gap:2px;padding:8px 2px 0;font-size:13px}
+.tp-cap b{font-size:14.5px;line-height:1.3}
+.tp-cap span{color:var(--muted)}
+.tp-stop{align-self:flex-start;margin-top:4px;border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer}
+.tp-opts{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 16px) / 3);gap:8px;overflow-x:auto;scrollbar-width:none}
+.tp-opts::-webkit-scrollbar{display:none}
+.tp-opt{display:flex;flex-direction:column;gap:4px;padding:0;border:2px solid transparent;border-radius:10px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer;min-width:0}
+.tp-opt img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:var(--sunk)}
+.tp-opt.on{border-color:var(--brand)}
+.tp-optt{font-size:12px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 2px 2px}
+.tp-cols{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.tp-col{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.tp-item{display:flex;flex-direction:column;gap:3px;text-align:left;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;padding:9px 0;cursor:pointer;min-width:0}
+.tp-col .tp-h + .tp-item{border-top:0;padding-top:0}
+.tp-meta{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);min-width:0}
+.tp-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-t{font-size:14px;line-height:1.3;font-weight:600;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.tp-item.talk .tp-t{font-weight:500}
+.tp-item.read .tp-t{opacity:.6}
+.tp-flag{align-self:flex-start;font-size:10.5px;font-weight:700;letter-spacing:.05em;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:0 5px}
+.tp-none{color:var(--muted);font-size:13px;margin:0 0 6px}
+.tp-follow{margin-top:8px;font-size:13px;white-space:normal;text-align:left}
+.tp-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tp-foot .hint{font-size:12.5px}
 /* Menu: a dot (no number) on a channel with new posts today */
 .newdot{width:9px;height:9px;border-radius:50%;background:var(--brand-fill);flex:none;margin:0 6px}
 .gmeta .newdot{width:7px;height:7px;margin:0 0 0 6px;display:inline-block;vertical-align:middle}
@@ -2325,11 +2347,12 @@ function trendTopics(){
   // Words seen capitalised in the middle of an ordinary headline are names; title-case headlines and
   // first words only count when the same word is a name elsewhere (so "Perfect Roast Potatoes" adds nothing)
   const proper = new Set();
-  const toks = new Map();
+  const toks = new Map(), tcase = new Set();
   items.forEach(it => {
     const w = trendTokens(it); toks.set(it.id, w);
     const long = w.filter(x => x.length > 3);
     const titleCase = long.length >= 3 && long.filter(isCap).length / long.length > 0.7;
+    if (titleCase) tcase.add(it.id);
     if (!titleCase) w.forEach((x, i) => { if (i > 0 && isCap(x) && !TREND_STOP.has(trendNorm(x))) proper.add(trendNorm(x)); });
   });
   const terms = new Map();   // key → {key, shows: Map(display → n), ids: Set, pubs: Set, newest}
@@ -2351,15 +2374,16 @@ function trendTopics(){
       if (!isCap(x) || k.length < 3) return null;
       return proper.has(k) ? k : null;
     });
-    // A capitalised word just before a name makes a pair even when it's never a name alone ("Storm Claudia", "Prince William")
-    ok.forEach((k, i) => { if (!k && ok[i + 1] && isCap(w[i]) && word(w[i]) && word(w[i]).length >= 3) ok[i] = "~" + word(w[i]); });
+    // Pairs: two capitalised words side by side make a name even when one is an everyday word on its own
+    // ("Black Friday", "Premier League", "Storm Claudia"). Not two everyday words ("Best Deals"), and in
+    // title-case headlines only when one of the two is a name seen elsewhere.
+    const capw = w.map(x => { const k = trendNorm(x); return isCap(x) && k.length >= 3 && !EN_WORDS.has(k) && !/^\d+$/.test(k) ? k : null; });
+    const pairAt = i => capw[i] && capw[i + 1] && !(TREND_STOP.has(capw[i]) && TREND_STOP.has(capw[i + 1])) && (!tcase.has(it.id) || ok[i] || ok[i + 1]);
     const seen = new Set();
-    ok.forEach((k, i) => {
-      if (!k) return;
-      const pairOnly = k.startsWith("~"); if (pairOnly) k = k.slice(1);
-      if (!pairOnly && !own.includes(k) && !seen.has(k)){ seen.add(k); note(k, w[i].replace(/[’']s$/, ""), it, pub); }
-      const k2 = ok[i + 1] && !ok[i + 1].startsWith("~") && ok[i + 1];
-      if (k2){ const kk = k + " " + k2; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, w[i] + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); } }
+    w.forEach((x, i) => {
+      const k = ok[i];
+      if (k && !own.includes(k) && !seen.has(k)){ seen.add(k); note(k, x.replace(/[’']s$/, ""), it, pub); }
+      if (pairAt(i)){ const kk = capw[i] + " " + capw[i + 1]; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, x + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); } }
     });
   });
   // Trending: mentioned by 3+ different publishers (2 for someone following only a few)
@@ -2416,34 +2440,90 @@ function trendStrip(){
   });
   sec.append(row); return sec;
 }
-// The topic page's header: what it is, how big, where it's coming from, and the mix of types
-function topicHead(tp){
-  const box = el("section", "topichead"); box.setAttribute("aria-label", "Trending topic " + state.topic.label);
-  const top = el("div", "th-top"); top.append(el("span", "th-kicker", "Trending in your feeds"));
-  const x = el("button", "iconbtn th-close"); x.type = "button"; x.setAttribute("aria-label", "Close topic");
+// The topic page, as sketched: keyword bar; video picks that expand and play in place; then two columns,
+// news on the left (opens in the reader, so the video keeps playing) and conversation on the right
+function topicPage(tp){
+  const page = el("section", "tpage"); page.setAttribute("aria-label", "Trending: " + state.topic.label);
+  const bar = el("div", "tp-bar");
+  const words = el("div", "tp-words");
+  words.append(el("span", "tp-kicker", "Trending in your feeds"), el("h2", null, state.topic.label));
+  if (tp && tp.related.length) words.append(el("span", "tp-rel", "Also: " + tp.related.join(" · ")));
+  const x = el("button", "tp-close"); x.type = "button"; x.setAttribute("aria-label", "Close topic");
   x.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
-  x.onclick = closeTopic; top.append(x); box.append(top);
-  box.append(el("h2", null, state.topic.label));
-  if (!tp){ box.append(el("p", "th-stats", "This topic has gone quiet in your feeds.")); return box; }
-  if (tp.related.length) box.append(el("p", "th-rel", "Also: " + tp.related.join(" · ")));
-  const its = state.items.filter(i => tp.ids.has(i.id));
-  const first = its.reduce((a, b) => (a && (a.date || 0) <= (b.date || 0)) ? a : b, null);
-  const firstFeed = first && feedById(first.feedId);
-  box.append(el("p", "th-stats", `${tp.ids.size} ${tp.ids.size === 1 ? "story" : "stories"} from ${tp.pubs.size} sources · first ${first ? ago(first.date || first.seen) : ""}${firstFeed ? " in " + firstFeed.title : ""} · latest ${ago(tp.newest)}`));
-  // Who's covering it
-  const bySrc = new Map(); its.forEach(i => bySrc.set(i.feedId, (bySrc.get(i.feedId) || 0) + 1));
-  const srcs = el("div", "th-src");
-  [...bySrc].sort((a, b) => b[1] - a[1]).slice(0, 12).forEach(([id, n]) => { const f = feedById(id); if (!f) return; const s = el("span", "th-s"); s.append(iconFor(f, 16), el("span", null, f.title + (n > 1 ? ` (${n})` : ""))); srcs.append(s); });
-  box.append(srcs);
-  // The mix: tap to see one type
-  const mix = el("div", "th-mix"); mix.setAttribute("role", "group"); mix.setAttribute("aria-label", "Show");
-  const counts = {}; its.forEach(i => { const t = typeOf(i); counts[t] = (counts[t] || 0) + 1; });
-  [["all", "All", its.length], ...TYPES.filter(([k]) => k !== "all" && counts[k]).map(([k, n]) => [k, n, counts[k]])].forEach(([k, name, n]) => {
-    const b = el("button", null); b.type = "button"; b.setAttribute("aria-pressed", String(view.type === k));
-    b.append(document.createTextNode(name + " "), el("span", "count", String(n)));
-    b.onclick = () => setView("type", k); mix.append(b);
+  x.onclick = closeTopic;
+  bar.append(words, x); page.append(bar);
+  if (!tp){ page.append(el("p", "tp-note", "This has gone quiet in your feeds.")); return page; }
+  const dup = dupeIds(state.items.filter(i => tp.ids.has(i.id)), "topic:" + tp.key);
+  const its = state.items.filter(i => tp.ids.has(i.id) && !dup.has(i.id)).sort((a, b) => (b.date || 0) - (a.date || 0));
+  const first = its.reduce((a, b) => (a && (a.date || 0) <= (b.date || 0)) ? a : b, null), ff = first && feedById(first.feedId);
+  page.append(el("p", "tp-stats", `${its.length} ${its.length === 1 ? "story" : "stories"} from ${tp.pubs.size} sources · first ${first ? ago(first.date || first.seen) : ""}${ff ? " in " + ff.title : ""} · latest ${ago(tp.newest)}`));
+  // Videos: pick one and it plays here, staying at the top while you read
+  const vids = its.filter(i => typeOf(i) === "videos").slice(0, 8);
+  const vsec = el("div", "tp-video");
+  const player = el("div", "tp-player"); player.hidden = true;
+  const opts = el("div", "tp-opts");
+  vids.forEach(it => {
+    const b = el("button", "tp-opt"); b.type = "button"; b.setAttribute("aria-label", "Play " + it.title);
+    const pic = it.image || (it.videoId ? `https://i.ytimg.com/vi/${encodeURIComponent(it.videoId)}/mqdefault.jpg` : "");
+    if (pic){ const im = el("img"); im.alt = ""; im.loading = "lazy"; im.referrerPolicy = "no-referrer"; im.src = pic; im.onerror = () => im.remove(); b.append(im); }
+    b.append(el("span", "tp-optt", it.title));
+    b.onclick = () => {
+      state.read.add(it.id); save();
+      if (!it.videoId){ openArticle(it); return; }
+      opts.querySelectorAll(".tp-opt").forEach(o => o.classList.toggle("on", o === b));
+      if (pod.item && !pod.audio.paused) pod.audio.pause();
+      const f = el("iframe");
+      f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1`;
+      f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+      f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
+      try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!isShortItem(it)); }catch{}
+      player.classList.toggle("tall", isShortItem(it));
+      watchVideo(f);
+      const cap = el("div", "tp-cap"); const f2 = feedById(it.feedId);
+      cap.append(el("b", null, it.title), el("span", null, (f2 ? f2.title + " · " : "") + ago(it.date || it.seen)));
+      const shut = el("button", "tp-stop", "Close video"); shut.type = "button";
+      shut.onclick = () => { player.replaceChildren(); player.hidden = true; opts.querySelectorAll(".tp-opt").forEach(o => o.classList.remove("on")); };
+      cap.append(shut);
+      player.replaceChildren(f, cap); player.hidden = false;
+    };
+    opts.append(b);
   });
-  box.append(mix);
+  vsec.append(el("h3", "tp-h", "Videos"));
+  if (vids.length) vsec.append(player, opts);
+  else vsec.append(el("p", "tp-none", "No videos on this from your channels yet."));
+  page.append(vsec);
+  // Two columns: news, and conversation
+  const row = (it, cls) => {
+    const b = el("button", "tp-item " + cls); b.type = "button";
+    const f = feedById(it.feedId) || {};
+    const m = el("span", "tp-meta"); m.append(iconFor(f, 14), el("span", null, (f.title || "") + " · " + ago(it.date || it.seen)));
+    const text = it.title || (it.summary || "").slice(0, 140);
+    b.append(m, el("span", "tp-t", text));
+    if (it.audioUrl) b.append(el("span", "tp-flag", "LISTEN"));
+    if (state.read.has(it.id)) b.classList.add("read");
+    b.onclick = () => { state.read.add(it.id); b.classList.add("read"); save(); openArticle(it); };
+    return b;
+  };
+  const cols = el("div", "tp-cols");
+  const news = its.filter(i => ["articles", "topics", "audio"].includes(typeOf(i)));
+  const talk = its.filter(i => typeOf(i) === "conversations");
+  const left = el("div", "tp-col"); left.append(el("h3", "tp-h", `News (${news.length})`));
+  if (news.length) news.slice(0, 40).forEach(i => left.append(row(i, "news"))); else left.append(el("p", "tp-none", "No articles yet."));
+  const right = el("div", "tp-col"); right.append(el("h3", "tp-h", `Conversation (${talk.length})`));
+  talk.slice(0, 40).forEach(i => right.append(row(i, "talk")));
+  if (!talk.length) right.append(el("p", "tp-none", "Nobody you follow is talking about it yet."));
+  // Follow the hashtag: Mastodon has a public feed for every tag
+  const tag = state.topic.label.replace(/[^\p{L}\p{N}]+/gu, "");
+  if (tag.length >= 3){
+    const url = `https://mastodon.social/tags/${encodeURIComponent(tag)}.rss`;
+    const have = state.feeds.some(f => f.url === url);
+    const fb = el("button", "btn tp-follow", have ? `Following #${tag}` : `Follow #${tag} on Mastodon`); fb.type = "button"; fb.disabled = have;
+    fb.onclick = async () => { fb.disabled = true; fb.textContent = "Adding…";
+      try{ await addFeed(url, true, "mastodon"); fb.textContent = `Following #${tag}`; toast(`Following #${tag} on Mastodon`); }
+      catch(e){ fb.disabled = false; fb.textContent = `Follow #${tag} on Mastodon`; toast(e.message); } };
+    right.append(fb);
+  }
+  cols.append(left, right); page.append(cols);
   // Keep following it after it stops trending
   const q = state.topic.label, url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-GB&gl=GB&ceid=GB:en`;
   const have = state.feeds.some(f => f.url === url);
@@ -2451,8 +2531,8 @@ function topicHead(tp){
   fol.onclick = async () => { fol.disabled = true; fol.textContent = "Adding…";
     try{ await addFeed(url, true, "news"); fol.textContent = "Following this topic"; fol.classList.remove("primary"); toast(`Following “${q}” as a news topic`); }
     catch(e){ fol.disabled = false; fol.textContent = "Follow this topic"; toast(e.message); } };
-  const fr = el("div", "th-foot"); fr.append(fol, el("span", "hint", "Adds it as a News topic, so you keep getting stories about it.")); box.append(fr);
-  return box;
+  const foot = el("div", "tp-foot"); foot.append(fol, el("span", "hint", "Adds it as a News topic, so you keep getting stories about it.")); page.append(foot);
+  return page;
 }
 // New = not seen yet: never on screen long enough to read the headline, and never tapped
 const isNew = i => !state.looked.has(i.id) && !state.read.has(i.id);
@@ -3030,8 +3110,8 @@ function renderList(){
   list.textContent = "";
   list.classList.toggle("shortgrid", shortsGrid());
   const vs = videoSwitch(); if (vs) list.append(vs);
-  if (state.topic && !view.saved) list.append(topicHead(currentTopic()));
-  else { const ts = trendStrip(); if (ts) list.append(ts); }
+  if (state.topic && !view.saved){ list.append(topicPage(currentTopic())); return; }
+  { const ts = trendStrip(); if (ts) list.append(ts); }
   const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
