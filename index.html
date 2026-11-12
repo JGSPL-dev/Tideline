@@ -3432,6 +3432,21 @@ let editingId = null;
 const ICON_EDIT = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4z"/><path d="M13.5 6.5l4 4"/></svg>';
 const ICON_BIN = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12"/><path d="M9 7V4h6v3"/></svg>';
 const ICON_CHEV = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
+// How often a source posts, from its recent dates (newest first): "usual" is the typical gap in days (the slower
+// three-quarter mark, so bonus posts don't make a weekly show look daily), "longest" its longest recent break
+function rhythm(dates){
+  const gaps = dates.slice(0, 21).map((d, i, a) => i ? (a[i - 1] - d) / 86400000 : null).filter(g => g != null && g >= 0).sort((a, b) => a - b);
+  if (!gaps.length) return {usual: 0, longest: 0};
+  return {usual: gaps[Math.min(gaps.length - 1, Math.floor(gaps.length * 0.75))], longest: gaps[gaps.length - 1]};
+}
+function rhythmWords(d){
+  if (d < 1.5) return "daily";
+  if (d < 5) return `every ${Math.round(d)} days`;
+  if (d < 10) return "weekly";
+  if (d < 20) return "every two weeks";
+  if (d < 45) return "monthly";
+  return `every ${Math.round(d / 30)} months`;
+}
 // Sources that need a look: failing ones, and ones that have gone quiet
 function attentionList(){
   const out = [];
@@ -3445,11 +3460,14 @@ function attentionList(){
     if (ytChannelOf(f.url)) return;
     const dates = its.map(i => i.date || 0).filter(Boolean).sort((a, b) => b - a);
     const newest = dates[0] || 0;
-    // Judge "quiet" against the source's own rhythm: a weekly channel isn't quiet after 5 days
-    const gaps = dates.slice(0, 11).map((d, i, a) => i ? (a[i - 1] - d) / 86400000 : null).filter(g => g != null).sort((a, b) => a - b);
-    const usual = gaps.length ? gaps[Math.floor(gaps.length / 2)] : 0;
-    const quietDays = Math.max(f.audio ? 30 : 3, usual * 3);
-    if (newest && Date.now() - newest > quietDays * 86400000) out.push({f, why: `Nothing new for ${Math.floor((Date.now() - newest) / 86400000)} days`, act: "Check"});
+    if (!newest) return;
+    const {usual, longest} = rhythm(dates);
+    // Judge "quiet" against the source's own rhythm: a weekly channel isn't quiet after 5 days.
+    // Podcasts: bonus episodes make the middle gap look short, so go by the slower end of their rhythm, allow
+    // for the season breaks they've taken before, and never call one quiet inside a month.
+    const quietDays = f.audio ? Math.max(30, usual * 4, longest * 1.5) : Math.max(3, usual * 3);
+    const days = Math.floor((Date.now() - newest) / 86400000);
+    if (days > quietDays) out.push({f, why: `Nothing new for ${days} days` + (usual >= 0.5 ? ` (usually ${rhythmWords(usual)})` : ""), act: "Check"});
   });
   return out;
 }
