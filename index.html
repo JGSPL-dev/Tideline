@@ -15,6 +15,9 @@
 <!-- Reader view is switched off (READER_ENABLED in the script). It needs an article-extraction library, served from this site, before it can be turned back on. -->
 <style>
 /* Fonts ship with the app (fonts/, SIL Open Font License): no font requests to Google or anyone else */
+@font-face{font-family:"Anton";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/anton-latin-400-normal.woff) format("woff")}
+@font-face{font-family:"Space Mono";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/space-mono-latin-400-normal.woff) format("woff")}
+@font-face{font-family:"Space Mono";font-style:normal;font-weight:700;font-display:swap;src:url(fonts/space-mono-latin-700-normal.woff) format("woff")}
 @font-face{font-family:"Instrument Sans";font-style:normal;font-weight:400;font-display:swap;src:url(fonts/instrument-sans-latin-400-normal.woff2) format("woff2")}
 @font-face{font-family:"Instrument Sans";font-style:normal;font-weight:500;font-display:swap;src:url(fonts/instrument-sans-latin-500-normal.woff2) format("woff2")}
 @font-face{font-family:"Instrument Sans";font-style:normal;font-weight:600;font-display:swap;src:url(fonts/instrument-sans-latin-600-normal.woff2) format("woff2")}
@@ -724,6 +727,92 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
   .reader{padding:20px 16px 40px;font-size:18px}
   .side{width:80px}.side.vid{width:112px}
 }
+/* ---------- Off-grid look ---------- */
+.ograil,.ogbar{display:none}
+:root[data-look="offgrid"]{--og-paper:#FFE600;--og-hot:#FF6FB5;--og-ink:#000;--og-rail:64px;--og-mono:"Space Mono",ui-monospace,monospace;--og-disp:"Anton","Impact",sans-serif}
+:root[data-look="offgrid"] body{background:#000}
+:root[data-look="offgrid"] .feedcol .top{display:none}
+:root[data-look="offgrid"] .feedcol{margin-right:var(--og-rail);background:var(--og-paper);border-right:0}
+:root[data-look="offgrid"][data-rail="left"] .feedcol{margin-right:0;margin-left:var(--og-rail)}
+:root[data-look="offgrid"] #toTop{display:none!important}
+.ograil{position:fixed;top:0;bottom:0;right:0;width:var(--og-rail);z-index:40;background:#000;color:#fff;flex-direction:column;align-items:center;justify-content:space-between;padding:calc(10px + env(safe-area-inset-top,0px)) 0 calc(12px + env(safe-area-inset-bottom,0px));box-sizing:border-box;font-family:var(--og-mono)}
+:root[data-look="offgrid"] .ograil{display:flex}
+:root[data-look="offgrid"][data-rail="left"] .ograil{right:auto;left:0}
+.ograil .brand{writing-mode:vertical-rl;margin:0;display:flex;align-items:center;gap:8px}
+.ograil .brand .logo{transform:rotate(90deg);width:30px;height:30px}
+.ograil .brandtext{display:flex;flex-direction:row;gap:0}
+.ograil .wordmark{font-family:var(--og-disp);font-size:34px;font-weight:400;letter-spacing:.02em;text-transform:uppercase;color:#fff;line-height:1}
+.ograil .wordmark .rss{color:var(--og-paper)}
+.ograil .byline{display:none}
+.og-tools{display:flex;flex-direction:column;align-items:center;gap:4px}
+.og-status{writing-mode:vertical-rl;border:0;background:none;color:#fff;font:700 10.5px var(--og-mono);display:flex;align-items:center;gap:6px;padding:6px 0;margin-bottom:4px;cursor:pointer;letter-spacing:.02em}
+.og-dot{width:9px;height:9px;border-radius:50%;background:#4ADE80;flex:none}
+.og-dot.warn{background:var(--og-hot)}.og-dot.idle{background:#999}
+.ograil .btn.icon{width:48px;height:48px;border:0;background:none;color:#fff;border-radius:0;box-shadow:none}
+.ograil .btn.icon svg{width:24px;height:24px}
+.ograil .btn.icon:hover{background:#222}
+.ograil #nowBtn.on,.ograil #savedBtn[aria-pressed="true"]{background:var(--og-hot);color:#000}
+.ograil .bcount{background:var(--og-hot);color:#000;border-radius:0;font-family:var(--og-mono)}
+.ograil .refreshdot .hdot{display:none}
+.ogbar{position:sticky;top:0;z-index:20;min-height:48px;background:#000;color:#fff;align-items:center;gap:10px;padding:calc(env(safe-area-inset-top,0px)) 8px 0 8px;font:700 12px var(--og-mono)}
+:root[data-look="offgrid"] .ogbar{display:flex;flex-wrap:wrap}
+.og-head{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:.03em}
+.ogbar .filterbtn{order:-1;height:36px;border:0;border-radius:0;background:var(--og-paper);color:#000;font:700 12px var(--og-mono);text-transform:uppercase;padding:0 12px;box-shadow:none}
+.ogbar .filterbtn .fcount{background:#000;color:var(--og-paper);border-radius:0}
+.ogbar .fpill{background:none;border:0;color:#fff;font:700 12px var(--og-mono);text-decoration:underline;padding:0 4px;max-width:40%}
+.ogbar .fpill span{display:none}
+.ogbar .fpill::before{content:"CLEAR"}
+.ogbar .statuspop{position:absolute;top:100%;left:8px;right:8px}
+.ogbar .filterbox{position:absolute;top:100%;left:0;right:0;font:400 15px var(--ui);text-transform:none}
+.ogbar .statuspop{font:400 14px var(--ui)}
+:root[data-look="offgrid"] .list{background:var(--og-paper);padding:0 0 calc(40px + env(safe-area-inset-bottom,0px));gap:0;display:block}
+:root[data-look="offgrid"] body.has-mini .list{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+:root[data-look="offgrid"] #list > .card.og{position:relative;display:block;background:var(--og-paper);color:#000;border:0;border-bottom:3px solid #000;border-radius:0;padding:10px 12px 16px 14px;box-shadow:none;margin:0;font-family:var(--og-mono);overflow:hidden;width:auto;max-width:none}
+:root[data-look="offgrid"] #list > .card.og:nth-of-type(3n+2){background:#000;color:#fff}
+:root[data-look="offgrid"] #list > .card.og:nth-of-type(3n+3){background:var(--og-hot);color:#000}
+:root[data-look="offgrid"] #list > .card.og.read{opacity:.72}
+.og-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
+.og-logo{flex:none;width:92px;height:92px;margin-top:6px;box-sizing:border-box;border:3px solid currentColor;background:#fff;display:grid;place-items:center;overflow:hidden;transform:rotate(4deg)}
+.card.og:nth-of-type(2n) .og-logo{transform:rotate(-5deg)}
+.og-logo.round{border-radius:50%}.og-logo.tile{border-radius:18px}.og-logo.square{border-radius:0}
+.og-logo .sicon{width:80px!important;height:80px!important;border-radius:0}
+.og-logo.round .sicon{border-radius:50%}.og-logo.tile .sicon{border-radius:12px}
+.og-logo .sicon img{width:100%;height:100%;object-fit:contain}
+.og-logo.round .sicon img,.og-logo.tile .sicon img{object-fit:cover}
+.og-logo .sicon.letter{font-family:var(--og-disp);font-weight:400}
+.og-pic{flex:0 1 160px;min-width:0;aspect-ratio:3/2;margin:10px 4px 0 0;border:3px solid #000;background:#fff;transform:rotate(-4deg);overflow:hidden}
+.card.og:nth-of-type(2n) .og-pic{transform:rotate(3deg)}
+.og-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.og-src{font-family:var(--og-disp);font-size:clamp(28px,10vw,40px);line-height:1.02;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:6px 0 8px}
+.og-tag{display:inline-block;background:currentColor;padding:3px 8px;font-size:12px;font-weight:700;margin-bottom:8px}
+.og-tag{background:#000;color:var(--og-paper)}
+#list > .card.og:nth-of-type(3n+2) .og-tag{background:#fff;color:#000}
+#list > .card.og:nth-of-type(3n+3) .og-tag{background:#000;color:var(--og-hot)}
+.og-title{font-family:var(--og-disp);font-weight:400;font-size:calc(26px * var(--scale,1));line-height:1.06;text-transform:uppercase;margin:0 0 12px;overflow-wrap:anywhere;letter-spacing:.005em}
+.og-title .cardlink{color:inherit}
+.og-acts{position:relative;z-index:2;display:flex;gap:8px;flex-wrap:wrap}
+.og-b{height:44px;padding:0 14px;border:3px solid currentColor;background:transparent;color:inherit;font:700 13px var(--og-mono);cursor:pointer;border-radius:0}
+.og-b.main{background:currentColor}
+.og-b.main{color:inherit}
+.card.og .og-b.main{background:#000;color:var(--og-paper);border-color:#000}
+#list > .card.og:nth-of-type(3n+2) .og-b.main{background:#fff;color:#000;border-color:#fff}
+#list > .card.og:nth-of-type(3n+3) .og-b.main{color:var(--og-hot)}
+.og-b.on{background:var(--og-hot);color:#000;border-color:#000}
+#list > .card.og:nth-of-type(3n+3) .og-b.on{background:#fff}
+.og-acts .cact{position:static;width:44px;height:44px;border:3px solid currentColor;border-radius:0;background:none;color:inherit}
+.card.og .vbox{margin:-10px -12px 12px -14px}
+.card.og + .inline,.card.og + .pod-panel{background:#fff}
+:root[data-look="offgrid"] .trendstrip{padding:12px 12px 4px;margin:0;border-bottom:3px solid #000}
+:root[data-look="offgrid"] .trendstrip h3{font-family:var(--og-mono);color:#000}
+:root[data-look="offgrid"] .tchip{border:3px solid #000;border-radius:0;background:#fff;font-family:var(--og-mono)}
+:root[data-look="offgrid"] .tchip b{font-family:var(--og-disp);font-weight:400;font-size:18px;text-transform:uppercase}
+:root[data-look="offgrid"] .tpage{padding:10px}
+:root[data-look="offgrid"] .tp-bar{background:#000;border-radius:0}
+:root[data-look="offgrid"] .tp-bar h2{font-family:var(--og-disp);font-weight:400;font-size:34px;text-transform:uppercase;color:var(--og-paper)}
+:root[data-look="offgrid"] .tp-video,:root[data-look="offgrid"] .tp-col{border:3px solid #000;border-radius:0}
+:root[data-look="offgrid"] .empty{padding:24px 16px;color:#000}
+:root[data-look="offgrid"] .more{font:700 12px var(--og-mono);text-align:center;padding:22px 10px;color:#000}
+@media (min-width:900px){:root[data-look="offgrid"] .app{margin-right:var(--og-rail)}:root[data-look="offgrid"][data-rail="left"] .app{margin-right:0;margin-left:var(--og-rail)}:root[data-look="offgrid"] .feedcol{margin:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -2678,6 +2767,12 @@ function paintHealth(){
   dot.className = "hdot" + (idle ? " idle" : bad ? " warn" : "");
   ib.className = "infobtn" + (bad ? " warn" : idle ? " idle" : "");
   ib.textContent = bad ? "!" : "i";
+  const os = $("#ogStatus");
+  if (os){
+    os.textContent = "";
+    os.append(el("span", "og-dot" + (idle ? " idle" : bad ? " warn" : "")), document.createTextNode(state.busy ? "CHECKING…" : bad ? `${bad} NEED${bad === 1 ? "S" : ""} A LOOK` : "ALL OK" + (state.lastUpdated ? " · " + ogAgo(state.lastUpdated) : "")));
+    os.setAttribute("aria-label", ib.getAttribute("aria-label"));
+  }
   ib.setAttribute("aria-label", bad ? `${bad} source${bad === 1 ? " needs" : "s need"} attention. Show summary` : "All sources working. Show summary");
   link.hidden = !bad;
 }
@@ -2698,6 +2793,12 @@ function renderFilterBar(){
     pill.setAttribute("aria-label", `Showing ${label}. Show everything`);
   }
   const n = (view.type !== "all" ? 1 : 0) + (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "week" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0);
+  const oh = $("#ogHead");
+  if (oh && isOG()){
+    const head = [view.saved ? "SAVED" : (typeName || "EVERYTHING").toUpperCase(), state.topic ? state.topic.label.toUpperCase() : view.source !== "all" ? sourceLabel().toUpperCase() : ""].filter(Boolean);
+    if (!state.topic){ try{ head.push(String(visibleItems().length)); }catch{} }
+    oh.textContent = head.join(" · ");
+  }
   const fc = $("#filterCount"); fc.hidden = !n; fc.textContent = String(n);
   $("#filterBtn").setAttribute("aria-label", n ? `Filter, ${n} on` : "Filter");
 }
@@ -3032,7 +3133,7 @@ function cardEl(it){
 const STACK_SHOW = 2, STACK_STEP = 10;
 function listUnits(){
   const items = visibleItems();
-  if (design.stack !== "on" || shortsGrid()) return items.map(it => ({it}));
+  if (design.stack !== "on" || shortsGrid() || isOG()) return items.map(it => ({it}));
   const groups = new Map();
   for (const it of items){
     let g = groups.get(it.feedId);
@@ -3041,7 +3142,109 @@ function listUnits(){
   }
   return [...groups.values()].map(g => g.items.length === 1 ? {it: g.items[0]} : {group: g});
 }
-const unitEl = u => u.it ? cardEl(u.it) : stackEl(u.group);
+const unitEl = u => u.it ? (isOG() && !shortsGrid() ? ogCard(u.it) : cardEl(u.it)) : stackEl(u.group);
+/* ---------- Off-grid look (Settings → Look → Style) ----------
+   From the Nov 2026 design canvas, option E: a black side bar for the controls, the feed in colour slabs
+   (yellow, black, pink) with the source's logo shaped by type, big uppercase headlines, and one clear action. */
+const isOG = () => design.look === "offgrid";
+const OG_PARKED = ["#manage", ".top .brand", "#savedBtn", "#nowBtn", "#refresh", "#statusPop", "#activeFilter", "#filterBtn", "#filterBox"];
+function placeLook(){
+  const on = isOG();
+  let rail = $("#ogRail"), bar = $("#ogBar");
+  if (on && !rail){
+    rail = el("nav", "ograil"); rail.id = "ogRail"; rail.setAttribute("aria-label", "YourFeed controls");
+    const st = el("button", "og-status"); st.type = "button"; st.id = "ogStatus";
+    st.onclick = e => { e.stopPropagation(); toggleStatusPop(); };
+    const top = el("button", "btn icon og-top"); top.type = "button"; top.id = "ogTop"; top.setAttribute("aria-label", "Back to the top");
+    top.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
+    top.onclick = scrollFeedTop;
+    const tools = el("div", "og-tools"); tools.id = "ogTools";
+    rail.append(el("div", "og-brandslot"), tools);
+    tools.append(st, top);
+    document.body.append(rail);
+    bar = el("div", "ogbar"); bar.id = "ogBar";
+    bar.append(el("span", "og-head")); bar.querySelector(".og-head").id = "ogHead";
+    $("#list").before(bar);
+  }
+  if (!rail) return;
+  // Move the real controls (same buttons, same handlers) into the side bar and the strip, or back again
+  OG_PARKED.forEach(sel => {
+    const n = document.querySelector(sel) || document.querySelector("[data-og='" + sel + "']");
+    if (!n) return;
+    if (!n.dataset.og){ n.dataset.og = sel; const mark = document.createComment("og:" + sel); n.before(mark); n._ogHome = mark; }
+    if (on){
+      if (sel === ".top .brand") rail.querySelector(".og-brandslot").append(n);
+      else if (["#filterBtn"].includes(sel)) bar.prepend(n);
+      else if (["#activeFilter", "#statusPop", "#filterBox"].includes(sel)) bar.append(n);
+      else $("#ogTools").append(n);
+    } else if (n._ogHome) n._ogHome.after(n);
+  });
+  rail.hidden = bar.hidden = !on;
+  document.body.classList.toggle("og", on);
+}
+// "53M AGO", "2H AGO", "3D AGO", then the date
+function ogAgo(ms){
+  if (!ms) return "";
+  const s = Math.max(0, (Date.now() - ms) / 1000);
+  if (s < 60) return "JUST NOW";
+  if (s < 3600) return Math.floor(s / 60) + "M AGO";
+  if (s < 86400) return Math.floor(s / 3600) + "H AGO";
+  if (s < 86400 * 7) return Math.floor(s / 86400) + "D AGO";
+  return new Date(ms).toLocaleDateString(undefined, {day: "numeric", month: "short"}).toUpperCase();
+}
+function ogCard(it){
+  const a = el("article", "card og");
+  if (state.read.has(it.id)) a.classList.add("read");
+  a.dataset.id = it.id;
+  queueMicrotask(() => watchLook(a));
+  const f = feedById(it.feedId), t = typeOf(it), isPod = !!it.audioUrl && !it.videoId;
+  if (isPod){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); }
+  // Logo shaped by type: websites square (favicon), channels and accounts round, podcasts rounded artwork
+  const top = el("div", "og-top");
+  const logo = el("span", "og-logo " + ({videos: "round", conversations: "round", audio: "tile"}[t] || "square"));
+  logo.append(iconFor(f, 80)); top.append(logo);
+  if (it.image && !isPod){
+    const box = el("div", "og-pic" + (it.videoId ? " vid" : ""));
+    const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+    const tries = imageCandidates(it); let n = 0;
+    img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else box.remove(); };
+    img.src = tries[0]; box.append(img); top.append(box);
+  }
+  a.append(top);
+  a.append(el("div", "og-src", (f && f.title) || it.feedTitle || ""));
+  const len = itemDur(it), st = isPod ? podStatus(it.id) : null;
+  const kind = it.videoId ? (isShortItem(it) ? "SHORT" : "WATCH") : isPod ? (st.played ? "PLAYED" : st.pos ? "CONTINUE" : "LISTEN")
+    : t === "conversations" ? "TALK" : t === "topics" ? "TOPIC" : "READ";
+  const tag = [ogAgo(it.date || it.seen), kind, len ? (it.videoId ? clockLen(len) : minsLen(len).toUpperCase()) : "", state.read.has(it.id) ? "SEEN" : ""].filter(Boolean).join(" / ");
+  a.append(el("div", "og-tag", tag));
+  const link = el(it.link ? "a" : "span", "cardlink");
+  if (it.link){ link.href = it.link; link.target = "_blank"; link.rel = "noopener noreferrer"; }
+  link.textContent = it.title || (it.summary || "").slice(0, 160);
+  const h = el("h2", "og-title"); h.append(link); a.append(h);
+  const go = e => {
+    state.read.add(it.id); save(); a.classList.add("read"); renderChips();
+    if (isPod){ e && e.preventDefault(); togglePodPanel(it); return true; }
+    if (it.videoId && state.videoInApp){ e && e.preventDefault(); if (isWide()) openItem(it.id); else playInCard(a, it); return true; }
+    if (state.keepInBrowser && it.link){ const intent = browserIntent(it.link); if (intent){ e && e.preventDefault(); location.href = intent; return true; } }
+    return false;
+  };
+  link.addEventListener("click", e => { go(e); });
+  const acts = el("div", "og-acts");
+  const main = el("button", "og-b main", isPod ? (pod.item && pod.item.id === it.id && !pod.audio.paused ? "PAUSE" : st.pos ? "CONTINUE" : "LISTEN") : it.videoId ? "PLAY" : "OPEN");
+  main.type = "button"; main.setAttribute("aria-label", main.textContent.toLowerCase() + ": " + (it.title || ""));
+  main.onclick = () => { if (!go(null) && it.link) link.click(); };
+  acts.append(main);
+  if (it.link || it.audioUrl){
+    const on = isSaved(it.id);
+    const sv = el("button", "og-b" + (on ? " on" : ""), on ? "SAVED" : "SAVE"); sv.type = "button"; sv.setAttribute("aria-pressed", String(on));
+    sv.onclick = () => { toggleSave(it, null); const now = isSaved(it.id); sv.textContent = now ? "SAVED" : "SAVE"; sv.classList.toggle("on", now); sv.setAttribute("aria-pressed", String(now)); };
+    const sh = el("button", "og-b", "SHARE"); sh.type = "button"; sh.onclick = () => sharePost(it);
+    acts.append(sv, sh);
+    if (isPod && CAN_DOWNLOAD) acts.append(downloadBtn(it, true));
+  }
+  a.append(acts);
+  return a;
+}
 function stackEl(g){
   const f = feedById(g.feedId) || {title: "Feed", color: "#888"};
   const total = g.items.length, fresh = g.items.filter(isNew).length;
@@ -3194,7 +3397,7 @@ function continueListening(){
 }
 function addSentinel(total){
   const list = $("#list");
-  if (state.shown >= total){ list.append(el("div", "more", "You're all caught up")); return; }
+  if (state.shown >= total){ list.append(el("div", "more", isOG() ? "END OF THE LIST. THAT IS ALL OF IT." : "You're all caught up")); return; }
   const s = el("div", "more", "Loading more…"); list.append(s);
   io = new IntersectionObserver(es => {
     if (!es.some(e => e.isIntersecting)) return;
@@ -5673,12 +5876,14 @@ $("#searchPage").addEventListener("close", () => { renderTopResults(); renderFee
 renderFilterChips($("#searchFilters"), renderAllResults);
 
 /* ---------- design settings ---------- */
-const DESIGN_DEFAULT = {theme:"system", accent:"orange", scale:"m", head:"serif", layout:"magazine", density:"normal", thumbs:"large", sum:"on", width:"narrow", stack:"off"};
+const DESIGN_DEFAULT = {look:"classic", rail:"right", theme:"system", accent:"orange", scale:"m", head:"serif", layout:"magazine", density:"normal", thumbs:"large", sum:"on", width:"narrow", stack:"off"};
 const ACCENTS = {
   orange:["#c2410c","#ff8a4c"], teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
   amber:["#9a5b00","#f2b453"], green:["#2f7a1f","#8fd47a"], slate:["#3d4a5c","#a9b6c8"], red:["#c0362c","#ff8a7e"]
 };
 const DESIGN_ROWS = [
+  ["look","Style",[["classic","Classic"],["offgrid","Off-grid"]]],
+  ["rail","Off-grid side bar",[["right","Right"],["left","Left"]]],
   ["theme","Theme",[["system","Auto"],["light","Light"],["dark","Dark"],["black","Black"]]],
   ["layout","Layout",[["list","List"],["magazine","Magazine"]]],
   ["scale","Text size",[["s","Small"],["m","Medium"],["l","Large"],["xl","Extra large"]]],
@@ -5701,7 +5906,8 @@ function applyDesign(){
   r.style.setProperty("--accent-l", ac[0]); r.style.setProperty("--accent-d", ac[1]);
   r.style.setProperty("--scale", {s:.9, m:1, l:1.12, xl:1.25}[design.scale] || 1);
   r.style.setProperty("--head", design.head === "sans" ? "var(--ui)" : "var(--read)");
-  ["layout","density","thumbs","sum","width"].forEach(k => r.dataset[k] = design[k]);
+  ["layout","density","thumbs","sum","width","look","rail"].forEach(k => r.dataset[k] = design[k]);
+  try{ placeLook(); }catch(e){ console.warn(e); }
   const meta = document.querySelector('meta[name="theme-color"]');
   const bg = getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3";
   if (meta) meta.content = bg;
@@ -5723,7 +5929,7 @@ function renderDesign(){
     opts.forEach(([v, t]) => {
       const b = el("button", null, t); b.type = "button"; b.id = "set-" + key + "-" + v;
       b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(design[key] === v)); b.setAttribute("aria-pressed", String(design[key] === v));
-      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "stack"){ state.shown = PAGE; renderList(); } else if (key === "layout" || key === "thumbs") renderList(); $("#" + b.id).focus(); };
+      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "look"){ state.shown = PAGE; renderList(); renderFilterBar(); paintHealth(); } else if (key === "stack"){ state.shown = PAGE; renderList(); } else if (key === "layout" || key === "thumbs") renderList(); $("#" + b.id).focus(); };
       seg.append(b);
     });
     row.append(lab, seg); rows.append(row);
