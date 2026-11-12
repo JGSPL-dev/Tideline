@@ -155,7 +155,9 @@ function looksPrivate(u){
   return (!pub && !/\/public\//i.test(u.pathname) && u.pathname.split("/").some(v => randomCode(v.replace(/\.\w{2,5}$/, ""))))
     || /(^|\.)(patreon|supercast|memberful|glow\.fm|hello-audio|passport)\b/.test(u.hostname) || /\/private\//i.test(u.pathname);
 }
-async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept} = {}){
+// partial: keep the first MAX_BYTES of a longer reply (feeds that list every episode ever) instead of refusing;
+// the caller closes the document off (wholeFeed). cut: true says it was cut.
+async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept, partial = false} = {}){
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
   try{
@@ -166,7 +168,8 @@ async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept} = {}){
     const r = await fetch(url, {headers: h, redirect: "follow", signal: ctrl.signal, ...(plain ? {cf: {cacheTtl: 300, cacheEverything: true}} : {})});
     if (!publicUrl(r.url || url)) throw new Error("Redirected somewhere not allowed");
     const len = +r.headers.get("content-length") || 0;
-    if (len > MAX_BYTES) throw new Error("Too large");
+    if (len > MAX_BYTES && !partial) throw new Error("Too large");
+    let cut = false;
     const reader = r.body ? r.body.getReader() : null;
     const chunks = []; let size = 0;
     if (reader){
@@ -174,15 +177,31 @@ async function fetchCapped(url, {ua = UA_FEEDS, cookie, accept} = {}){
         const {done, value} = await reader.read();
         if (done) break;
         size += value.length;
-        if (size > MAX_BYTES){ ctrl.abort(); throw new Error("Too large"); }
+        if (size > MAX_BYTES){
+          if (!partial){ ctrl.abort(); throw new Error("Too large"); }
+          chunks.push(value.subarray(0, value.length - (size - MAX_BYTES))); size = MAX_BYTES; cut = true;
+          try{ reader.cancel(); }catch{}
+          break;
+        }
         chunks.push(value);
       }
     }
     const buf = new Uint8Array(size); let o = 0; for (const c of chunks){ buf.set(c, o); o += c.length; }
-    return {status: r.status, ok: r.ok, url: r.url || url, type: r.headers.get("content-type") || "", text: new TextDecoder().decode(buf)};
+    return {status: r.status, ok: r.ok, url: r.url || url, type: r.headers.get("content-type") || "", text: new TextDecoder().decode(buf), cut};
   } finally { clearTimeout(t); }
 }
 
+// A feed cut short ends mid-entry: keep the whole entries and close the document
+function wholeFeed(t){
+  const head = t.slice(0, 5000);
+  const close = (endTag, suffix) => { const e = t.lastIndexOf(endTag); return e < 0 ? t : t.slice(0, e + endTag.length) + suffix; };
+  if (/<urlset[\s>]/i.test(head)) return /<\/urlset>\s*$/i.test(t) ? t : close("</url>", "</urlset>");
+  if (/<\/(rss|feed|rdf:RDF)>\s*$/i.test(t.slice(-200))) return t;
+  if (/<rss[\s>]/i.test(head)) return close("</item>", "</channel></rss>");
+  if (/<rdf:RDF[\s>]/i.test(head)) return close("</item>", "</rdf:RDF>");
+  if (/<feed[\s>]/i.test(head)) return close("</entry>", "</feed>");
+  return t;
+}
 // Judged by the document's first element (after the XML declaration, comments, stylesheet and doctype),
 // so a web page that merely mentions <rss> is never passed through
 const rootOf = t => t.slice(0, 20000).replace(/^\uFEFF/, "").replace(/^(\s+|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE[^>]*>)+/i, "");
@@ -411,10 +430,11 @@ async function handle(req, url, origin, env, ctx){
     if (!target) return fail(origin, 400, "Not a public web address");
     if (looksPrivate(target)) return fail(origin, 403, "That looks like a private feed link, so it's only read from your own device");
     const isReddit = /(^|\.)reddit\.com$/.test(target.hostname);
-    const r = await fetchCapped(target.href, {ua: isReddit ? UA_FEEDS : UA_BROWSER});
+    // Feeds that list every episode ever can be far over the cap: keep the first part, newest episodes first
+    const r = await fetchCapped(target.href, {ua: isReddit ? UA_FEEDS : UA_BROWSER, partial: true});
     if (!r.ok) return fail(origin, 502, "The site answered with error " + r.status);
     if (!looksLikeFeed(r.text)) return fail(origin, 422, blocked(r.text) ? "Blocked by the site's bot protection" : "That address isn't a feed");
-    return new Response(r.text, {headers: headers(origin, "text/plain; charset=utf-8")});
+    return new Response(r.cut ? wholeFeed(r.text) : r.text, {headers: headers(origin, "text/plain; charset=utf-8")});
   }
 
   if (p === "/json"){

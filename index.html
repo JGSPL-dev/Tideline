@@ -1142,20 +1142,43 @@ async function fetchWithTimeout(url, ms, headers){
 // Read a reply's text with a size limit: refused up front when the site says it's too big, and cut off while
 // reading otherwise, so one huge file can't use up the phone's memory (the likely cause of the 0.2.40 crash)
 const MAX_FEED = 8e6, MAX_PAGE = 3e6;
-async function readCapped(r, max = MAX_FEED, what = "That feed"){
+// partial: for feeds. Long-running shows list every episode ever (newest first), easily 10–20 MB: keep the first
+// part and close it off (wholeFeed) instead of refusing. r._cut says it was cut. Over HARD_FEED is still refused.
+const HARD_FEED = 40e6, BIG_RANGE = "bytes=0-7999999";
+async function readCapped(r, max = MAX_FEED, what = "That feed", {partial = false} = {}){
   const tooBig = () => new Error(`${what} is too big to read on a phone`);
-  if ((+r.headers.get("content-length") || 0) > max) throw tooBig();
-  if (!r.body || !r.body.getReader){ const t = await r.text(); if (t.length > max) throw tooBig(); return t; }
+  if ((+r.headers.get("content-length") || 0) > (partial ? HARD_FEED : max)) throw tooBig();
+  if (!r.body || !r.body.getReader){
+    const t = await r.text();
+    if (t.length <= max) return t;
+    if (!partial) throw tooBig();
+    r._cut = true; return t.slice(0, max);
+  }
   const reader = r.body.getReader(), dec = new TextDecoder();
   let out = "", size = 0;
   for (;;){
     const {done, value} = await reader.read();
     if (done) break;
     size += value.length;
-    if (size > max){ try{ reader.cancel(); }catch{} throw tooBig(); }
+    if (size > max){
+      try{ reader.cancel(); }catch{}
+      if (!partial) throw tooBig();
+      r._cut = true; out += dec.decode(value.subarray(0, value.length - (size - max)), {stream: true}); break;
+    }
     out += dec.decode(value, {stream: true});
   }
   return out + dec.decode();
+}
+// A feed read only in part ends mid-episode: keep the whole entries and close the document
+function wholeFeed(t){
+  const head = t.slice(0, 5000);
+  if (/<urlset[\s>]/i.test(head)) return wholeSitemap(t);
+  const tail = t.slice(-200);
+  if (/<\/(rss|feed|rdf:RDF)>\s*$/i.test(tail)) return t;
+  if (/<rss[\s>]/i.test(head)){ const e = t.lastIndexOf("</item>"); return e < 0 ? t : t.slice(0, e + 7) + "</channel></rss>"; }
+  if (/<rdf:RDF[\s>]/i.test(head)){ const e = t.lastIndexOf("</item>"); return e < 0 ? t : t.slice(0, e + 7) + "</rdf:RDF>"; }
+  if (/<feed[\s>]/i.test(head)){ const e = t.lastIndexOf("</entry>"); return e < 0 ? t : t.slice(0, e + 8) + "</feed>"; }
+  return t;
 }
 // A news sitemap asked for in part (Range) ends mid-entry: keep the whole entries
 function wholeSitemap(t){
@@ -1250,12 +1273,14 @@ async function feedDirect(url, ms = 12000, feed){
   const haveStories = feed && state.items.some(i => i.feedId === feed.id);
   if (v && haveStories && feed.iconParsed){ if (v.etag) h["If-None-Match"] = v.etag; if (v.lm) h["If-Modified-Since"] = v.lm; }
   if (feed && feed.sitemap) h.Range = SITEMAP_RANGE;
+  else if (feed && feed.big) h.Range = BIG_RANGE;      // known to be huge: ask for the first part only
   let r;
   try{ r = await fetchWithTimeout(url, ms, h); }catch(e){ throw friendlyNetErr(e); }
   if (r.status === 304 && v && haveStories) return NOT_MODIFIED;
   if (!r.ok) throw new Error("The site answered with error " + r.status);
-  let t = await readCapped(r);
-  if (feed && feed.sitemap) t = wholeSitemap(t);
+  let t = await readCapped(r, MAX_FEED, "That feed", {partial: true});
+  if (r._cut || r.status === 206 || (feed && feed.sitemap)) t = wholeFeed(t);
+  if (feed && feed.id !== "probe" && r._cut) feed.big = true;
   if (/^\x1f\x8b|^\ufffd\x08/.test(t)) throw new Error("The site sent a compressed file the app can't read");
   if (!looksLikeFeed(t)) throw new Error(notFeedReason(t));
   if (IS_APP && feed && feed.id !== "probe"){

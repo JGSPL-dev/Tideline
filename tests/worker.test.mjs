@@ -19,6 +19,7 @@ const PAGE_HTML = '<html><head><title>Good Food</title><link rel="alternate" typ
 const asked = [];
 globalThis.fetch = async (u) => {
   u = String(u && u.url || u); asked.push(u);
+  if (u === "https://bigpod.example/feed") return new Response('<?xml version="1.0"?><rss version="2.0"><channel><title>Big</title>' + Array.from({length: 2000}, (_, i) => `<item><title>Ep ${2000 - i}</title><description>${"notes ".repeat(600)}</description></item>`).join("") + "</channel></rss>", {status: 200, headers: {"content-type": "application/rss+xml"}});
   if (/^https:\/\/(www\.)?bbcgoodfood\.com\/feed/.test(u)) return new Response(RSS, {status: 200, headers: {"content-type": "application/rss+xml"}});
   if (/^https:\/\/(www\.)?bbcgoodfood\.com\//.test(u)) return new Response(PAGE_HTML, {status: 200, headers: {"content-type": "text/html"}});
   return new Response("not found", {status: 404});
@@ -69,6 +70,15 @@ test("feed route passes feeds and never relays web pages", async () => {
   const page = await call("/feed?url=" + encodeURIComponent("https://bbcgoodfood.com/recipes"));
   assert.equal(page.status, 422);
   assert.doesNotMatch(await page.text(), /A web page/);
+});
+
+test("huge feeds are cut to whole episodes, newest first, not refused", async () => {
+  const r = await call("/feed?url=" + encodeURIComponent("https://bigpod.example/feed"));
+  assert.equal(r.status, 200);
+  const t = await r.text();
+  assert.ok(t.length <= 5 * 1024 * 1024 + 50);
+  assert.match(t, /<\/item><\/channel><\/rss>$/);
+  assert.match(t, /Ep 2000/);
 });
 
 test("json route only reaches allowed APIs", async () => {
