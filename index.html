@@ -6313,7 +6313,7 @@ function openReport(focusId){
   const copy = el("button", "btn", "Copy"); copy.type = "button";
   copy.onclick = async () => { try{ await navigator.clipboard.writeText(R.text); toast("Report copied"); }catch{ toast("Couldn't copy"); } };
   const dl = el("button", "btn", IS_APP ? "Save as file" : "Download"); dl.type = "button";
-  dl.onclick = async () => { try{ await deliverFile(`yourfeed-source-health-${new Date().toISOString().slice(0, 10)}.txt`, R.text, "text/plain", "Save or send the report"); }catch(e){ if (!/cancel/i.test(String(e && e.message))) toast("Couldn't save the file"); } };
+  dl.onclick = async () => { try{ const how = await deliverFile(`yourfeed-source-health.txt`, R.text, "text/plain", "Save or send the report", {save: true}); if (how.startsWith("downloads:")) toast("Saved to Downloads as " + how.slice(10)); }catch(e){ if (!/cancel/i.test(String(e && e.message))) toast("Couldn't save the file"); } };
   const retry = el("button", "btn", "Retry failing"); retry.type = "button"; retry.disabled = !R.failing.length;
   retry.onclick = async () => {
     retry.disabled = true; retry.textContent = "Checking…";
@@ -6504,9 +6504,19 @@ function exportOpml(withPrivate){
   }).join("\n");
   return `<?xml version="1.0" encoding="UTF-8"?>\n<opml version="2.0">\n  <head>\n    <title>YourFeed sources</title>\n    <dateCreated>${new Date().toUTCString()}</dateCreated>\n  </head>\n  <body>\n${body}\n  </body>\n</opml>\n`;
 }
-async function deliverFile(name, text, mime, title = "Save or send your sources"){
+// In the app, "save" puts the file in the phone's Download folder (Android 11+ allows this without asking);
+// if that isn't possible, or share is asked for, the share sheet opens instead
+async function deliverFile(name, text, mime, title = "Save or send your sources", {save = false} = {}){
   const FS = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
   const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
+  if (FS && save){
+    const stamp = new Date().toISOString().slice(0, 16).replace("T", "-").replace(":", "");
+    const file = name.replace(/(\.\w+)$/, `-${stamp}$1`);
+    try{
+      await FS.writeFile({path: "Download/" + file, data: text, directory: "EXTERNAL_STORAGE", encoding: "utf8", recursive: true});
+      return "downloads:" + file;
+    }catch(e){ console.warn("Couldn't save to Download", e); if (!S) throw e; }
+  }
   if (FS && S){
     const w = await FS.writeFile({path: name, data: text, directory: "CACHE", encoding: "utf8"});
     await S.share({title: name, files: [w.uri], dialogTitle: title});
@@ -6592,9 +6602,17 @@ $("#exportBtn").onclick = async () => {
   const priv = state.feeds.filter(isPrivateFeed).length, withPrivate = priv && $("#exportPrivate").checked;
   const n = state.feeds.length - (priv && !withPrivate ? priv : 0);
   try{
-    const how = await deliverFile("yourfeed-sources.opml", exportOpml(withPrivate), "text/x-opml");
-    m.textContent = `${n} sources ${how === "shared" ? "ready to save or send" : "saved to your downloads"}.` +
+    const text = exportOpml(withPrivate);
+    const how = await deliverFile("yourfeed-sources.opml", text, "text/x-opml", undefined, {save: true});
+    m.textContent = (how.startsWith("downloads:") ? `${n} sources saved to Downloads as ${how.slice(10)}.`
+      : how === "shared" ? `${n} sources ready to save or send.` : `${n} sources saved to your downloads.`) +
       (priv ? (withPrivate ? ` Includes ${priv} private feed${priv === 1 ? "" : "s"} with your access code: keep this file to yourself.` : ` ${priv} private feed${priv === 1 ? " was" : "s were"} left out.`) : "");
+    if (how.startsWith("downloads:")){
+      m.append(document.createTextNode(" On the website or another phone: Settings → Sources → Import sources, and pick that file. "));
+      const sh = el("button", "linkbtn", "Share it instead"); sh.type = "button";
+      sh.onclick = () => deliverFile("yourfeed-sources.opml", text, "text/x-opml").catch(() => {});
+      m.append(sh);
+    }
   }
   catch(e){ if (!/cancel/i.test(String(e && e.message))){ m.className = "msg err"; m.textContent = "Couldn't export: " + (e && e.message || "unknown error"); } }
 };
