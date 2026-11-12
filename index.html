@@ -395,8 +395,9 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .flist .info,.flist .sub{display:flex;flex-direction:column;min-width:0}
 .flist .nm{display:block}
 .flist .all-dot{background:conic-gradient(var(--brand) 0 25%,#1c7ed6 0 50%,#2b8a3e 0 75%,#ae3ec9 0)!important}
-.flist .count{min-width:22px;height:22px;padding:0 7px;border-radius:99px;background:var(--brand-fill);color:#fff;font-size:12px;font-weight:700;display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
-.flist .count.zero{background:var(--sunk);color:var(--muted)}
+/* Menu: a dot (no number) on a channel with new posts today */
+.newdot{width:9px;height:9px;border-radius:50%;background:var(--brand-fill);flex:none;margin:0 6px}
+.gmeta .newdot{width:7px;height:7px;margin:0 0 0 6px;display:inline-block;vertical-align:middle}
 .flist .acts .btn.icon{width:36px;height:36px}
 .flist .acts .btn.armed{width:auto;padding:0 10px;font-weight:600}
 .row-all{background:color-mix(in srgb,var(--sunk) 50%,transparent)}
@@ -2280,6 +2281,11 @@ function newCount(feedId){
   for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && isNew(i) && !(dup && dup.has(i.id))) n++;
   return n;
 }
+// Any new (not seen) post from today, for the menu's dots
+function newToday(feedId){
+  const since = new Date().setHours(0, 0, 0, 0);
+  return state.items.some(i => i.feedId === feedId && (i.date || 0) >= since && isNew(i));
+}
 function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
 // Show one source, folder or platform ("all" for everything)
 function selectFeed(src){
@@ -3523,8 +3529,8 @@ function renderFeedList(){
     const info = el("span", "info");
     info.append(el("span", "nm", name));
     if (sub) info.append(sub);
-    const n = newCount(src === "all" ? "all" : src.slice(5));
-    pick.append(d, info, el("span", "count" + (n ? "" : " zero"), String(n)));
+    pick.append(d, info);
+    if (src.startsWith("feed:") && newToday(src.slice(5))){ const nd = el("span", "newdot"); nd.title = "New today"; nd.setAttribute("aria-label", "New posts today"); pick.append(nd); }
     pick.onclick = () => { selectFeed(src); closeMenu(); };
     return pick;
   };
@@ -3546,10 +3552,10 @@ function renderFeedList(){
     const sec = el("section", "group"); sec.setAttribute("aria-label", name);
     const h = el("button", "ghead"); h.type = "button"; h.id = "gh-" + gi; h.setAttribute("aria-expanded", String(open));
     h.innerHTML = ICON_CHEV;
-    const fresh = feeds.reduce((n, f) => n + newCount(f.id), 0);
     const meta = el("span", "gmeta");
     if (feeds.some(isTroubled)) meta.append(el("span", "hdot warn"));
-    meta.append(document.createTextNode(`${feeds.length} · ${fresh} new`));
+    meta.append(document.createTextNode(String(feeds.length)));
+    if (feeds.some(f => newToday(f.id))){ const nd = el("span", "newdot"); nd.setAttribute("aria-label", "New posts today"); meta.append(nd); }
     h.append(el("span", "gname", name), meta);
     h.onclick = () => { state.collapsed[open ? "add" : "delete"](key); store.set("tl.collapsed", [...state.collapsed]); renderFeedList(); $("#gh-" + gi).focus(); };
     sec.append(h);
