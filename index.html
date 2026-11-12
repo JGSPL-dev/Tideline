@@ -395,6 +395,30 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .flist .info,.flist .sub{display:flex;flex-direction:column;min-width:0}
 .flist .nm{display:block}
 .flist .all-dot{background:conic-gradient(var(--brand) 0 25%,#1c7ed6 0 50%,#2b8a3e 0 75%,#ae3ec9 0)!important}
+/* Trending */
+.trendstrip{margin:2px 0 14px}
+.trendstrip h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:700}
+.trow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin:0 -2px}
+.trow::-webkit-scrollbar{display:none}
+.tchip{flex:none;display:flex;flex-direction:column;align-items:flex-start;gap:1px;max-width:220px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.tchip b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:196px}
+.tchip span{font-size:12px;color:var(--muted)}
+.tchip:hover{border-color:var(--brand)}
+.topichead{border:1px solid var(--line);background:var(--card);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.th-top{display:flex;align-items:center;justify-content:space-between}
+.th-close{width:34px;height:34px;display:grid;place-items:center;border-radius:99px;border:1px solid var(--line);background:none;color:var(--ink);cursor:pointer}
+.th-kicker{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);font-weight:700}
+.topichead h2{margin:2px 0 4px;font-size:24px;line-height:1.15}
+.th-rel{margin:0 0 6px;color:var(--ink);font-weight:600}
+.th-stats{margin:0 0 10px;color:var(--muted);font-size:13.5px}
+.th-src{display:flex;flex-wrap:wrap;gap:6px 12px;margin:0 0 12px}
+.th-s{display:inline-flex;align-items:center;gap:6px;font-size:13px}
+.th-mix{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.th-mix button{border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:5px 10px;font:inherit;font-size:13.5px;cursor:pointer}
+.th-mix button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.th-mix .count{font-weight:700;opacity:.7}
+.th-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.th-foot .hint{font-size:12.5px}
 /* Menu: a dot (no number) on a channel with new posts today */
 .newdot{width:9px;height:9px;border-radius:50%;background:var(--brand-fill);flex:none;margin:0 6px}
 .gmeta .newdot{width:7px;height:7px;margin:0 0 0 6px;display:inline-block;vertical-align:middle}
@@ -758,6 +782,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
       <label class="check" for="videoInApp">
         <input type="checkbox" id="videoInApp">
         <span><b>Play videos in YourFeed</b><br><span class="hint">Videos play under the story instead of opening YouTube. Tap full screen to watch it big.</span></span>
+      </label>
+      <label class="check" for="showTrending">
+        <input type="checkbox" id="showTrending">
+        <span><b>Trending in your feeds</b><br><span class="hint">Show the subjects several of your sources are talking about, above Everything. Worked out on this device.</span></span>
       </label>
       <label class="check" for="hideShorts">
         <input type="checkbox" id="hideShorts">
@@ -2236,11 +2264,12 @@ function baseItems(){
   let cut = 0;
   if (view.from === "today"){ const d = new Date(); d.setHours(0, 0, 0, 0); cut = d.getTime(); }
   else if (view.from === "week") cut = Date.now() - 7 * 86400000;
-  const shown = state.items.filter(i => sourceMatch(i.feedId) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut));
+  const tp = state.topic && currentTopic();
+  const shown = state.items.filter(i => (state.topic ? !!tp && tp.ids.has(i.id) : sourceMatch(i.feedId)) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut));
   // Showing one source: everything from it. Otherwise each story once, judged within what's shown
   if (view.source.startsWith("feed:")) return shown;
   const memo = baseItems.memo || {};
-  const key = [view.source, view.from, view.unread, cut && Math.floor(cut / 60000), state.lookSnap.size, state.read.size].join("|");
+  const key = [state.topic ? "topic:" + state.topic.key + ":" + (tp ? tp.ids.size : 0) : view.source, view.from, view.unread, cut && Math.floor(cut / 60000), state.lookSnap.size, state.read.size].join("|");
   if (memo.items !== state.items || memo.n !== state.items.length || memo.key !== key){
     baseItems.memo = {items: state.items, n: state.items.length, key, dup: dupeIds(shown, key)};
   }
@@ -2261,6 +2290,169 @@ function visibleItems(){
     return [...list].sort((a, b) => name(a.feedId).localeCompare(name(b.feedId)) || (b.date || 0) - (a.date || 0));
   }
   return list;
+}
+
+/* ---------- trending: subjects several of your sources are talking about ---------- */
+// Worked out on the phone from the headlines already here (nothing is sent anywhere). Names and subjects are the
+// capitalised words and pairs in headlines ("Rachel Reeves", "Premier League", "NHS"); one counts as trending when
+// different publishers mention it in the last two days. Related subjects that keep turning up in the same stories
+// ("Rachel Reeves" + "Budget") become one topic.
+const TREND_HOURS = 48;
+const TREND_STOP = new Set((
+  "the a an of to in and for on is are was were with at by from as after how why what who whom when where which while new over into out up down about it its it's this that these those be been being has have had will would can could should may might must says said say tells told not no yes more most than his her their our your my we you they he she i me him them us after before just only also all any some every each other another first last next best top big little old young good great bad worst latest live watch video videos photos photo pictures gallery listen podcast episode ep part series season review reviews preview analysis opinion comment column explainer interview exclusive breaking update updates news report reports today tonight yesterday tomorrow week weekend month year years day days time times now here there home way back still even again ever never always plus vs v via full official new one two three four five six seven eight nine ten million billion per cent percent monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec morning evening night afternoon man woman men women people boy girl family uk us mr mrs ms dr sir lord lady st how-to guide tips things ways reasons why don't can't won't isn't i'm you're we're they're get gets got make makes made take takes took give gives gave go goes going come comes see sees know want look looks find finds call calls set sets win wins won lose loses lost beat beats hit hits back backs face faces join joins leave leaves sign signs open opens close closes help helps show shows reveal reveals reveals claim claims warn warns urge urges deal deals plan plans move moves bid bids ban bans row rows boost boosts cut cuts hike hikes rise rises fall falls star stars fans fan club clubs team teams game games match matches player players coach boss league cup final finals goal goals score scores result results line-up lineup transfer transfers rumours rumour latest story stories world global national local city country state government police court health school"
+).split(" "));
+const trendNorm = w => w.toLowerCase().replace(/[’']s$/, "").replace(/[’'.]/g, "");
+function trendTokens(it){
+  let t = String(it.title || "");
+  if (isGNItem(it)) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");          // " - Publisher" on Google News
+  t = t.replace(/^(watch|live|listen|video|breaking|exclusive|podcast|opinion|analysis|review)\s*[:|–-]\s*/i, "");
+  return t.split(/[^\p{L}\p{N}’'.&-]+/u).map(w => w.replace(/^[-.’']+|[-.’']+$/g, "")).filter(Boolean);
+}
+const isCap = w => /^\p{Lu}/u.test(w);
+const isAcronym = w => /^\p{Lu}[\p{Lu}\d&.]{1,5}$/u.test(w) && /\p{Lu}.*\p{Lu}/u.test(w);
+// Which source a story counts for: one publisher for all of a site's section feeds; each channel or account on its own
+function trendPub(f){
+  if (!f) return "";
+  if (/news\.google\.com/.test(f.url) && newsQuery(f.url) && !newsQuery(f.url).site) return "gnt:" + f.id;
+  if (/youtube\.com|reddit\.com|bsky|mastodon|\/@|lemmy|peertube/i.test(f.url) || f.kind === "social" || f.audio) return "f:" + f.id;
+  try{ return "s:" + siteOf(f.url).split("/")[0]; }catch{ return "f:" + f.id; }
+}
+function trendTopics(){
+  const now = Date.now(), cut = now - TREND_HOURS * 3600000;
+  const m = trendTopics.memo;
+  if (m && m.items === state.items && m.n === state.items.length && now - m.at < 10 * 60000) return m.topics;
+  const items = state.items.filter(i => (i.date || i.seen || 0) >= cut && i.title);
+  // Words seen capitalised in the middle of an ordinary headline are names; title-case headlines and
+  // first words only count when the same word is a name elsewhere (so "Perfect Roast Potatoes" adds nothing)
+  const proper = new Set();
+  const toks = new Map();
+  items.forEach(it => {
+    const w = trendTokens(it); toks.set(it.id, w);
+    const long = w.filter(x => x.length > 3);
+    const titleCase = long.length >= 3 && long.filter(isCap).length / long.length > 0.7;
+    if (!titleCase) w.forEach((x, i) => { if (i > 0 && isCap(x) && !TREND_STOP.has(trendNorm(x))) proper.add(trendNorm(x)); });
+  });
+  const terms = new Map();   // key → {key, shows: Map(display → n), ids: Set, pubs: Set, newest}
+  const note = (key, display, it, pub) => {
+    let t = terms.get(key);
+    if (!t){ t = {key, shows: new Map(), ids: new Set(), pubs: new Set(), newest: 0, recent: 0}; terms.set(key, t); }
+    t.shows.set(display, (t.shows.get(display) || 0) + 1);
+    if (!t.ids.has(it.id)){ t.ids.add(it.id); if ((it.date || 0) > now - 12 * 3600000) t.recent++; }
+    t.pubs.add(pub); t.newest = Math.max(t.newest, it.date || it.seen || 0);
+  };
+  items.forEach(it => {
+    const f = feedById(it.feedId), pub = trendPub(f); if (!pub) return;
+    const own = trendNorm(String(f && f.title || ""));
+    const w = toks.get(it.id);
+    const word = x => { const k = trendNorm(x); return k.length < 2 || /^\d+$/.test(k) || TREND_STOP.has(k) || EN_WORDS.has(k) ? null : k; };
+    const ok = w.map(x => {
+      const k = word(x); if (!k) return null;
+      if (isAcronym(x)) return k;
+      if (!isCap(x) || k.length < 3) return null;
+      return proper.has(k) ? k : null;
+    });
+    // A capitalised word just before a name makes a pair even when it's never a name alone ("Storm Claudia", "Prince William")
+    ok.forEach((k, i) => { if (!k && ok[i + 1] && isCap(w[i]) && word(w[i]) && word(w[i]).length >= 3) ok[i] = "~" + word(w[i]); });
+    const seen = new Set();
+    ok.forEach((k, i) => {
+      if (!k) return;
+      const pairOnly = k.startsWith("~"); if (pairOnly) k = k.slice(1);
+      if (!pairOnly && !own.includes(k) && !seen.has(k)){ seen.add(k); note(k, w[i].replace(/[’']s$/, ""), it, pub); }
+      const k2 = ok[i + 1] && !ok[i + 1].startsWith("~") && ok[i + 1];
+      if (k2){ const kk = k + " " + k2; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, w[i] + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); } }
+    });
+  });
+  // Trending: mentioned by 3+ different publishers (2 for someone following only a few)
+  const pubCount = new Set(state.feeds.map(trendPub)).size;
+  const need = pubCount < 15 ? 2 : 3;
+  let list = [...terms.values()].filter(t => t.pubs.size >= need);
+  list.forEach(t => { t.score = t.pubs.size * 3 + t.ids.size + t.recent; t.label = [...t.shows].sort((a, b) => b[1] - a[1])[0][0]; });
+  // A name's pair is the label over its single words when it covers most of their stories ("Rachel Reeves", not
+  // "Reeves"); the single word still joins the topic, bringing stories that only say "Reeves"
+  const pairs = list.filter(t => t.key.includes(" "));
+  list.forEach(t => {
+    if (t.key.includes(" ")) return;
+    const p = pairs.find(p => p.key.split(" ").includes(t.key) && [...p.ids].filter(id => t.ids.has(id)).length >= p.ids.size * 0.6);
+    if (p){ t.inside = p; t.score = Math.min(t.score, p.score - 0.01); }
+  });
+  list.sort((a, b) => b.score - a.score);
+  // Subjects that keep appearing in the same stories become one topic
+  const topics = [];
+  list.forEach(t => {
+    const home = topics.find(tp => [...t.ids].filter(id => tp.ids.has(id)).length >= t.ids.size * 0.5);
+    if (home){ home.terms.push(t); t.ids.forEach(id => home.ids.add(id)); t.pubs.forEach(p => home.pubs.add(p)); home.newest = Math.max(home.newest, t.newest); }
+    else if (topics.length < 12) topics.push({key: t.key, label: t.label, terms: [t], ids: new Set(t.ids), pubs: new Set(t.pubs), newest: t.newest, score: t.score});
+  });
+  topics.forEach(tp => { tp.related = tp.terms.slice(1).filter(t => !t.inside).map(t => t.label).filter(l => !tp.label.toLowerCase().includes(l.toLowerCase())).slice(0, 3); });
+  trendTopics.memo = {items: state.items, n: state.items.length, at: now, topics};
+  return topics;
+}
+// The topic being looked at (not kept between visits: trends move on)
+state.topic = null;
+function openTopic(tp){
+  state.topic = {key: tp.key, label: tp.label};
+  view.type = "all"; view.source = "all"; view.saved = false; saveView(); state.shown = PAGE;
+  renderChips(); renderStatus(); renderList(); renderFilterBar(); scrollFeedTop();
+}
+function closeTopic(){ state.topic = null; state.shown = PAGE; renderChips(); renderList(); renderFilterBar(); scrollFeedTop(); }
+function currentTopic(){
+  if (!state.topic) return null;
+  return trendTopics().find(t => t.key === state.topic.key) || trendTopics.last && trendTopics.last.key === state.topic.key && trendTopics.last || null;
+}
+// "Trending in your feeds": a row of topics above Everything
+function trendStrip(){
+  if (!store.get("yf.trending", true) || view.saved || view.source !== "all" || view.type !== "all" || state.topic) return null;
+  const topics = trendTopics().slice(0, 10);
+  if (!topics.length) return null;
+  const sec = el("section", "trendstrip"); sec.setAttribute("aria-label", "Trending in your feeds");
+  sec.append(el("h3", null, "Trending in your feeds"));
+  const row = el("div", "trow");
+  topics.forEach(tp => {
+    const b = el("button", "tchip"); b.type = "button";
+    b.append(el("b", null, tp.label), el("span", null, `${tp.pubs.size} sources`));
+    b.setAttribute("aria-label", `${tp.label}: ${tp.ids.size} stories from ${tp.pubs.size} sources`);
+    b.onclick = () => { trendTopics.last = tp; openTopic(tp); };
+    row.append(b);
+  });
+  sec.append(row); return sec;
+}
+// The topic page's header: what it is, how big, where it's coming from, and the mix of types
+function topicHead(tp){
+  const box = el("section", "topichead"); box.setAttribute("aria-label", "Trending topic " + state.topic.label);
+  const top = el("div", "th-top"); top.append(el("span", "th-kicker", "Trending in your feeds"));
+  const x = el("button", "iconbtn th-close"); x.type = "button"; x.setAttribute("aria-label", "Close topic");
+  x.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  x.onclick = closeTopic; top.append(x); box.append(top);
+  box.append(el("h2", null, state.topic.label));
+  if (!tp){ box.append(el("p", "th-stats", "This topic has gone quiet in your feeds.")); return box; }
+  if (tp.related.length) box.append(el("p", "th-rel", "Also: " + tp.related.join(" · ")));
+  const its = state.items.filter(i => tp.ids.has(i.id));
+  const first = its.reduce((a, b) => (a && (a.date || 0) <= (b.date || 0)) ? a : b, null);
+  const firstFeed = first && feedById(first.feedId);
+  box.append(el("p", "th-stats", `${tp.ids.size} ${tp.ids.size === 1 ? "story" : "stories"} from ${tp.pubs.size} sources · first ${first ? ago(first.date || first.seen) : ""}${firstFeed ? " in " + firstFeed.title : ""} · latest ${ago(tp.newest)}`));
+  // Who's covering it
+  const bySrc = new Map(); its.forEach(i => bySrc.set(i.feedId, (bySrc.get(i.feedId) || 0) + 1));
+  const srcs = el("div", "th-src");
+  [...bySrc].sort((a, b) => b[1] - a[1]).slice(0, 12).forEach(([id, n]) => { const f = feedById(id); if (!f) return; const s = el("span", "th-s"); s.append(iconFor(f, 16), el("span", null, f.title + (n > 1 ? ` (${n})` : ""))); srcs.append(s); });
+  box.append(srcs);
+  // The mix: tap to see one type
+  const mix = el("div", "th-mix"); mix.setAttribute("role", "group"); mix.setAttribute("aria-label", "Show");
+  const counts = {}; its.forEach(i => { const t = typeOf(i); counts[t] = (counts[t] || 0) + 1; });
+  [["all", "All", its.length], ...TYPES.filter(([k]) => k !== "all" && counts[k]).map(([k, n]) => [k, n, counts[k]])].forEach(([k, name, n]) => {
+    const b = el("button", null); b.type = "button"; b.setAttribute("aria-pressed", String(view.type === k));
+    b.append(document.createTextNode(name + " "), el("span", "count", String(n)));
+    b.onclick = () => setView("type", k); mix.append(b);
+  });
+  box.append(mix);
+  // Keep following it after it stops trending
+  const q = state.topic.label, url = `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-GB&gl=GB&ceid=GB:en`;
+  const have = state.feeds.some(f => f.url === url);
+  const fol = el("button", "btn" + (have ? "" : " primary"), have ? "Following this topic" : "Follow this topic"); fol.type = "button"; fol.disabled = have;
+  fol.onclick = async () => { fol.disabled = true; fol.textContent = "Adding…";
+    try{ await addFeed(url, true, "news"); fol.textContent = "Following this topic"; fol.classList.remove("primary"); toast(`Following “${q}” as a news topic`); }
+    catch(e){ fol.disabled = false; fol.textContent = "Follow this topic"; toast(e.message); } };
+  const fr = el("div", "th-foot"); fr.append(fol, el("span", "hint", "Adds it as a News topic, so you keep getting stories about it.")); box.append(fr);
+  return box;
 }
 // New = not seen yet: never on screen long enough to read the headline, and never tapped
 const isNew = i => !state.looked.has(i.id) && !state.read.has(i.id);
@@ -2314,6 +2506,7 @@ function newToday(feedId){
 function scrollFeedTop(){ window.scrollTo({top: 0}); $("#list").scrollTop = 0; }
 // Show one source, folder or platform ("all" for everything)
 function selectFeed(src){
+  state.topic = null;
   view.source = src === "all" || /^(feed|folder|platform):/.test(src) ? src : "feed:" + src;
   view.type = "all"; view.saved = false;
   saveView(); state.shown = PAGE; snapLooked();
@@ -2416,7 +2609,7 @@ function toggleStatusPop(open){
 function renderFilterBar(){
   const pill = $("#activeFilter");
   const typeName = {articles: "Articles", topics: "Topics", videos: "Videos", audio: "Audio", conversations: "Conversations"}[view.type];
-  const label = [typeName, view.source !== "all" ? sourceLabel() : ""].filter(Boolean).join(" · ");
+  const label = [typeName, state.topic ? "Trending: " + state.topic.label : view.source !== "all" ? sourceLabel() : ""].filter(Boolean).join(" · ");
   if (!label){ pill.hidden = true; }
   else {
     pill.hidden = false; pill.textContent = "";
@@ -2431,6 +2624,7 @@ function renderFilterBar(){
 
 /* ---------- filter box ---------- */
 function setView(k, v, focusId){
+  if (k === "source" || k === "saved") state.topic = null;
   view[k] = v; saveView(); state.shown = PAGE; snapLooked();
   renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
   if (focusId){ const b = document.getElementById(focusId); if (b) b.focus(); }
@@ -2550,7 +2744,7 @@ function manageCategories(custom, used){
 function openFilterBox(){ const box = $("#filterBox"); box.hidden = false; $("#filterBtn").setAttribute("aria-expanded", "true"); renderFilterBox(); const f = box.querySelector('[aria-pressed="true"]') || box.querySelector("button"); if (f) f.focus(); }
 function closeFilterBox(focusBtn){ const box = $("#filterBox"); if (box.hidden) return; box.hidden = true; $("#filterBtn").setAttribute("aria-expanded", "false"); if (focusBtn) $("#filterBtn").focus(); }
 $("#filterBtn").onclick = () => $("#filterBox").hidden ? openFilterBox() : closeFilterBox();
-$("#activeFilter").onclick = () => selectFeed("all");   // clears the source and the type
+$("#activeFilter").onclick = () => { state.topic = null; selectFeed("all"); };   // clears the source, the type and a topic
 // (i)/(!) opens the summary; "Open Source health" goes to Settings with Needs attention unfolded
 $("#infoBtn").onclick = e => { e.stopPropagation(); toggleStatusPop(); };
 $("#healthLink").onclick = () => {
@@ -2836,6 +3030,8 @@ function renderList(){
   list.textContent = "";
   list.classList.toggle("shortgrid", shortsGrid());
   const vs = videoSwitch(); if (vs) list.append(vs);
+  if (state.topic && !view.saved) list.append(topicHead(currentTopic()));
+  else { const ts = trendStrip(); if (ts) list.append(ts); }
   const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
@@ -3930,7 +4126,7 @@ function showTab(which){
   $("#panelFeeds").hidden = !feeds; $("#panelSettings").hidden = feeds;
   [["#tab-feeds", feeds], ["#tab-settings", !feeds]].forEach(([id, on]) => { $(id).setAttribute("aria-selected", String(on)); $(id).setAttribute("aria-pressed", String(on)); });
   if (feeds){ renderFeedList(); }
-  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#hideShorts").checked = state.hideShorts; $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
+  else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#hideShorts").checked = state.hideShorts; $("#showTrending").checked = store.get("yf.trending", true); $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
 function openMenu(tab){
   setMsg(""); showTab(tab || "feeds");
@@ -3983,6 +4179,7 @@ dlg.addEventListener("focusin", e => {
   // the keyboard may still be opening: fit again once the screen has resized
   if (window.visualViewport) window.visualViewport.addEventListener("resize", () => setTimeout(fit, 60), {once: true});
 });
+$("#showTrending").addEventListener("change", e => { store.set("yf.trending", e.target.checked); renderList(); });
 $("#hideShorts").addEventListener("change", e => { state.hideShorts = e.target.checked; store.set("yf.hideShorts", state.hideShorts); state.shown = PAGE; renderChips(); renderList(); });
 $("#videoInApp").addEventListener("change", e => { state.videoInApp = e.target.checked; store.set("yf.videoInApp", state.videoInApp); });
 function initDownloads(){
@@ -6462,6 +6659,7 @@ function goBack(){
     closeMenu(); return true;
   }
   if (state.activeId){ closeViewer(); return true; }
+  if (state.topic){ closeTopic(); return true; }
   if (view.source !== "all" || view.type !== "all" || view.saved){ view.source = "all"; view.type = "all"; view.saved = false; saveView(); state.shown = PAGE; renderChips(); renderStatus(); renderList(); scrollFeedTop(); return true; }
   return false;
 }
