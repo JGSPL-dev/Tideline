@@ -770,7 +770,6 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 :root[data-look="offgrid"] #list > .card.og{position:relative;display:block;background:var(--og-paper);color:#000;border:0;border-bottom:3px solid #000;border-radius:0;padding:10px 12px 16px 14px;box-shadow:none;margin:0;font-family:var(--og-mono);overflow:hidden;width:auto;max-width:none}
 :root[data-look="offgrid"] #list > .card.og:nth-of-type(3n+2){background:#000;color:#fff}
 :root[data-look="offgrid"] #list > .card.og:nth-of-type(3n+3){background:var(--og-hot);color:#000}
-:root[data-look="offgrid"] #list > .card.og.read{opacity:.72}
 .og-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px}
 .og-logo{flex:none;width:92px;height:92px;margin-top:6px;box-sizing:border-box;border:3px solid currentColor;background:#fff;display:grid;place-items:center;overflow:hidden;transform:rotate(4deg)}
 .card.og:nth-of-type(2n) .og-logo{transform:rotate(-5deg)}
@@ -812,6 +811,47 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 :root[data-look="offgrid"] .tp-video,:root[data-look="offgrid"] .tp-col{border:3px solid #000;border-radius:0}
 :root[data-look="offgrid"] .empty{padding:24px 16px;color:#000}
 :root[data-look="offgrid"] .more{font:700 12px var(--og-mono);text-align:center;padding:22px 10px;color:#000}
+:root[data-look="offgrid"] .ogbar .fpill{display:none}
+.og-clear{background:none;border:0;color:#fff;font:700 12px var(--og-mono);text-decoration:underline;height:44px;padding:0 6px;cursor:pointer}
+.og-new{position:sticky;top:48px;z-index:19;display:block;width:100%;height:40px;border:0;border-bottom:3px solid #000;background:var(--og-hot);color:#000;font:700 12px var(--og-mono);cursor:pointer;letter-spacing:.03em}
+.og-brandslot{position:relative}
+.og-home{position:absolute;inset:0;z-index:2;border:0;background:none;cursor:pointer;padding:0}
+.og-home:focus-visible{outline:3px solid var(--og-paper)}
+.og-dot.busy{background:#FFD23F}.og-dot.warn{background:#FF5A4D}.og-dot.off{background:none;border:2px solid #fff;width:7px;height:7px}
+:root[data-look="offgrid"] .ograil #nowBtn.loaded{background:var(--og-hot);color:#000}
+:root[data-look="offgrid"] .ograil #savedBtn[aria-pressed="true"]{background:var(--og-hot);color:#000}
+/* slab parts that are buttons */
+button.og-logo{padding:0;cursor:pointer;position:relative;z-index:2;color:inherit;font:inherit}
+.og-logo img{width:100%;height:100%;object-fit:contain;padding:8px;box-sizing:border-box;background:#fff}
+.og-logo.round img,.og-logo.tile img{object-fit:cover;padding:0}
+.og-letters{font-family:var(--og-disp);font-size:40px;color:#000;line-height:1}
+button.og-src{display:block;width:100%;text-align:left;background:none;border:0;padding:0;color:inherit;cursor:pointer;position:relative;z-index:2}
+.og-pic{position:relative}
+.og-play{position:absolute;right:0;bottom:0;width:28px;height:28px;background:#000}
+.og-play::after{content:"";position:absolute;left:10px;top:7px;border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent}
+.og-title{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+/* seen: white slab, greyscale picture */
+:root[data-look="offgrid"] #list > .card.og.seen{background:#fff!important;color:#000!important;opacity:1}
+:root[data-look="offgrid"] #list > .card.og.seen .og-pic img{filter:grayscale(1)}
+:root[data-look="offgrid"] #list > .card.og.seen .og-tag{background:#000!important;color:#fff!important}
+:root[data-look="offgrid"] #list > .card.og.seen .og-b.main{background:#000!important;color:#fff!important;border-color:#000!important}
+:root[data-look="offgrid"] #list > .card.og.seen .og-logo{border-color:#000}
+/* loading slabs */
+.card.og.skel .og-logo,.card.og.skel .og-pic{background:#fff}
+.card.og.skel .og-src{opacity:.5}
+/* long-press sheet */
+.og-sheet{position:fixed;left:0;right:var(--og-rail);bottom:0;z-index:90;background:#000;display:flex;flex-direction:column;padding:8px 0 calc(8px + env(safe-area-inset-bottom,0px));border-top:3px solid var(--og-hot)}
+:root[data-rail="left"] .og-sheet{left:var(--og-rail);right:0}
+.og-sheetb{height:56px;border:0;border-bottom:1px solid #5A5A5A;background:none;color:#fff;font:400 22px var(--og-disp);text-align:left;padding:0 16px;cursor:pointer;text-transform:uppercase}
+.og-sheetb:last-child{border-bottom:0;color:var(--og-hot)}
+/* toasts */
+:root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
+:root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
+/* empty states */
+:root[data-look="offgrid"] #list .empty{background:var(--og-paper);padding:28px 16px}
+:root[data-look="offgrid"] #list .empty h3{font:400 52px/1 var(--og-disp);text-transform:uppercase;margin:0 0 14px;color:#000}
+:root[data-look="offgrid"] #list .empty p{font:400 14px/1.5 var(--og-mono);color:#000}
+:root[data-look="offgrid"] #list .empty .btn{height:52px;border-radius:0;border:3px solid #000;background:#000;color:#fff;font:700 13px var(--og-mono);text-transform:uppercase;box-shadow:none;padding:0 18px}
 @media (min-width:900px){:root[data-look="offgrid"] .app{margin-right:var(--og-rail)}:root[data-look="offgrid"][data-rail="left"] .app{margin-right:0;margin-left:var(--og-rail)}:root[data-look="offgrid"] .feedcol{margin:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
 </style>
@@ -2770,7 +2810,10 @@ function paintHealth(){
   const os = $("#ogStatus");
   if (os){
     os.textContent = "";
-    os.append(el("span", "og-dot" + (idle ? " idle" : bad ? " warn" : "")), document.createTextNode(state.busy ? "CHECKING…" : bad ? `${bad} NEED${bad === 1 ? "S" : ""} A LOOK` : "ALL OK" + (state.lastUpdated ? " · " + ogAgo(state.lastUpdated) : "")));
+    const off = navigator.onLine === false;
+    const pr = state.progress;
+    os.append(el("span", "og-dot" + (off ? " off" : state.busy ? " busy" : bad ? " warn" : "")),
+      document.createTextNode(off ? "OFFLINE" : state.busy ? (pr ? `CHECKING ${pr.done}/${pr.total}` : "CHECKING") : bad ? `${bad} NOT WORKING` : "ALL OK" + (state.lastUpdated ? " · " + ogAgo(state.lastUpdated) : "")));
     os.setAttribute("aria-label", ib.getAttribute("aria-label"));
   }
   ib.setAttribute("aria-label", bad ? `${bad} source${bad === 1 ? " needs" : "s need"} attention. Show summary` : "All sources working. Show summary");
@@ -2795,9 +2838,11 @@ function renderFilterBar(){
   const n = (view.type !== "all" ? 1 : 0) + (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "week" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0);
   const oh = $("#ogHead");
   if (oh && isOG()){
-    const head = [view.saved ? "SAVED" : (typeName || "EVERYTHING").toUpperCase(), state.topic ? state.topic.label.toUpperCase() : view.source !== "all" ? sourceLabel().toUpperCase() : ""].filter(Boolean);
+    const head = [view.saved ? "SAVED" : typeName ? typeName.toUpperCase() : (view.source !== "all" || state.topic ? "" : "EVERYTHING"), state.topic ? state.topic.label.toUpperCase() : view.source !== "all" ? sourceLabel().toUpperCase() : ""].filter(Boolean);
     if (!state.topic){ try{ head.push(String(visibleItems().length)); }catch{} }
     oh.textContent = head.join(" · ");
+    const clr = $("#ogClear");
+    if (clr){ const on = n > 0 || !!state.topic; clr.hidden = !(on || view.saved); clr.textContent = view.saved && !on ? "BACK TO FEED" : "CLEAR"; }
   }
   const fc = $("#filterCount"); fc.hidden = !n; fc.textContent = String(n);
   $("#filterBtn").setAttribute("aria-label", n ? `Filter, ${n} on` : "Filter");
@@ -3154,16 +3199,20 @@ function placeLook(){
   if (on && !rail){
     rail = el("nav", "ograil"); rail.id = "ogRail"; rail.setAttribute("aria-label", "YourFeed controls");
     const st = el("button", "og-status"); st.type = "button"; st.id = "ogStatus";
-    st.onclick = e => { e.stopPropagation(); toggleStatusPop(); };
+    st.onclick = e => { e.stopPropagation(); $("#healthLink").onclick(); };
     const top = el("button", "btn icon og-top"); top.type = "button"; top.id = "ogTop"; top.setAttribute("aria-label", "Back to the top");
     top.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
     top.onclick = scrollFeedTop;
     const tools = el("div", "og-tools"); tools.id = "ogTools";
-    rail.append(el("div", "og-brandslot"), tools);
+    const slot = el("div", "og-brandslot");
+    const home = el("button", "og-home"); home.type = "button"; home.setAttribute("aria-label", "YourFeed: show everything");
+    home.onclick = ogReset; slot.append(home);
+    rail.append(slot, tools);
     tools.append(st, top);
     document.body.append(rail);
     bar = el("div", "ogbar"); bar.id = "ogBar";
     bar.append(el("span", "og-head")); bar.querySelector(".og-head").id = "ogHead";
+    const clr = el("button", "og-clear"); clr.type = "button"; clr.id = "ogClear"; clr.hidden = true; clr.onclick = ogReset; bar.append(clr);
     $("#list").before(bar);
   }
   if (!rail) return;
@@ -3182,6 +3231,56 @@ function placeLook(){
   rail.hidden = bar.hidden = !on;
   document.body.classList.toggle("og", on);
 }
+addEventListener("offline", () => { paintHealth(); if (isOG()) toast("YOU'RE OFFLINE"); });
+addEventListener("online", () => paintHealth());
+function paintOgNew(){
+  const bar = $("#ogBar"); if (!bar) return;
+  let n = $("#ogNew");
+  if (!state.ogNew){ if (n) n.remove(); return; }
+  if (!n){ n = el("button", "og-new"); n.type = "button"; n.id = "ogNew"; n.setAttribute("aria-live", "polite"); bar.after(n);
+    n.onclick = () => { state.ogNew = 0; n.remove(); state.shown = PAGE; snapLooked(); renderList(); scrollFeedTop(); }; }
+  n.textContent = `${state.ogNew} NEW · TAP TO SEE`;
+}
+// The strip's CLEAR / BACK TO FEED: everything, out of Saved and out of a topic
+function ogReset(){
+  state.topic = null; state.ogNew = 0; paintOgNew();
+  Object.assign(view, {type: "all", source: "all", unread: false, saved: false, from: VIEW_DEFAULT.from, sort: VIEW_DEFAULT.sort});
+  saveView(); state.shown = PAGE; snapLooked();
+  if (typeof closeFilterBox === "function" && !$("#filterBox").hidden) closeFilterBox(true);
+  renderChips(); renderStatus(); renderList(); renderFilterBar(); renderFilterBox(); scrollFeedTop();
+}
+// Long press on a slab: three quick choices
+function ogSheet(it){
+  document.querySelectorAll(".og-sheet").forEach(n => n.remove());
+  const f = feedById(it.feedId);
+  const sh = el("div", "og-sheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "Story options");
+  const add = (label, fn) => { const b = el("button", "og-sheetb", label); b.type = "button"; b.onclick = () => { sh.remove(); fn(); }; sh.append(b); return b; };
+  if (f) add("ONLY THIS SOURCE", () => selectFeed(f.id));
+  if (f) add("EDIT THIS SOURCE", () => { openMenu("feeds"); setTimeout(() => openEdit(f.id), 200); });
+  if (it.link) add("COPY LINK", () => { navigator.clipboard.writeText(it.link).then(() => toast("LINK COPIED"), () => toast("COULDN'T COPY")); });
+  add("CANCEL", () => {});
+  document.body.append(sh);
+  sh.querySelector("button").focus();
+  setTimeout(() => document.addEventListener("pointerdown", function off(e){ if (!sh.contains(e.target)){ sh.remove(); document.removeEventListener("pointerdown", off); } }), 0);
+}
+// Logo for a slab: the sharpest image the source has (a site's touch icon before its tiny favicon); tiny images are
+// refused so nothing blurry is blown up; otherwise the first letters of the name
+function ogLogo(f, shape){
+  const box = el("button", "og-logo " + shape); box.type = "button";
+  const name = (f && f.title) || "Source";
+  box.setAttribute("aria-label", "Only " + name);
+  const letters = () => { box.textContent = ""; const s = el("span", "og-letters", (name.replace(/^(r|bs|g)\//, "").match(/[\p{L}\p{N}]+/gu) || ["?"]).slice(0, 2).map(w => w[0]).join("").toUpperCase()); box.append(s); };
+  let tries = f ? iconCandidates(f) : [];
+  const touch = tries.findIndex(u => /apple-touch-icon/.test(u));
+  if (touch > 0) tries = [tries[touch], ...tries.filter((_, i) => i !== touch)];
+  if (!tries.length){ letters(); return box; }
+  const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+  let n = 0;
+  img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else letters(); };
+  img.onload = () => { if (img.naturalWidth && img.naturalWidth < 48 && !/i\.ytimg|yt3\.|ggpht|bsky|cdn\.bsky/.test(img.src)) img.onerror(); };
+  img.src = tries[0]; box.append(img);
+  return box;
+}
 // "53M AGO", "2H AGO", "3D AGO", then the date
 function ogAgo(ms){
   if (!ms) return "";
@@ -3195,27 +3294,36 @@ function ogAgo(ms){
 function ogCard(it){
   const a = el("article", "card og");
   if (state.read.has(it.id)) a.classList.add("read");
+  // Seen (tapped, or looked at before this view was drawn) turns the slab white; Saved keeps its colours
+  const seen = !view.saved && (state.read.has(it.id) || state.lookSnap.has(it.id));
+  if (seen) a.classList.add("seen");
   a.dataset.id = it.id;
   queueMicrotask(() => watchLook(a));
   const f = feedById(it.feedId), t = typeOf(it), isPod = !!it.audioUrl && !it.videoId;
   if (isPod){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); }
   // Logo shaped by type: websites square (favicon), channels and accounts round, podcasts rounded artwork
   const top = el("div", "og-top");
-  const logo = el("span", "og-logo " + ({videos: "round", conversations: "round", audio: "tile"}[t] || "square"));
-  logo.append(iconFor(f, 80)); top.append(logo);
+  const logo = ogLogo(f, {videos: "round", conversations: "round", audio: "tile"}[t] || "square");
+  if (f) logo.onclick = e => { e.stopPropagation(); selectFeed(f.id); };
+  top.append(logo);
   if (it.image && !isPod){
     const box = el("div", "og-pic" + (it.videoId ? " vid" : ""));
     const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
     const tries = imageCandidates(it); let n = 0;
     img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else box.remove(); };
-    img.src = tries[0]; box.append(img); top.append(box);
+    img.src = tries[0]; box.append(img);
+    if (it.videoId) box.append(el("span", "og-play"));
+    top.append(box);
   }
   a.append(top);
-  a.append(el("div", "og-src", (f && f.title) || it.feedTitle || ""));
+  const src = el("button", "og-src", (f && f.title) || it.feedTitle || ""); src.type = "button"; src.setAttribute("aria-hidden", "true"); src.tabIndex = -1;
+  if (f) src.onclick = e => { e.stopPropagation(); selectFeed(f.id); };
+  a.append(src);
   const len = itemDur(it), st = isPod ? podStatus(it.id) : null;
   const kind = it.videoId ? (isShortItem(it) ? "SHORT" : "WATCH") : isPod ? (st.played ? "PLAYED" : st.pos ? "CONTINUE" : "LISTEN")
     : t === "conversations" ? "TALK" : t === "topics" ? "TOPIC" : "READ";
-  const tag = [ogAgo(it.date || it.seen), kind, len ? (it.videoId ? clockLen(len) : minsLen(len).toUpperCase()) : "", state.read.has(it.id) ? "SEEN" : ""].filter(Boolean).join(" / ");
+  const left = st && st.pos && st.left ? String(st.left).toUpperCase() + " LEFT" : "";
+  const tag = [ogAgo(it.date || it.seen), kind, left || (len ? (it.videoId ? clockLen(len) : minsLen(len).toUpperCase()) : ""), isPod && isDownloaded(it.id) ? "DOWNLOADED" : "", seen ? "SEEN" : ""].filter(Boolean).join(" / ");
   a.append(el("div", "og-tag", tag));
   const link = el(it.link ? "a" : "span", "cardlink");
   if (it.link){ link.href = it.link; link.target = "_blank"; link.rel = "noopener noreferrer"; }
@@ -3243,6 +3351,13 @@ function ogCard(it){
     if (isPod && CAN_DOWNLOAD) acts.append(downloadBtn(it, true));
   }
   a.append(acts);
+  // Long press: ONLY THIS SOURCE / EDIT THIS SOURCE / COPY LINK
+  let lp = 0, sx = 0, sy = 0, fired = false;
+  a.addEventListener("pointerdown", e => { fired = false; sx = e.clientX; sy = e.clientY; clearTimeout(lp); lp = setTimeout(() => { fired = true; ogSheet(it); }, 550); });
+  a.addEventListener("pointermove", e => { if (Math.abs(e.clientX - sx) + Math.abs(e.clientY - sy) > 10) clearTimeout(lp); });
+  ["pointerup", "pointercancel", "pointerleave"].forEach(ev => a.addEventListener(ev, () => clearTimeout(lp)));
+  a.addEventListener("click", e => { if (fired){ e.preventDefault(); e.stopPropagation(); fired = false; } }, true);
+  a.addEventListener("contextmenu", e => e.preventDefault());
   return a;
 }
 function stackEl(g){
@@ -3318,6 +3433,11 @@ function renderList(){
   const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
+    if (state.busy && !state.items.length && isOG()){
+      for (let k = 0; k < 3; k++){ const sk = el("article", "card og skel"); sk.setAttribute("aria-hidden", "true");
+        const tp = el("div", "og-top"); tp.append(el("span", "og-logo square"), el("div", "og-pic")); sk.append(tp, el("div", "og-src", "LOADING"), el("div", "og-tag", "…")); list.append(sk); }
+      return;
+    }
     if (state.busy && !state.items.length){ e.append(el("h3", null, "Loading your feeds…"), el("p", null, "This takes a few seconds the first time.")); }
     else if (!state.feeds.length){
       e.classList.add("welcome");
@@ -3912,13 +4032,19 @@ async function refreshAllInner(){
   const suspects = due.filter(f => f.crashes > 0);
   if (suspects.length) due = suspects.concat(due.filter(f => !(f.crashes > 0)));
   const results = [];
-  for (const f of suspects) results.push(await fetchFeedNow(f));
-  results.push(...await pool(due.slice(suspects.length), 4, fetchFeedNow));
+  // Progress for the Off-grid status line ("CHECKING 12/48")
+  state.progress = {done: 0, total: due.length};
+  const counted = async f => { try{ return await fetchFeedNow(f); } finally { state.progress.done++; if (isOG()) paintHealth(); } };
+  for (const f of suspects) results.push(await counted(f));
+  results.push(...await pool(due.slice(suspects.length), 4, counted));
+  state.progress = null;
   const ids = new Set(state.feeds.map(f => f.id));
   const fresh = new Map(due.map((f, i) => [f.id, results[i]]));
   let incoming = [];
   fresh.forEach(v => { if (v) incoming = incoming.concat(v); });
+  const before = new Set(state.items.map(i => i.id));
   state.items = mergeHistory(state.items.filter(i => ids.has(i.feedId)), incoming);
+  const added = state.items.filter(i => !before.has(i.id) && sourceMatch(i.feedId)).length;
   artDB.keepOnly(new Set(state.items.map(i => i.id)));
   state.lastUpdated = Date.now();
   state.busy = false;
@@ -3926,7 +4052,11 @@ async function refreshAllInner(){
   save(); renderChips(); renderStatus(); renderFeedList();
   const keepScroll = $("#list").scrollTop;
   // A video playing in a card would stop if the list were redrawn: wait until it's closed
-  if (document.querySelector(".card.vplaying")) state.listStale = true; else renderList();
+  // Off-grid: never move the list under someone reading further down; offer the new stories instead
+  const readingDown = isOG() && (window.scrollY || $("#list").scrollTop) > 400;
+  if (isOG()){ toast(added ? `${added} NEW ${added === 1 ? "STORY" : "STORIES"}` : "NOTHING NEW"); }
+  if (readingDown && added){ state.ogNew = (state.ogNew || 0) + added; paintOgNew(); }
+  else if (document.querySelector(".card.vplaying")) state.listStale = true; else renderList();
   $("#list").scrollTop = keepScroll;
 }
 
@@ -5909,7 +6039,7 @@ function applyDesign(){
   ["layout","density","thumbs","sum","width","look","rail"].forEach(k => r.dataset[k] = design[k]);
   try{ placeLook(); }catch(e){ console.warn(e); }
   const meta = document.querySelector('meta[name="theme-color"]');
-  const bg = getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3";
+  const bg = design.look === "offgrid" ? "#000000" : (getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3");
   if (meta) meta.content = bg;
   // In the app: Android's status and navigation bars take the page background (not orange), with matching icons
   try{
@@ -6232,7 +6362,7 @@ function placePodPanel(){
 // Mini player along the bottom, on every page while an episode is loaded
 function renderMini(){
   const m = $("#mini");
-  const nb = $("#nowBtn"); if (nb){ nb.hidden = false; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); }
+  const nb = $("#nowBtn"); if (nb){ nb.hidden = false; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); nb.classList.toggle("loaded", !!pod.item); }
   if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
   m.hidden = false; document.body.classList.add("has-mini");
   const f = feedById(pod.item.feedId) || {};
