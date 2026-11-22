@@ -1121,6 +1121,43 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
   :root[data-look="offgrid"] .og-strip .ogs-b{width:56px;flex:none}
 }
 @media (prefers-reduced-motion:reduce){:root[data-look="offgrid"] .ograil #refresh.spin svg{animation:none}:root[data-look="offgrid"] dialog.drawer[open],.og-strip{animation:none}}
+/* leftovers from Classic, drawn Off-grid */
+:root[data-look="offgrid"] .ograil .brand .logo rect{fill:var(--og-paper)}
+:root[data-look="offgrid"] .ograil .brand .logo path{stroke:#000}
+:root[data-look="offgrid"] #list .vswitch{display:flex;gap:0;margin:0;padding:0;background:#000;border-radius:0;border-bottom:3px solid #000}
+:root[data-look="offgrid"] #list .vswitch button{flex:1;height:52px;border-radius:0;border:0;background:#000;color:#fff;font:400 24px var(--og-disp);text-transform:uppercase;box-shadow:none;justify-content:center;align-items:center;gap:8px}
+:root[data-look="offgrid"] #list .vswitch button[aria-pressed="true"]{background:var(--og-paper);color:#000}
+:root[data-look="offgrid"] #list .vswitch .n{font:700 12px var(--og-mono);color:inherit}
+:root[data-look="offgrid"] #list .tabhelp{display:flex;gap:12px;align-items:center;margin:0;padding:12px 14px;background:#000;color:#fff;border:0;border-bottom:3px solid var(--og-hot);border-radius:0;font:400 13px/1.45 var(--og-mono)}
+:root[data-look="offgrid"] #list .tabhelp button{min-height:44px;padding:0 14px;border-radius:0;background:var(--og-hot);color:#000;font:700 12px var(--og-mono);text-transform:uppercase}
+:root[data-look="offgrid"] #list .cont{margin:0;padding:12px 14px 6px;background:#000;color:#fff;border:0;border-radius:0;border-bottom:3px solid #000}
+:root[data-look="offgrid"] #list .cont h3{font:700 12px var(--og-mono);color:var(--og-paper);letter-spacing:.04em}
+:root[data-look="offgrid"] #list .cont-row{grid-template-columns:56px minmax(0,1fr) 44px;border-top:1px solid #5A5A5A}
+:root[data-look="offgrid"] #list .cont-row:first-of-type{border-top:0}
+:root[data-look="offgrid"] #list .cont-row .pod-btn{width:56px;height:56px;border-radius:0;background:var(--og-hot);color:#000}
+:root[data-look="offgrid"] #list .cont-row b{font:400 20px/1.1 var(--og-disp);text-transform:uppercase;white-space:normal}
+:root[data-look="offgrid"] #list .cont-row small{font:700 11px var(--og-mono);text-transform:uppercase;color:#C8C8C8}
+:root[data-look="offgrid"] #list .cont-bar{background:#5A5A5A;border-radius:0;height:6px}
+:root[data-look="offgrid"] #list .cont-bar i{background:var(--og-hot);border-radius:0}
+:root[data-look="offgrid"] #list .cont-x{width:44px;height:44px;color:#fff;border-radius:0}
+:root[data-look="offgrid"] #list .cont-toggle{color:var(--og-paper);border-top:1px solid #5A5A5A;font:700 12px var(--og-mono);text-transform:uppercase}
+:root[data-look="offgrid"] #list.shortgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0}
+:root[data-look="offgrid"] #list.shortgrid > :not(.card){grid-column:1/-1}
+:root[data-look="offgrid"] #list > .card.og.ogshort{display:flex;flex-direction:column;gap:6px;padding:12px 10px 14px;margin:0;min-width:0}
+:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:nth-of-type(4n+1),:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:nth-of-type(4n){background:var(--og-paper);color:#000}
+:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:nth-of-type(4n+2),:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:nth-of-type(4n+3){background:#000;color:#fff}
+.ogsh-pic{position:relative;display:block;width:100%;aspect-ratio:9/16;padding:0;border:3px solid currentColor;background:#222;overflow:hidden;cursor:pointer;transform:rotate(-1.5deg)}
+.card.og.ogshort:nth-of-type(2n) .ogsh-pic{transform:rotate(1.5deg)}
+.ogsh-pic img{width:100%;height:100%;object-fit:cover;display:block}
+.ogsh-src{font:400 18px/1.05 var(--og-disp);text-transform:uppercase;overflow-wrap:anywhere;margin-top:4px}
+.ogsh-title{font:400 17px/1.1 var(--og-disp);text-transform:uppercase;margin:0;overflow-wrap:anywhere}
+.card.og.ogshort .og-tag{align-self:flex-start;font-size:10px}
+.card.og.ogshort .og-b{align-self:flex-start;min-height:40px;padding:0 10px;font-size:11px}
+:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:is(:nth-of-type(4n+1),:nth-of-type(4n)) .og-tag{background:#000;color:#fff}
+:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:is(:nth-of-type(4n+2),:nth-of-type(4n+3)) .og-tag{background:#fff;color:#000}
+:root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:is(:nth-of-type(4n+2),:nth-of-type(4n+3)) .og-b{color:#fff;border-color:#fff}
+:root[data-look="offgrid"] #list > .card.og.ogshort.seen{background:#fff!important;color:#000!important}
+:root[data-look="offgrid"] #list > .card.og.ogshort.seen img{filter:grayscale(1)}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -2750,6 +2787,9 @@ function visibleItems(){
 // different publishers mention it in the last two days. Related subjects that keep turning up in the same stories
 // ("Rachel Reeves" + "Budget") become one topic.
 const TREND_HOURS = 48;
+const TREND_PART_SKIP = new Set(("monday tuesday wednesday thursday friday saturday sunday january february march april may june july august " +
+  "september october november december league cup city united town club fc day night week weekend show live news game games world " +
+  "final finals series season awards party house street road park festival").split(" "));
 const TREND_STOP = new Set((
   "the a an of to in and for on is are was were with at by from as after how why what who whom when where which while new over into out up down about it its it's this that these those be been being has have had will would can could should may might must says said say tells told not no yes more most than his her their our your my we you they he she i me him them us after before just only also all any some every each other another first last next best top big little old young good great bad worst latest live watch video videos photos photo pictures gallery listen podcast episode ep part series season review reviews preview analysis opinion comment column explainer interview exclusive breaking update updates news report reports today tonight yesterday tomorrow week weekend month year years day days time times now here there home way back still even again ever never always plus vs v via full official new one two three four five six seven eight nine ten million billion per cent percent monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec morning evening night afternoon man woman men women people boy girl family uk us mr mrs ms dr sir lord lady st how-to guide tips things ways reasons why don't can't won't isn't i'm you're we're they're get gets got make makes made take takes took give gives gave go goes going come comes see sees know want look looks find finds call calls set sets win wins won lose loses lost beat beats hit hits back backs face faces join joins leave leaves sign signs open opens close closes help helps show shows reveal reveals reveals claim claims warn warns urge urges deal deals plan plans move moves bid bids ban bans row rows boost boosts cut cuts hike hikes rise rises fall falls star stars fans fan club clubs team teams game games match matches player players coach boss league cup final finals goal goals score scores result results line-up lineup transfer transfers rumours rumour latest story stories world global national local city country state government police court health school"
 ).split(" "));
@@ -2808,24 +2848,29 @@ function trendTopics(){
     // ("Black Friday", "Premier League", "Storm Claudia"). Not two everyday words ("Best Deals"), and in
     // title-case headlines only when one of the two is a name seen elsewhere.
     const capw = w.map(x => { const k = trendNorm(x); return isCap(x) && k.length >= 3 && !EN_WORDS.has(k) && !/^\d+$/.test(k) ? k : null; });
-    const pairAt = i => capw[i] && capw[i + 1] && !(TREND_STOP.has(capw[i]) && TREND_STOP.has(capw[i + 1])) && (!tcase.has(it.id) || ok[i] || ok[i + 1]);
+    // Title-case headlines count too ("Best Black Friday Deals"), but a pair only trends if it is also written
+    // capitalised inside an ordinary sentence-case headline somewhere (so "Best Deals" never does)
+    const pairAt = i => capw[i] && capw[i + 1] && !(TREND_STOP.has(capw[i]) && TREND_STOP.has(capw[i + 1]));
     const seen = new Set();
     w.forEach((x, i) => {
       const k = ok[i];
       if (k && !own.includes(k) && !seen.has(k)){ seen.add(k); note(k, x.replace(/[’']s$/, ""), it, pub); }
-      if (pairAt(i)){ const kk = capw[i] + " " + capw[i + 1]; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, x + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); } }
+      if (pairAt(i)){ const kk = capw[i] + " " + capw[i + 1]; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, x + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); if (!tcase.has(it.id) || ok[i] || ok[i + 1]) terms.get(kk).named = true; } }
     });
   });
   // Trending: mentioned by 3+ different publishers (2 for someone following only a few)
   const pubCount = new Set(state.feeds.map(trendPub)).size;
   const need = pubCount < 15 ? 2 : 3;
-  let list = [...terms.values()].filter(t => t.pubs.size >= need);
+  let list = [...terms.values()].filter(t => t.pubs.size >= need && (!t.key.includes(" ") || t.named));
   list.forEach(t => { t.score = t.pubs.size * 3 + t.ids.size + t.recent; t.label = [...t.shows].sort((a, b) => b[1] - a[1])[0][0]; });
   // A name's pair is the label over its single words when it covers most of their stories ("Rachel Reeves", not
   // "Reeves"); the single word still joins the topic, bringing stories that only say "Reeves"
   const pairs = list.filter(t => t.key.includes(" "));
   list.forEach(t => {
     if (t.key.includes(" ")) return;
+    // …except everyday parts of a name: "Friday" in "Black Friday" or "League" in "Premier League" would pull in
+    // every Friday-night football story
+    if (TREND_PART_SKIP.has(t.key)) return;
     const p = pairs.find(p => p.key.split(" ").includes(t.key) && [...p.ids].filter(id => t.ids.has(id)).length >= p.ids.size * 0.6);
     if (p){ t.inside = p; t.score = Math.min(t.score, p.score - 0.01); }
   });
@@ -2838,6 +2883,23 @@ function trendTopics(){
     else if (topics.length < 12) topics.push({key: t.key, label: t.label, terms: [t], ids: new Set(t.ids), pubs: new Set(t.pubs), newest: t.newest, score: t.score});
   });
   topics.forEach(tp => { tp.related = tp.terms.slice(1).filter(t => !t.inside).map(t => t.label).filter(l => !tp.label.toLowerCase().includes(l.toLowerCase())).slice(0, 3); });
+  // What belongs to a topic: every story of the last week whose headline names it ("Black Friday", or for a
+  // person "Rachel Reeves" or just "Reeves"), so it agrees with FIND WORDS. Related subjects that were merged in
+  // are shown as "Also: …" but don't bring their own stories (that's how unrelated football videos got in).
+  const weekCut = now - 7 * 86400000;
+  const recentAll = state.items.filter(i => (i.date || i.seen || 0) >= weekCut && i.title);
+  topics.forEach(tp => {
+    const main = tp.terms[0], phrases = [main.key, ...tp.terms.filter(t => t.inside === main).map(t => t.key)];
+    const esc = x => x.split(" ").map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s-]+");
+    const re = new RegExp("(^|[^\\p{L}\\p{N}])(" + phrases.map(esc).join("|") + ")(?=$|[^\\p{L}\\p{N}])", "iu");
+    const ids = new Set(), pubs = new Set(); let newest = 0;
+    recentAll.forEach(it => {
+      const t = trendTokens(it).map(trendNorm).join(" ");
+      if (!re.test(t)) return;
+      ids.add(it.id); pubs.add(trendPub(feedById(it.feedId))); newest = Math.max(newest, it.date || it.seen || 0);
+    });
+    if (ids.size){ tp.ids = ids; tp.pubs = pubs; tp.newest = newest; }
+  });
   trendTopics.memo = {items: state.items, n: state.items.length, at: now, topics};
   return topics;
 }
@@ -3491,7 +3553,28 @@ function listUnits(){
   }
   return [...groups.values()].map(g => g.items.length === 1 ? {it: g.items[0]} : {group: g});
 }
-const unitEl = u => u.it ? (isOG() && !shortsGrid() ? ogCard(u.it) : cardEl(u.it)) : stackEl(u.group);
+const unitEl = u => u.it ? (isOG() ? (shortsGrid() ? ogShort(u.it) : ogCard(u.it)) : cardEl(u.it)) : stackEl(u.group);
+// A Short in the Off-grid grid: the tall picture, then source, age and title; tap opens it upright, full screen
+function ogShort(it){
+  const a = el("article", "card og ogshort"); a.dataset.id = it.id;
+  const f = feedById(it.feedId);
+  if (!view.saved && state.read.has(it.id)) a.classList.add("seen");
+  const go = el("button", "ogsh-pic"); go.type = "button"; go.setAttribute("aria-label", "Play: " + (it.title || ""));
+  const tries = imageCandidates(it);
+  if (it.videoId) tries.unshift(`https://i.ytimg.com/vi/${encodeURIComponent(it.videoId)}/oar2.jpg`);
+  if (tries.length){ const img = el("img"); img.alt = ""; img.loading = "lazy"; img.referrerPolicy = "no-referrer"; let n = 0; img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else img.remove(); }; img.src = tries[0]; go.append(img); }
+  go.append(el("span", "og-play"));
+  go.onclick = () => { state.read.add(it.id); save(); a.classList.add("seen"); if (state.videoInApp) ogVideo(it); else if (it.link) openOutside(it.link); };
+  const src = el("div", "ogsh-src", (f && f.title) || it.feedTitle || "");
+  const len = itemDur(it);
+  const tag = el("div", "og-tag", [ogAgo(it.date || it.seen), len ? clockLen(len) : ""].filter(Boolean).join(" / "));
+  const h = el("h2", "ogsh-title", it.title || "");
+  const on = isSaved(it.id);
+  const sv = el("button", "og-b" + (on ? " on" : ""), on ? "SAVED" : "SAVE"); sv.type = "button"; sv.setAttribute("aria-pressed", String(on));
+  sv.onclick = () => { toggleSave(it, null); const n = isSaved(it.id); sv.textContent = n ? "SAVED" : "SAVE"; sv.classList.toggle("on", n); sv.setAttribute("aria-pressed", String(n)); toast(n ? "SAVED" : "REMOVED"); };
+  a.append(go, src, tag, h, sv);
+  return a;
+}
 /* ---------- Off-grid look (Settings → Look → Style) ----------
    From the Nov 2026 design canvas, option E: a black side bar for the controls, the feed in colour slabs
    (yellow, black, pink) with the source's logo shaped by type, big uppercase headlines, and one clear action. */
