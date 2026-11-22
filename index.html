@@ -844,6 +844,47 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 :root[data-rail="left"] .og-sheet{left:var(--og-rail);right:0}
 .og-sheetb{height:56px;border:0;border-bottom:1px solid #5A5A5A;background:none;color:#fff;font:400 22px var(--og-disp);text-align:left;padding:0 16px;cursor:pointer;text-transform:uppercase}
 .og-sheetb:last-child{border-bottom:0;color:var(--og-hot)}
+/* video page: whole screen, rail included */
+.og-video{position:fixed;inset:0;z-index:120;background:#000;display:flex;flex-direction:column;font-family:var(--og-mono);color:#000;overflow:auto}
+.og-vplayer{position:relative;width:100%;aspect-ratio:16/9;background:#000;flex:none;padding-top:env(safe-area-inset-top,0px)}
+.og-video.tall .og-vplayer{aspect-ratio:auto;flex:1 1 auto;min-height:60vh}
+.og-vplayer iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.og-vplayer:fullscreen{padding:0;aspect-ratio:auto;width:100%;height:100%}
+.og-vinfo{background:var(--og-paper);padding:14px 14px 18px;flex:1 0 auto}
+.og-video.tall .og-vinfo{flex:none}
+.og-vwho{display:flex;align-items:center;gap:10px}
+.og-vwho .og-logo{width:56px;height:56px;flex:none}
+.og-vsrc{font:400 27px/1.05 var(--og-disp);text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.og-vinfo .og-tag{margin:10px 0 8px}
+.og-vtitle{font:400 24px/1.08 var(--og-disp);text-transform:uppercase;margin:0 0 14px;overflow-wrap:anywhere}
+.og-vinfo .og-b{text-decoration:none;display:inline-flex;align-items:center;color:#000}
+.og-vclose{flex:none;height:56px;border:0;border-top:3px solid #000;background:var(--og-hot);color:#000;font:400 26px var(--og-disp);text-transform:uppercase;cursor:pointer;margin-bottom:env(safe-area-inset-bottom,0px)}
+@media (orientation:landscape) and (max-height:520px){.og-video:not(.tall) .og-vplayer{aspect-ratio:auto;height:100vh}}
+/* filter panel: over the feed, under the black strip */
+.og-filter{position:fixed;left:0;right:var(--og-rail);top:calc(48px + env(safe-area-inset-top,0px));bottom:0;z-index:60;background:var(--og-paper);color:#000;overflow:auto;font-family:var(--og-mono);padding:12px 14px calc(84px + env(safe-area-inset-bottom,0px));border-top:3px solid #000;box-sizing:border-box}
+:root[data-rail="left"] .og-filter{left:var(--og-rail);right:0}
+.ogf-title{font:400 64px/1 var(--og-disp);text-transform:uppercase;margin:0 0 8px}
+.ogf-sec{border-top:3px solid #000;padding:10px 0 14px}
+.ogf-lbl{font:700 12px var(--og-mono);text-transform:uppercase;margin:0 0 8px;letter-spacing:.04em}
+.ogf-words{width:100%;box-sizing:border-box;height:48px;border:3px solid #000;border-radius:0;background:#fff;color:#000;font:700 16px var(--og-mono);padding:0 10px}
+.ogf-row{display:flex;justify-content:space-between;align-items:center;width:100%;height:48px;border:0;border-bottom:1px solid #000;background:none;color:#000;font:400 24px var(--og-disp);text-transform:uppercase;padding:0 4px;cursor:pointer}
+.ogf-row[aria-pressed="true"]{background:#000;color:var(--og-paper)}
+.ogf-n{font:700 13px var(--og-mono)}
+.ogf-switch{display:flex;margin-bottom:10px}
+.ogf-switch button{flex:1;height:44px;border:3px solid #000;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;cursor:pointer;border-radius:0}
+.ogf-switch button+button{border-left:0}
+.ogf-switch button[aria-pressed="true"]{background:#000;color:var(--og-paper)}
+.ogf-chips{display:flex;flex-wrap:wrap;gap:6px}
+.ogf-chip{min-height:40px;border:3px solid #000;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;padding:0 10px;cursor:pointer;border-radius:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ogf-chip[aria-pressed="true"]{background:var(--og-hot)}
+.ogf-chip.more{border-style:dashed}
+.og-filter .catmanage{margin-top:12px;font-family:var(--og-mono)}
+.ogf-foot{position:fixed;left:0;right:var(--og-rail);bottom:0;display:flex;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--og-paper);border-top:3px solid #000}
+:root[data-rail="left"] .ogf-foot{left:var(--og-rail);right:0}
+.ogf-clear,.ogf-show{flex:1;height:56px;border:3px solid #000;border-radius:0;font:400 24px var(--og-disp);text-transform:uppercase;cursor:pointer}
+.ogf-clear{background:none;color:#000}
+.ogf-show{background:var(--og-hot);color:#000;flex:2}
+.toast-act{border:0;background:none;color:inherit;font:inherit;text-decoration:underline;padding:0 2px;cursor:pointer;text-transform:uppercase}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -2376,7 +2417,7 @@ function sourceLabel(){
   return s.replace(/^(folder|platform):/, "");
 }
 function checkView(){
-  if (view.saved && !state.saved.length) view.saved = false;
+  if (view.saved && !state.saved.length && !isOG()) view.saved = false;
   if (view.source.startsWith("feed:") && !feedById(view.source.slice(5))) view.source = "all";
   if (view.source === "folder:Unsorted") view.source = "folder:" + UNSORTED;
   if (view.source.startsWith("folder:") && view.source !== "folder:" + UNSORTED && !state.folders.includes(view.source.slice(7))) view.source = "all";
@@ -2411,16 +2452,24 @@ function dupeIds(list = state.items, memoKey = ""){
   dupeIds.cache[memoKey ? "view" : "all"] = {src: list, n: list.length, set: out};
   return out;
 }
+// FIND WORDS (Off-grid filter): every word must appear in the headline or the source's name
+function wordsMatch(){
+  const q = String(view.q || "").trim().toLowerCase(); if (!q) return null;
+  const ws = q.split(/\s+/);
+  return i => { const hay = ((i.title || "") + " " + ((feedById(i.feedId) || {}).title || i.feedTitle || "")).toLowerCase(); return ws.every(w => hay.includes(w)); };
+}
 function baseItems(){
   let cut = 0;
   if (view.from === "today"){ const d = new Date(); d.setHours(0, 0, 0, 0); cut = d.getTime(); }
+  else if (view.from === "3d") cut = Date.now() - 3 * 86400000;
   else if (view.from === "week") cut = Date.now() - 7 * 86400000;
   const tp = state.topic && currentTopic();
-  const shown = state.items.filter(i => (state.topic ? !!tp && tp.ids.has(i.id) : sourceMatch(i.feedId)) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut));
+  const words = wordsMatch();
+  const shown = state.items.filter(i => (state.topic ? !!tp && tp.ids.has(i.id) : sourceMatch(i.feedId)) && (!view.unread || !(state.lookSnap.has(i.id) || state.read.has(i.id))) && (!cut || (i.date || i.seen || 0) >= cut) && (!words || words(i)));
   // Showing one source: everything from it. Otherwise each story once, judged within what's shown
   if (view.source.startsWith("feed:")) return shown;
   const memo = baseItems.memo || {};
-  const key = [state.topic ? "topic:" + state.topic.key + ":" + (tp ? tp.ids.size : 0) : view.source, view.from, view.unread, cut && Math.floor(cut / 60000), state.lookSnap.size, state.read.size].join("|");
+  const key = [state.topic ? "topic:" + state.topic.key + ":" + (tp ? tp.ids.size : 0) : view.source, view.from, view.q || "", view.unread, cut && Math.floor(cut / 60000), state.lookSnap.size, state.read.size].join("|");
   if (memo.items !== state.items || memo.n !== state.items.length || memo.key !== key){
     baseItems.memo = {items: state.items, n: state.items.length, key, dup: dupeIds(shown, key)};
   }
@@ -2429,7 +2478,8 @@ function baseItems(){
 }
 function visibleItems(){
   if (view.saved){
-    const all = [...state.saved].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0));
+    const words = wordsMatch();
+    const all = [...state.saved].sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0)).filter(i => !words || words(i));
     // Saved audio is a queue: first saved, first played
     if (view.type === "audio") return all.filter(i => typeOf(i) === "audio").reverse();
     return videoKind(view.type === "all" ? all : all.filter(i => typeOf(i) === view.type));
@@ -2826,7 +2876,7 @@ function toggleStatusPop(open){
 }
 function renderFilterBar(){
   const pill = $("#activeFilter");
-  const typeName = {articles: "Articles", topics: "Topics", videos: "Videos", audio: "Audio", conversations: "Conversations"}[view.type];
+  const typeName = (isOG() ? {articles: "Read", topics: "Topics", videos: "Watch", audio: "Listen", conversations: "Talk"} : {articles: "Articles", topics: "Topics", videos: "Videos", audio: "Audio", conversations: "Conversations"})[view.type];
   const label = [typeName, state.topic ? "Trending: " + state.topic.label : view.source !== "all" ? sourceLabel() : ""].filter(Boolean).join(" · ");
   if (!label){ pill.hidden = true; }
   else {
@@ -2835,7 +2885,7 @@ function renderFilterBar(){
     pill.insertAdjacentHTML("beforeend", '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>');
     pill.setAttribute("aria-label", `Showing ${label}. Show everything`);
   }
-  const n = (view.type !== "all" ? 1 : 0) + (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "week" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0);
+  const n = (view.type !== "all" ? 1 : 0) + (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "week" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0) + (String(view.q || "").trim() ? 1 : 0);
   const oh = $("#ogHead");
   if (oh && isOG()){
     const head = [view.saved ? "SAVED" : typeName ? typeName.toUpperCase() : (view.source !== "all" || state.topic ? "" : "EVERYTHING"), state.topic ? state.topic.label.toUpperCase() : view.source !== "all" ? sourceLabel().toUpperCase() : ""].filter(Boolean);
@@ -2969,7 +3019,7 @@ function manageCategories(custom, used){
 }
 function openFilterBox(){ const box = $("#filterBox"); box.hidden = false; $("#filterBtn").setAttribute("aria-expanded", "true"); renderFilterBox(); const f = box.querySelector('[aria-pressed="true"]') || box.querySelector("button"); if (f) f.focus(); }
 function closeFilterBox(focusBtn){ const box = $("#filterBox"); if (box.hidden) return; box.hidden = true; $("#filterBtn").setAttribute("aria-expanded", "false"); if (focusBtn) $("#filterBtn").focus(); }
-$("#filterBtn").onclick = () => $("#filterBox").hidden ? openFilterBox() : closeFilterBox();
+$("#filterBtn").onclick = () => { if (isOG()){ $("#ogFilter") ? closeOgFilter() : openOgFilter(); return; } $("#filterBox").hidden ? openFilterBox() : closeFilterBox(); };
 $("#activeFilter").onclick = () => { state.topic = null; selectFeed("all"); };   // clears the source, the type and a topic
 // (i)/(!) opens the summary; "Open Source health" goes to Settings with Needs attention unfolded
 $("#infoBtn").onclick = e => { e.stopPropagation(); toggleStatusPop(); };
@@ -3053,11 +3103,12 @@ const ICON_SAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_SAVED = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>';
 const ICON_SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
 let toastTimer;
-function toast(msg){
+function toast(msg, action){
   let t = $(".toast");
   if (!t){ t = el("div", "toast"); t.setAttribute("role", "status"); document.body.append(t); }
   t.textContent = msg; t.hidden = false;
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 2600);
+  if (action){ const b = el("button", "toast-act", action.label); b.type = "button"; b.onclick = () => { t.hidden = true; action.run(); }; t.append(document.createTextNode(" · "), b); }
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, action ? 5000 : isOG() ? 1800 : 2600);
 }
 function toggleSave(it, btn){
   if (isSaved(it.id)) state.saved = state.saved.filter(x => x.id !== it.id);
@@ -3067,7 +3118,7 @@ function toggleSave(it, btn){
   if (btn){ btn.setAttribute("aria-pressed", String(on)); btn.innerHTML = on ? ICON_SAVED : ICON_SAVE; btn.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); }
   toast(on ? "Saved for later" : "Removed from Saved");
   renderChips();
-  if (view.saved && !on){ if (!state.saved.length){ view.saved = false; view.type = "all"; saveView(); renderChips(); } renderList(); }
+  if (view.saved && !on){ if (!state.saved.length && !isOG()){ view.saved = false; view.type = "all"; saveView(); renderChips(); } renderList(); }
 }
 async function sharePost(it){
   const f = feedById(it.feedId);
@@ -3281,6 +3332,125 @@ function ogLogo(f, shape){
   img.src = tries[0]; box.append(img);
   return box;
 }
+// Video page (Off-grid): PLAY opens the video full screen; leaving full screen leaves the page with its details and CLOSE.
+// The Trending topic page keeps playing videos in place.
+function ogVideo(it){
+  closeOgVideo();
+  if (pod.item && !pod.audio.paused) pod.audio.pause();
+  pauseAllVideos();
+  state.read.add(it.id); save();
+  const f = feedById(it.feedId), short = isShortItem(it);
+  const pg = el("div", "og-video" + (short ? " tall" : "")); pg.id = "ogVideo"; pg.setAttribute("role", "dialog"); pg.setAttribute("aria-label", it.title || "Video");
+  const pl = el("div", "og-vplayer"), fr = el("iframe");
+  fr.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1&fs=1`;
+  fr.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen";
+  fr.allowFullscreen = true; fr.referrerPolicy = "strict-origin-when-cross-origin"; fr.title = it.title || "Video";
+  watchVideo(fr); pl.append(fr);
+  const info = el("div", "og-vinfo");
+  const who = el("div", "og-vwho"); who.append(ogLogo(f, "round"), el("span", "og-vsrc", (f && f.title) || it.feedTitle || ""));
+  const len = itemDur(it);
+  info.append(who, el("div", "og-tag", [ogAgo(it.date || it.seen), short ? "SHORT" : "WATCH", len ? clockLen(len) : ""].filter(Boolean).join(" / ")), el("h2", "og-vtitle", it.title || ""));
+  const acts = el("div", "og-acts");
+  const on = isSaved(it.id);
+  const sv = el("button", "og-b" + (on ? " on" : ""), on ? "SAVED" : "SAVE"); sv.type = "button";
+  sv.onclick = () => { toggleSave(it, null); const n = isSaved(it.id); sv.textContent = n ? "SAVED" : "SAVE"; sv.classList.toggle("on", n); toast(n ? "SAVED" : "REMOVED"); };
+  const sh = el("button", "og-b", "SHARE"); sh.type = "button"; sh.onclick = () => sharePost(it);
+  const yt = el("a", "og-b", "OPEN IN YOUTUBE"); yt.href = it.link || ("https://www.youtube.com/watch?v=" + encodeURIComponent(it.videoId)); yt.target = "_blank"; yt.rel = "noopener noreferrer";
+  acts.append(sv, sh, yt); info.append(acts);
+  const close = el("button", "og-vclose", "CLOSE"); close.type = "button"; close.onclick = closeOgVideo;
+  pg.append(pl, info, close);
+  document.body.append(pg); document.body.classList.add("og-vopen");
+  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!short); }catch{}
+  // Straight to full screen (this runs inside the tap, which browsers require); landscape in the app unless it's a Short
+  try{ const req = pl.requestFullscreen || pl.webkitRequestFullscreen; if (req) req.call(pl).catch(() => {}); }catch{}
+  close.focus({preventScroll: true});
+  renderList();
+}
+function closeOgVideo(){
+  const pg = $("#ogVideo"); if (!pg) return;
+  try{ if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }catch{}
+  pg.remove(); document.body.classList.remove("og-vopen");
+}
+// Filter panel (Off-grid): every choice applies at once; SHOW says how many stories are left
+function openOgFilter(){
+  closeOgFilter();
+  const p = el("section", "og-filter"); p.id = "ogFilter"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Filter");
+  document.body.append(p);
+  $("#filterBtn").setAttribute("aria-expanded", "true");
+  renderOgFilter(true);
+}
+function closeOgFilter(){ const p = $("#ogFilter"); if (!p) return; p.remove(); $("#filterBtn").setAttribute("aria-expanded", "false"); $("#filterBtn").focus({preventScroll: true}); }
+function ogFilterSet(k, v){ view[k] = v; if (k === "source") state.topic = null; saveView(); state.shown = PAGE; snapLooked(); renderChips(); renderList(); renderFilterBar(); renderOgFilter(); }
+function renderOgFilter(first){
+  const p = $("#ogFilter"); if (!p) return;
+  const keepScroll = p.scrollTop;
+  // The words box is kept (not redrawn) so typing isn't interrupted
+  let box = p.querySelector("#ogWords");
+  const typing = box && document.activeElement === box, sel = typing ? [box.selectionStart, box.selectionEnd] : null;
+  p.textContent = "";
+  const sec = (label) => { const d = el("div", "ogf-sec"); const h = el("h3", "ogf-lbl", label); d.append(h); p.append(d); return d; };
+  p.append(el("h2", "ogf-title", "Filter"));
+  const ws = sec("Find words");
+  if (!box){
+    box = el("input", "ogf-words"); box.id = "ogWords"; box.type = "search"; box.autocomplete = "off"; box.value = view.q || "";
+    box.setAttribute("aria-label", "Find words in headlines and source names");
+    let t = 0; box.oninput = () => { clearTimeout(t); t = setTimeout(() => { view.q = box.value; saveView(); state.shown = PAGE; renderList(); renderFilterBar(); renderOgFilter(); }, 200); };
+  }
+  ws.append(box);
+  if (typing){ box.focus({preventScroll: true}); try{ box.setSelectionRange(sel[0], sel[1]); }catch{} }
+  // WHAT KIND, with counts under the other filters
+  const ks = sec("What kind");
+  const saved = view.saved;
+  const base = saved ? state.saved.filter(i => { const w = wordsMatch(); return !w || w(i); }) : baseItems();
+  [["all", "Everything"], ["articles", "Read"], ["topics", "Topics"], ["videos", "Watch"], ["audio", "Listen"], ["conversations", "Talk"]].forEach(([k, name]) => {
+    const n = k === "all" ? base.length : base.filter(i => typeOf(i) === k).length;
+    const b = el("button", "ogf-row"); b.type = "button"; b.setAttribute("aria-pressed", String(view.type === k));
+    b.append(el("span", null, name), el("span", "ogf-n", String(n)));
+    b.onclick = () => ogFilterSet("type", k);
+    ks.append(b);
+  });
+  if (!saved){
+    // FROM WHERE: categories or sources
+    const fw = sec("From where");
+    const mode = state.ogWhere || (view.source.startsWith("feed:") ? "source" : "category");
+    const sw = el("div", "ogf-switch");
+    [["category", "Category"], ["source", "Source"]].forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(mode === v)); b.onclick = () => { state.ogWhere = v; renderOgFilter(); }; sw.append(b); });
+    fw.append(sw);
+    const chips = el("div", "ogf-chips");
+    const chip = (label, val) => { const b = el("button", "ogf-chip", label); b.type = "button"; const on = view.source === val; b.setAttribute("aria-pressed", String(on)); b.onclick = () => ogFilterSet("source", on ? "all" : val); chips.append(b); };
+    if (mode === "category"){
+      const used = new Map(); state.feeds.forEach(f => { const g = folderOf(f); used.set(g, (used.get(g) || 0) + 1); });
+      [...used.keys()].sort((a, b) => a === UNSORTED ? 1 : b === UNSORTED ? -1 : a.localeCompare(b)).forEach(g => chip(g, "folder:" + g));
+      fw.append(chips);
+      const fixed = INTERESTS.map(([n]) => n), custom = state.folders.filter(n => !fixed.includes(n));
+      if (custom.length) fw.append(manageCategories(custom, used));
+    } else {
+      const newest = new Map(); state.items.forEach(i => newest.set(i.feedId, Math.max(newest.get(i.feedId) || 0, i.date || 0)));
+      const fs = [...state.feeds].sort((a, b) => (newest.get(b.id) || 0) - (newest.get(a.id) || 0));
+      const shown = state.ogMoreSources ? fs : fs.slice(0, 12);
+      shown.forEach(f => chip(f.title || "Source", "feed:" + f.id));
+      if (fs.length > 12 && !state.ogMoreSources){ const m = el("button", "ogf-chip more", `MORE (${fs.length - 12})`); m.type = "button"; m.onclick = () => { state.ogMoreSources = true; renderOgFilter(); }; chips.append(m); }
+      fw.append(chips);
+    }
+    // HOW FAR BACK
+    const hb = sec("How far back"); const hc = el("div", "ogf-chips");
+    [["today", "Today"], ["3d", "3 days"], ["week", "Week"], ["any", "All"]].forEach(([v, t]) => { const b = el("button", "ogf-chip", t); b.type = "button"; b.setAttribute("aria-pressed", String(view.from === v)); b.onclick = () => ogFilterSet("from", v); hc.append(b); });
+    hb.append(hc);
+    // SEEN
+    const sn = sec("Seen"); const tg = el("div", "ogf-switch"); tg.setAttribute("aria-label", "Hide seen");
+    [[true, "Hide seen: on"], [false, "Off"]].forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(!!view.unread === v)); b.onclick = () => ogFilterSet("unread", v); tg.append(b); });
+    sn.append(tg);
+  }
+  // Footer
+  const foot = el("div", "ogf-foot");
+  const clr = el("button", "ogf-clear", "Clear"); clr.type = "button";
+  clr.onclick = () => { Object.assign(view, {type: "all", source: "all", unread: false, from: VIEW_DEFAULT.from, sort: VIEW_DEFAULT.sort, q: ""}); state.topic = null; const w = p.querySelector("#ogWords"); if (w) w.value = ""; saveView(); state.shown = PAGE; snapLooked(); renderChips(); renderList(); renderFilterBar(); renderOgFilter(); };
+  const n = visibleItems().length;
+  const go = el("button", "ogf-show", `Show ${n}`); go.type = "button"; go.onclick = closeOgFilter;
+  foot.append(clr, go); p.append(foot);
+  p.scrollTop = keepScroll;
+  if (first) (p.querySelector('.ogf-row[aria-pressed="true"]') || box).focus({preventScroll: true});
+}
 // "53M AGO", "2H AGO", "3D AGO", then the date
 function ogAgo(ms){
   if (!ms) return "";
@@ -3332,7 +3502,7 @@ function ogCard(it){
   const go = e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
     if (isPod){ e && e.preventDefault(); togglePodPanel(it); return true; }
-    if (it.videoId && state.videoInApp){ e && e.preventDefault(); if (isWide()) openItem(it.id); else playInCard(a, it); return true; }
+    if (it.videoId && state.videoInApp){ e && e.preventDefault(); ogVideo(it); return true; }
     if (state.keepInBrowser && it.link){ const intent = browserIntent(it.link); if (intent){ e && e.preventDefault(); location.href = intent; return true; } }
     return false;
   };
@@ -3345,7 +3515,13 @@ function ogCard(it){
   if (it.link || it.audioUrl){
     const on = isSaved(it.id);
     const sv = el("button", "og-b" + (on ? " on" : ""), on ? "SAVED" : "SAVE"); sv.type = "button"; sv.setAttribute("aria-pressed", String(on));
-    sv.onclick = () => { toggleSave(it, null); const now = isSaved(it.id); sv.textContent = now ? "SAVED" : "SAVE"; sv.classList.toggle("on", now); sv.setAttribute("aria-pressed", String(now)); };
+    sv.onclick = () => {
+      const was = state.saved.find(x => x.id === it.id);
+      toggleSave(it, null);
+      const now = isSaved(it.id); sv.textContent = now ? "SAVED" : "SAVE"; sv.classList.toggle("on", now); sv.setAttribute("aria-pressed", String(now));
+      if (!now && was) toast("REMOVED", {label: "UNDO", run: () => { if (!isSaved(was.id)){ state.saved.unshift(was); saveSaved(); renderChips(); renderList(); toast("PUT BACK"); } }});
+      else if (now) toast("SAVED");
+    };
     const sh = el("button", "og-b", "SHARE"); sh.type = "button"; sh.onclick = () => sharePost(it);
     acts.append(sv, sh);
     if (isPod && CAN_DOWNLOAD) acts.append(downloadBtn(it, true));
@@ -3433,6 +3609,10 @@ function renderList(){
   const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
+    if (isOG() && view.saved && !state.saved.length){
+      e.append(el("h3", null, "Nothing saved"), el("p", null, "Tap SAVE on any story to keep it here."));
+      list.append(e); return;
+    }
     if (state.busy && !state.items.length && isOG()){
       for (let k = 0; k < 3; k++){ const sk = el("article", "card og skel"); sk.setAttribute("aria-hidden", "true");
         const tp = el("div", "og-top"); tp.append(el("span", "og-logo square"), el("div", "og-pic")); sk.append(tp, el("div", "og-src", "LOADING"), el("div", "og-tag", "…")); list.append(sk); }
@@ -6109,7 +6289,7 @@ $("#nowBtn").onclick = () => {
   setView("type", "audio");
 };
 $("#savedBtn").onclick = () => {
-  if (!view.saved && !state.saved.length){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
+  if (!view.saved && !state.saved.length && !isOG()){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
   view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
   renderChips(); renderStatus(); renderList(); scrollFeedTop();
 };
@@ -7092,6 +7272,9 @@ function goBack(){
     if (editingId){ editingId = null; renderFeedList(); return true; }
     closeMenu(); return true;
   }
+  if ($("#ogVideo")){ closeOgVideo(); return true; }
+  if ($("#ogFilter")){ closeOgFilter(); return true; }
+  if (document.querySelector(".og-sheet")){ document.querySelectorAll(".og-sheet").forEach(n => n.remove()); return true; }
   if (state.activeId){ closeViewer(); return true; }
   if (state.topic){ closeTopic(); return true; }
   if (view.source !== "all" || view.type !== "all" || view.saved){ view.source = "all"; view.type = "all"; view.saved = false; saveView(); state.shown = PAGE; renderChips(); renderStatus(); renderList(); scrollFeedTop(); return true; }
