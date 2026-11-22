@@ -38,7 +38,7 @@ With the API key and the shared store set up, the service subscribes each follow
 | Path | Returns |
 | --- | --- |
 | `/feed?url=` | The feed text, only if it is RSS, Atom, RDF or JSON Feed |
-| `/json?url=` | JSON from Apple Podcasts, Reddit, Bluesky or Mastodon only |
+| `/json?url=` | JSON from Apple Podcasts, Bluesky or Mastodon only |
 | `/discover?url=` | `{feeds, title}` for a website |
 | `/youtube/channel?url=` | `{id, title, avatar}` |
 | `/youtube/search?q=` | `{channels:[{id, title, avatar}]}` |

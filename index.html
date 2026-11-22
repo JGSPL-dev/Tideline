@@ -885,6 +885,64 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .ogf-clear{background:none;color:#000}
 .ogf-show{background:var(--og-hot);color:#000;flex:2}
 .toast-act{border:0;background:none;color:inherit;font:inherit;text-decoration:underline;padding:0 2px;cursor:pointer;text-transform:uppercase}
+/* player strip */
+:root[data-look="offgrid"] #mini{display:none!important}
+.og-strip{position:fixed;left:0;right:var(--og-rail);bottom:0;z-index:30;background:#000;color:#fff;border-top:3px solid var(--og-hot);font-family:var(--og-mono);padding:6px 10px calc(4px + env(safe-area-inset-bottom,0px));box-sizing:border-box;animation:ogUp .18s ease-out}
+:root[data-rail="left"] .og-strip{left:var(--og-rail);right:0}
+@keyframes ogUp{from{transform:translateY(100%)}to{transform:none}}
+.ogs-info{all:unset;display:flex;gap:10px;align-items:baseline;width:100%;box-sizing:border-box;min-height:22px;cursor:pointer;font:700 11px var(--og-mono)}
+.ogs-info:focus-visible{outline:2px solid var(--og-hot)}
+.ogs-what{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ogs-time{flex:none;color:var(--og-paper)}
+.og-strip.failed .ogs-what{color:var(--og-hot)}
+.ogs-seek,.oge-scrub{-webkit-appearance:none;appearance:none;width:100%;margin:0;background:transparent;cursor:pointer;display:block}
+.ogs-seek{height:30px}
+.ogs-seek::-webkit-slider-runnable-track{height:6px;background:linear-gradient(var(--og-hot),var(--og-hot)) 0/var(--p,0%) 100% no-repeat,#5A5A5A}
+.ogs-seek::-moz-range-track{height:6px;background:#5A5A5A}
+.ogs-seek::-moz-range-progress{height:6px;background:var(--og-hot)}
+.ogs-seek::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;margin-top:-4px;background:#fff;border:0;border-radius:0}
+.ogs-seek::-moz-range-thumb{width:14px;height:14px;background:#fff;border:0;border-radius:0}
+.ogs-btns{display:flex;gap:4px}
+.ogs-b{flex:1;height:48px;border:0;background:none;color:#fff;font:700 13px var(--og-mono);cursor:pointer;padding:0 2px;border-radius:0}
+.ogs-b.play{background:var(--og-hot);color:#000;flex:1.4}
+.ogs-b.close{text-decoration:underline}
+.ogs-b:focus-visible{outline:2px solid var(--og-paper);outline-offset:-2px}
+:root[data-look="offgrid"] body.has-mini .toast{bottom:auto}
+:root[data-look="offgrid"] body.has-mini .totop{bottom:calc(120px + env(safe-area-inset-bottom,0px))}
+/* episode page: covers the main area, the rail stays */
+:root[data-look="offgrid"] .article-page.og-ep{margin:0;inset:0 var(--og-rail) 0 0;width:auto;max-width:none;height:100%;max-height:none;background:var(--og-paper);border:0;border-radius:0;padding:0}
+:root[data-look="offgrid"][data-rail="left"] .article-page.og-ep{inset:0 0 0 var(--og-rail)}
+.article-page.og-ep .art-bar{display:none}
+.article-page.og-ep::backdrop{background:transparent}
+.article-page.og-ep .dlg{background:var(--og-paper);color:#000;height:100%}
+.article-page.og-ep .art-body{display:block;background:var(--og-paper);padding:0}
+.og-epi{max-width:620px;margin:0 auto;padding:calc(12px + env(safe-area-inset-top,0px)) 16px calc(130px + env(safe-area-inset-bottom,0px));font-family:var(--og-mono);color:#000}
+.oge-back{height:48px;padding:0 18px;border:0;border-radius:0;background:#000;color:#fff;font:700 13px var(--og-mono);cursor:pointer}
+.oge-art{width:200px;height:200px;border:3px solid #000;border-radius:18px;overflow:hidden;transform:rotate(-2deg);margin:22px 0 18px;background:#fff;display:grid;place-items:center;box-sizing:border-box}
+.oge-art img{width:100%;height:100%;object-fit:cover;display:block}
+.oge-pub{all:unset;cursor:pointer;display:block;font:400 27px/1.05 var(--og-disp);text-transform:uppercase;text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px}
+.oge-pub:focus-visible{outline:3px solid #000}
+.oge-title{font:400 36px/1.04 var(--og-disp);text-transform:uppercase;margin:10px 0 8px;overflow-wrap:anywhere}
+.oge-meta{font:700 12px var(--og-mono);margin-bottom:16px}
+.oge-scrub{height:34px}
+.oge-scrub::-webkit-slider-runnable-track{height:10px;border:0;background:linear-gradient(#000,#000) 0/var(--p,0%) 100% no-repeat,#fff;box-shadow:inset 0 0 0 2px #000}
+.oge-scrub::-moz-range-track{height:10px;background:#fff;border:2px solid #000}
+.oge-scrub::-moz-range-progress{height:10px;background:#000}
+.oge-scrub::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-7px;background:#000;border:0;border-radius:0}
+.oge-scrub::-moz-range-thumb{width:24px;height:24px;background:#000;border:0;border-radius:0}
+.oge-times{display:flex;justify-content:space-between;font:700 12px var(--og-mono);margin-top:2px}
+.oge-tr{display:flex;align-items:center;gap:10px;margin:16px 0 18px}
+.oge-sq,.oge-speed{width:56px;height:56px;border:3px solid #000;background:none;color:#000;font:700 14px var(--og-mono);cursor:pointer;border-radius:0;padding:0}
+.oge-main{width:72px;height:72px;border:0;background:#000;color:#fff;font:400 22px var(--og-disp);cursor:pointer;border-radius:0}
+.oge-speed{margin-left:auto}
+.oge-acts .og-b{color:#000}
+.og-b.og-dl.on{background:#000;color:var(--og-paper);border-color:#000}
+.oge-notes{border-top:3px solid #000;margin-top:22px;padding-top:12px}
+.oge-notes h2{font:700 12px var(--og-mono);margin:0 0 8px}
+.oge-ntext{font:400 14px/1.5 var(--og-mono);overflow-wrap:anywhere}
+.oge-ntext p{margin:0 0 10px}
+.oge-ntext a{color:#000;text-decoration:underline}
+body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -950,7 +1008,7 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
       <div class="chips sfilters" id="searchFilters" role="toolbar" aria-label="Search in"></div>
       <ul class="addhint">
         <li><b>Paste a link</b> to a site, feed or channel.</li>
-        <li><b>Search</b> for sites, channels, subreddits and more.</li>
+        <li><b>Search</b> for sites, channels, podcasts and more.</li>
         <li><b>Paid subscription?</b> Paste your private RSS link from Patreon, Supercast or Substack: it stays on this device.</li>
       </ul>
       <p class="msg" id="addMsg" aria-live="polite"></p>
@@ -2222,7 +2280,7 @@ async function discoverFeed(u){
 async function resolveInput(raw){
   let s = raw.trim();
   if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
-  if (/^r\/\w+$/i.test(s)) return {url: "https://www.reddit.com/" + s + "/.rss"};                       // r/subreddit
+  if (/^r\/\w+$/i.test(s)) throw new Error(REDDIT_NO);                       // r/subreddit
   if (/^@[\w.-]{2,}$/.test(s)) s = "https://www.youtube.com/" + s;                       // bare @handle
   if (!/^https?:\/\//i.test(s)) s = "https://" + s;
   let u;
@@ -2230,10 +2288,7 @@ async function resolveInput(raw){
   const host = u.hostname.replace(/^(www|m|music)\./, "");
   // Reddit links: subreddit or user → their own feed, never a guess
   if (/(^|\.)reddit\.com$/.test(u.hostname)){
-    const sub = u.pathname.match(/^\/r\/(\w+)/i), usr = u.pathname.match(/^\/(?:u|user)\/([\w-]+)/i);
-    if (sub) return {url: `https://www.reddit.com/r/${sub[1]}/.rss`};
-    if (usr) return {url: `https://www.reddit.com/user/${usr[1]}/.rss`};
-    throw new Error("Paste a subreddit link (reddit.com/r/name) or type r/name");
+    throw new Error(REDDIT_NO);
   }
   if ((host === "youtube.com" && !u.pathname.startsWith("/feeds/")) || host === "youtu.be"){
     let id = u.searchParams.get("channel_id") || (u.pathname.match(/\/channel\/(UC[\w-]{22})/) || [])[1];
@@ -2366,7 +2421,7 @@ const TYPE_HELP = {
   articles: "Pieces straight from websites, blogs, newsletters and news feeds.",
   topics: "Headlines about the subjects you follow, gathered from many publishers through Google News.",
   videos: "Videos from any source you follow: YouTube channels, and video posts from other feeds.",
-  conversations: "Community chat and social posts: Reddit, Bluesky and Mastodon.",
+  conversations: "Community chat and social posts: Bluesky, Mastodon, Lemmy and forums.",
   audio: "Podcasts and radio feeds. Tap play to listen; YourFeed remembers where you stopped."
 };
 function typeOf(it){
@@ -2838,7 +2893,7 @@ function renderStatus(){
     const next = soonestCheck(), mins = Math.max(1, Math.ceil((next - Date.now()) / 60000));
     s.append(document.createTextNode(next > Date.now() ? ` · up to date, next check in ${mins} min` : " · up to date"));
   } else if (state.lastUpdated) s.append(document.createTextNode(` · ${ago(state.lastUpdated)}`));
-  if (redditGone() && state.feeds.some(isRedditFeed)) s.append(el("p", "pop-note", "Reddit has stopped letting apps read it, so your Reddit sources are paused. Their saved stories stay."));
+  if (redditGone() && state.feeds.some(isRedditFeed)) s.append(el("p", "pop-note", "Reddit no longer offers feeds. Remove your Reddit sources in Your feeds."));
   // With problems, name them (plain words); the full detail is in Source health
   const issues = troubled.filter(f => !f.dismissed);
   if (issues.length){
@@ -3332,9 +3387,154 @@ function ogLogo(f, shape){
   img.src = tries[0]; box.append(img);
   return box;
 }
+// Off-grid download button (cards and the episode page)
+function ogDlBtn(it){
+  const b = el("button", "og-b og-dl"); b.type = "button"; b.dataset.dlFor = it.id;
+  let t = 0;
+  b.onclick = e => {
+    e.preventDefault(); e.stopPropagation();
+    if (dl.busy[it.id] != null) return;
+    if (isDownloaded(it.id)){
+      if (!b.dataset.arm){ b.dataset.arm = "1"; paintDl(b, it.id); clearTimeout(t); t = setTimeout(() => { delete b.dataset.arm; paintDl(b, it.id); }, 3000); return; }
+      clearTimeout(t); delete b.dataset.arm; deleteDownload(it.id); return;
+    }
+    downloadEpisode(it);
+  };
+  paintDl(b, it.id); return b;
+}
+// Player strip (Off-grid): black, along the bottom of the main area, while an episode is loaded
+function ogStrip(){
+  let s = $("#ogStrip");
+  if (!pod.item){ if (s) s.remove(); return; }
+  if (!s){
+    s = el("div", "og-strip"); s.id = "ogStrip"; s.setAttribute("role", "region"); s.setAttribute("aria-label", "Episode player");
+    const r1 = el("button", "ogs-info"); r1.type = "button"; r1.onclick = () => { if (pod.item) ogEpisode(pod.item); };
+    r1.append(el("span", "ogs-what"), el("span", "ogs-time"));
+    const seek = el("input", "ogs-seek"); seek.type = "range"; seek.min = 0; seek.max = 1000; seek.step = 1; seek.value = 0; seek.setAttribute("aria-label", "Position in episode");
+    seek.oninput = () => { const d = pod.audio.duration; if (pod.item && d) pod.audio.currentTime = seek.value / 1000 * d; };
+    const r3 = el("div", "ogs-btns");
+    const b = (cls, label, fn, aria) => { const x = el("button", "ogs-b " + cls, label); x.type = "button"; if (aria) x.setAttribute("aria-label", aria); x.onclick = fn; return x; };
+    r3.append(
+      b("back", "−15", () => skip(-BACK_S), "Back 15 seconds"),
+      b("play", "PLAY", () => { if (!pod.item) return; if (pod.failed){ pod.retries = 0; pod.failed = false; recoverPod("retry"); syncPod(); return; } pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); }),
+      b("fwd", "+30", () => skip(FWD_S), "Forward 30 seconds"),
+      b("speed", "1X", cycleSpeed, "Playback speed"),
+      b("web", "WEBSITE", () => { if (pod.item && pod.item.link) openOutside(pod.item.link); }),
+      b("close", "CLOSE", stopPod, "Stop and close the player"));
+    s.append(r1, seek, r3);
+    document.body.append(s);
+  }
+  ogSyncPod();
+}
+const ogSpeed = v => String(v).replace(/^0\./, ".") + "X";
+const ogClock = t => fmtTime(t).replace(/^0(\d:)/, "$1");
+function ogSyncPod(){
+  const a = pod.audio, cur = pod.item, playing = !!cur && !a.paused, d = a.duration, t = a.currentTime || 0;
+  const s = $("#ogStrip");
+  if (s && cur){
+    const f = feedById(cur.feedId) || {};
+    s.classList.toggle("failed", !!pod.failed);
+    s.querySelector(".ogs-what").textContent = pod.failed ? "CAN'T PLAY THIS" : `${(f.title || cur.feedTitle || "").toUpperCase()} / ${(cur.title || "").toUpperCase()}`;
+    s.querySelector(".ogs-time").textContent = pod.failed ? "" : d && isFinite(d) ? `${ogClock(t)} / ${ogClock(d)}` : a.readyState ? ogClock(t) : "LOADING";
+    const seek = s.querySelector(".ogs-seek");
+    if (document.activeElement !== seek){ seek.value = d ? Math.round(t / d * 1000) : 0; }
+    seek.style.setProperty("--p", (d ? t / d * 100 : 0) + "%");
+    seek.setAttribute("aria-valuetext", d ? `${fmtTime(t)} of ${fmtTime(d)}` : "Loading");
+    const pb = s.querySelector(".ogs-b.play"); pb.textContent = pod.failed ? "TRY AGAIN" : playing ? "PAUSE" : "PLAY";
+    s.querySelector(".ogs-b.speed").textContent = ogSpeed(pod.speed);
+    s.querySelector(".ogs-b.web").hidden = !(pod.failed && cur.link);
+    ["back", "fwd", "speed"].forEach(k => s.querySelector(".ogs-b." + k).hidden = !!pod.failed);
+  }
+  // Slab buttons and the episode page follow along
+  document.querySelectorAll("[data-og-pod]").forEach(b => {
+    const mine = cur && b.dataset.ogPod === cur.id, st = podStatus(b.dataset.ogPod);
+    b.textContent = mine && playing ? "PAUSE" : mine ? "PLAY" : st.pos ? "CONTINUE" : "LISTEN";
+  });
+  const ep = document.querySelector(".og-epi");
+  if (ep){
+    const mine = cur && ep.dataset.id === cur.id, dd = mine ? d : (pod.dur[ep.dataset.id] || 0), tt = mine ? t : (pod.pos[ep.dataset.id] || 0);
+    ep.querySelector(".oge-main").textContent = mine && playing ? "PAUSE" : "PLAY";
+    ep.querySelector(".oge-speed").textContent = ogSpeed(pod.speed);
+    const sc = ep.querySelector(".oge-scrub");
+    if (document.activeElement !== sc){ sc.value = dd ? Math.round(tt / dd * 1000) : 0; }
+    sc.style.setProperty("--p", (dd ? tt / dd * 100 : 0) + "%");
+    sc.setAttribute("aria-valuetext", dd ? `${fmtTime(tt)} of ${fmtTime(dd)}` : "Not started");
+    ep.querySelector(".oge-t1").textContent = ogClock(tt);
+    ep.querySelector(".oge-t2").textContent = dd ? "−" + ogClock(Math.max(0, dd - tt)) : "";
+  }
+}
+// Episode page (Off-grid): opened from the strip, a long press on the rail's Play, or an episode's title
+function ogEpisode(it){
+  const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
+  page.classList.add("is-pod", "og-ep");
+  body.textContent = "";
+  const ep = el("div", "og-epi"); ep.dataset.id = it.id;
+  const back = el("button", "oge-back", "BACK"); back.type = "button"; back.onclick = () => page.close();
+  const art = el("div", "oge-art");
+  const pic = it.image || f.icon;
+  if (pic){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = hiRes(pic); im.onerror = () => { im.remove(); art.append(srcIcon(f, 194)); }; art.append(im); }
+  else art.append(srcIcon(f, 194));
+  const pub = el("button", "oge-pub", f.title || it.feedTitle || ""); pub.type = "button";
+  pub.onclick = () => { page.close(); if (f.id) selectFeed("feed:" + f.id); };
+  const len = itemDur(it);
+  const when = it.date ? new Date(it.date).toLocaleDateString("en-GB", {weekday: "short", day: "numeric", month: "short", year: "numeric"}).replace(/,/g, "") : "";
+  const lenTxt = len ? (len >= 3600 ? `${Math.floor(len / 3600)} H ${Math.round(len % 3600 / 60)} MIN` : `${Math.max(1, Math.round(len / 60))} MIN`) : "";
+  const meta = el("div", "oge-meta", [when.toUpperCase(), lenTxt].filter(Boolean).join(" · "));
+  // Scrubber
+  const sw = el("div", "oge-scrubw");
+  const sc = el("input", "oge-scrub"); sc.type = "range"; sc.min = 0; sc.max = 1000; sc.step = 1; sc.setAttribute("aria-label", "Position in episode");
+  sc.oninput = () => {
+    if (pod.item && pod.item.id === it.id && pod.audio.duration) pod.audio.currentTime = sc.value / 1000 * pod.audio.duration;
+    else if (pod.dur[it.id]){ pod.pos[it.id] = Math.floor(sc.value / 1000 * pod.dur[it.id]); store.set("tl.podPos", pod.pos); ogSyncPod(); }
+  };
+  const times = el("div", "oge-times"); times.append(el("span", "oge-t1"), el("span", "oge-t2"));
+  sw.append(sc, times);
+  // Transport
+  const tr = el("div", "oge-tr");
+  const mine = () => pod.item && pod.item.id === it.id;
+  const tb = (cls, label, fn, aria) => { const b = el("button", cls, label); b.type = "button"; if (aria) b.setAttribute("aria-label", aria); b.onclick = fn; return b; };
+  tr.append(
+    tb("oge-sq", "−15", () => { if (mine()) skip(-BACK_S); }, "Back 15 seconds"),
+    tb("oge-main", "PLAY", () => playEpisode(it)),
+    tb("oge-sq", "+30", () => { if (mine()) skip(FWD_S); }, "Forward 30 seconds"),
+    tb("oge-speed", "1X", cycleSpeed, "Playback speed"));
+  // Actions
+  const acts = el("div", "og-acts oge-acts");
+  const on = isSaved(it.id);
+  const sv = el("button", "og-b" + (on ? " on" : ""), on ? "SAVED" : "SAVE"); sv.type = "button";
+  sv.onclick = () => { toggleSave(it, null); const n = isSaved(it.id); sv.textContent = n ? "SAVED" : "SAVE"; sv.classList.toggle("on", n); };
+  const sh = el("button", "og-b", "SHARE"); sh.type = "button"; sh.onclick = () => sharePost(it);
+  acts.append(sv, sh);
+  if (CAN_DOWNLOAD) acts.append(ogDlBtn(it));
+  if (it.link && it.link !== it.audioUrl && !(isPrivateFeed(f) && isPrivateUrl(it.link))){ const w = el("button", "og-b", "WEBSITE"); w.type = "button"; w.onclick = () => openOutside(it.link); acts.append(w); }
+  ep.append(back, art, pub, el("h1", "oge-title", it.title || ""), meta, sw, tr, acts);
+  // Episode notes: paragraphs, line breaks, lists and links only
+  const notes = (it.summary || "").trim();
+  if (notes || it.full){
+    const n = el("section", "oge-notes"); n.append(el("h2", null, "EPISODE NOTES"));
+    const body2 = el("div", "oge-ntext"); notes.split(/\n{2,}/).forEach(p => body2.append(el("p", null, p))); n.append(body2);
+    ep.append(n);
+    if (it.full) artDB.get(it.id).then(saved => { if (saved && saved.html && body2.isConnected) body2.replaceChildren(...cleanNotes(saved.html, saved.base || it.link).childNodes); }).catch(() => {});
+  }
+  body.append(ep);
+  if (!page.open) page.showModal();
+  ogSyncPod();
+  body.scrollTop = 0;
+  back.focus({preventScroll: true});
+}
+function cleanNotes(html, base){
+  const w = articleFragment(html, base), keep = new Set(["P", "BR", "UL", "OL", "LI", "A", "DIV"]);
+  [...w.querySelectorAll("*")].reverse().forEach(n => {
+    if (["IMG", "FIGURE", "PICTURE", "VIDEO", "AUDIO", "IFRAME", "SVG", "TABLE", "STYLE", "SCRIPT"].includes(n.tagName)){ n.remove(); return; }
+    if (!keep.has(n.tagName)) n.replaceWith(...n.childNodes);
+    else [...n.attributes].forEach(a => { if (!(n.tagName === "A" && ["href", "target", "rel"].includes(a.name))) n.removeAttribute(a.name); });
+  });
+  return w;
+}
 // Video page (Off-grid): PLAY opens the video full screen; leaving full screen leaves the page with its details and CLOSE.
 // The Trending topic page keeps playing videos in place.
 function ogVideo(it){
+  if (navigator.onLine === false){ toast("YOU'RE OFFLINE"); return; }
   closeOgVideo();
   if (pod.item && !pod.audio.paused) pod.audio.pause();
   pauseAllVideos();
@@ -3359,6 +3559,10 @@ function ogVideo(it){
   acts.append(sv, sh, yt); info.append(acts);
   const close = el("button", "og-vclose", "CLOSE"); close.type = "button"; close.onclick = closeOgVideo;
   pg.append(pl, info, close);
+  // A downward swipe on the details closes the page
+  let y0 = null;
+  info.addEventListener("touchstart", e => { y0 = pg.scrollTop <= 0 ? e.touches[0].clientY : null; }, {passive: true});
+  info.addEventListener("touchend", e => { if (y0 != null && e.changedTouches[0].clientY - y0 > 90) closeOgVideo(); y0 = null; }, {passive: true});
   document.body.append(pg); document.body.classList.add("og-vopen");
   try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!short); }catch{}
   // Straight to full screen (this runs inside the tap, which browsers require); landscape in the app unless it's a Short
@@ -3368,6 +3572,7 @@ function ogVideo(it){
 }
 function closeOgVideo(){
   const pg = $("#ogVideo"); if (!pg) return;
+  const fr = pg.querySelector("iframe"); if (fr) ytCmd(fr, "pauseVideo");
   try{ if (document.fullscreenElement) document.exitFullscreen().catch(() => {}); }catch{}
   pg.remove(); document.body.classList.remove("og-vopen");
 }
@@ -3501,7 +3706,7 @@ function ogCard(it){
   const h = el("h2", "og-title"); h.append(link); a.append(h);
   const go = e => {
     state.read.add(it.id); save(); a.classList.add("read"); renderChips();
-    if (isPod){ e && e.preventDefault(); togglePodPanel(it); return true; }
+    if (isPod){ e && e.preventDefault(); playEpisode(it); return true; }
     if (it.videoId && state.videoInApp){ e && e.preventDefault(); ogVideo(it); return true; }
     if (state.keepInBrowser && it.link){ const intent = browserIntent(it.link); if (intent){ e && e.preventDefault(); location.href = intent; return true; } }
     return false;
@@ -3510,6 +3715,7 @@ function ogCard(it){
   const acts = el("div", "og-acts");
   const main = el("button", "og-b main", isPod ? (pod.item && pod.item.id === it.id && !pod.audio.paused ? "PAUSE" : st.pos ? "CONTINUE" : "LISTEN") : it.videoId ? "PLAY" : "OPEN");
   main.type = "button"; main.setAttribute("aria-label", main.textContent.toLowerCase() + ": " + (it.title || ""));
+  if (isPod) main.dataset.ogPod = it.id;
   main.onclick = () => { if (!go(null) && it.link) link.click(); };
   acts.append(main);
   if (it.link || it.audioUrl){
@@ -3524,7 +3730,7 @@ function ogCard(it){
     };
     const sh = el("button", "og-b", "SHARE"); sh.type = "button"; sh.onclick = () => sharePost(it);
     acts.append(sv, sh);
-    if (isPod && CAN_DOWNLOAD) acts.append(downloadBtn(it, true));
+    if (isPod && CAN_DOWNLOAD) acts.append(ogDlBtn(it));
   }
   a.append(acts);
   // Long press: ONLY THIS SOURCE / EDIT THIS SOURCE / COPY LINK
@@ -4090,7 +4296,8 @@ const isDue = (f, now = Date.now()) => !f.crashPaused && !(redditGone() && isRed
 // that date, all of them are paused together with one plain message instead of each one being flagged a day later.
 const REDDIT_END = Date.UTC(2026, 10, 13);
 const isRedditFeed = f => /(^|\.)reddit\.com\//.test(String(f.url).replace(/^https?:\/\//, ""));
-const redditGone = () => !!store.get("yf.redditGone", 0);
+const redditGone = () => true;   // Reddit dropped (22 Nov 2026): its feeds ended on 13 Nov
+const REDDIT_NO = "Reddit no longer offers feeds, so YourFeed can't follow it";
 function noteRedditFailure(f){
   if (Date.now() < REDDIT_END || redditGone()) return;
   f.redditFail = Date.now();
@@ -4290,6 +4497,7 @@ function feedSub(f){
   const sub = el("span", "sub");
   if (isPrivateFeed(f)) sub.append(lockEl(), document.createTextNode(" "));
   if (isPrivateFeed(f) && !IS_APP){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
+  if (isRedditFeed(f)){ sub.append(el("span", "er", "Reddit no longer offers feeds")); return sub; }
   if (isTroubled(f)){ sub.append(el("span", "er", "Needs a look")); return sub; }
   const bits = [state.organise === "type" ? folderOf(f) : platformOf(f)];
   if (f.lastFetched) bits.push("checked " + ago(f.lastFetched));
@@ -4300,13 +4508,14 @@ function feedSub(f){
 const SUPPORT_YES = [
   ["Websites, blogs and newsletters", "Anything with a public feed."],
   ["YouTube channels", "Search by name or paste a link."],
-  ["Reddit", "Any subreddit, e.g. r/worldnews."],
+  ["Communities", "Lemmy communities and forums with feeds."],
   ["Podcasts", "Any public show, plus paid ones from Patreon, Supercast or Substack."],
   ["News topics", "Any subject or site, via Google News."],
   ["Bluesky and Mastodon", "Public accounts."]
 ];
 const SUPPORT_NO = [
   ["X, Meta and TikTok", "Block outside apps or have no feeds."],
+  ["Reddit", "Stopped offering feeds on 13 November 2026."],
   ["Exclusive and paid-for content", "Locked to the content provider."]
 ];
 function supportInfo(){
@@ -4456,14 +4665,13 @@ function renderAttention(){
   const rs = state.feeds.filter(isRedditFeed);
   if (redditGone() && rs.length){
     const r = el("div", "reddit-note");
-    r.append(el("b", null, "Reddit has stopped letting apps read it"), el("p", "hint", `From 13 November 2026 Reddit no longer offers feeds. Your ${rs.length} Reddit source${rs.length === 1 ? " is" : "s are"} paused and ${rs.length === 1 ? "its" : "their"} saved stories stay.`));
+    r.append(el("b", null, "Reddit no longer offers feeds"), el("p", "hint", `Reddit ended its feeds on 13 November 2026. Your ${rs.length} Reddit source${rs.length === 1 ? " can" : "s can"}'t be updated. Stories you saved stay in Saved.`));
     const row = el("div", "iorow");
-    const again = el("button", "btn", "Try again"); again.type = "button"; again.onclick = redditRetry;
-    const rm = el("button", "btn", `Remove Reddit sources`); rm.type = "button";
+    const rm = el("button", "btn", rs.length === 1 ? "Remove" : `Remove all ${rs.length}`); rm.type = "button";
     let armed = false;
     rm.onclick = () => { if (!armed){ armed = true; rm.textContent = "Tap again to remove"; return; }
       rs.forEach(removeFeed); setMsg(`Removed ${rs.length} Reddit source${rs.length === 1 ? "" : "s"}.`); renderAttention(); };
-    row.append(again, rm); r.append(row); box.append(r); box.hidden = false;
+    row.append(rm); r.append(row); box.append(r); box.hidden = false;
   }
   if (!attn.length){ box.hidden = !box.childElementCount; return; }
   if (!attn.length){ box.hidden = true; return; }
@@ -4586,7 +4794,7 @@ function feedRow(f, pickRow){
   const rm = el("button", "btn icon"); rm.type = "button"; rm.innerHTML = ICON_BIN;
   rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); rm.title = "Remove";
   let armed = false, timer;
-  const disarm = () => { armed = false; rm.classList.remove("armed", "danger"); rm.innerHTML = ICON_BIN; rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); };
+  const disarm = () => { armed = false; rm.classList.remove("armed", "danger"); if (isRedditFeed(f)){ rm.classList.add("danger"); rm.textContent = "Remove"; } else rm.innerHTML = ICON_BIN; rm.setAttribute("aria-label", "Remove " + (f.title || "feed")); };
   rm.onclick = () => {
     if (!armed){
       armed = true; rm.classList.add("armed", "danger"); rm.textContent = "Remove";
@@ -4596,6 +4804,7 @@ function feedRow(f, pickRow){
     clearTimeout(timer);
     removeFeed(f);
   };
+  if (isRedditFeed(f)){ rm.classList.add("danger"); rm.textContent = "Remove"; }
   acts.append(ed, rm);
   li.append(pickRow("feed:" + f.id, f.color, f.title || "Untitled feed", feedSub(f)), acts);
   return li;
@@ -4820,7 +5029,6 @@ $("#connCheck").onclick = async () => {
   const checks = [
     ["Direct from this device", () => fetchWithTimeout(feed, 8000).then(r => readCapped(r)).then(t => { if (!looksLikeFeed(t)) throw 0; })],
     ["YourFeed service", () => serviceBase() ? feedViaService(feed).then(t => { if (!looksLikeFeed(t)) throw 0; }) : Promise.reject(new Error("not set up"))],
-    ["Reddit search", () => fetchWithTimeout("https://www.reddit.com/subreddits/search.json?limit=1&q=football", 9000).then(r => r.json()).then(j => { if (!j.data) throw 0; })],
     ["Apple podcasts", () => fetchWithTimeout("https://itunes.apple.com/search?media=podcast&limit=1&term=news", 9000).then(r => r.json())],
     ["Bluesky", () => fetchWithTimeout("https://public.api.bsky.app/xrpc/app.bsky.actor.searchActors?limit=1&q=news", 9000).then(r => r.json())],
     ["Mastodon", () => fetchWithTimeout("https://mastodon.social/api/v2/search?type=accounts&limit=1&q=news", 9000).then(r => r.json())]
@@ -5754,7 +5962,6 @@ async function searchYouTube(q){
 const SOURCES = [
   {key: "web",      label: "Websites"},
   {key: "youtube",  label: "YouTube"},
-  {key: "reddit",   label: "Reddit"},
   {key: "podcasts", label: "Podcasts"},
   {key: "news",     label: "News topics"},
   {key: "social",   label: "Bluesky & Mastodon"}
@@ -5765,7 +5972,7 @@ const PILLS = [
   {key: "topics",        label: "Topics",        from: ["news", "web"]},
   {key: "videos",        label: "Videos",        from: ["youtube", "social"]},
   {key: "audio",         label: "Audio",         from: ["podcasts"]},
-  {key: "conversations", label: "Conversations", from: ["reddit", "social"]}
+  {key: "conversations", label: "Conversations", from: ["social"]}
 ];
 function pillOf(r){
   if (r.kind === "news" || r.site === "News topic") return "topics";
@@ -5777,7 +5984,7 @@ function pillOf(r){
 const listFor = p => { const P = PILLS.find(x => x.key === p); const all = P ? P.from.flatMap(k => search.results[k] || []).filter(r => pillOf(r) === p) : [];
   // Conversations can be narrowed to one service
   return p === "conversations" && search.sub ? all.filter(r => r.kind === search.sub) : all; };
-const SERVICES = [["reddit", "Reddit"], ["bluesky", "Bluesky"], ["mastodon", "Mastodon"], ["lemmy", "Lemmy"]];
+const SERVICES = [["bluesky", "Bluesky"], ["mastodon", "Mastodon"], ["lemmy", "Lemmy"]];
 // Only under Conversations: a row to pick one service, with how many each found
 function serviceBar(onPick){
   const bar = el("div", "chips ssub"); bar.setAttribute("role", "toolbar"); bar.setAttribute("aria-label", "Service");
@@ -5962,7 +6169,7 @@ function sortSocial(r, m){
   if ((m.bot || MIRROR_NOTE.test(r.desc)) && MIRROR_WHAT.test(r.desc + " " + r.title)) return directFor(r.title, "") || null;
   return r;
 }
-const SEARCHERS = {web: searchWebAll, youtube: searchYouTubeAll, reddit: searchReddit, podcasts: searchPodcasts, news: searchNews, social: searchSocial};
+const SEARCHERS = {web: searchWebAll, youtube: searchYouTubeAll, podcasts: searchPodcasts, news: searchNews, social: searchSocial};
 
 // One search, shared by the menu's top results and the full "Add to your feed" page
 const search = {q: "", filter: store.get("tl.searchFilter", "all"), seq: 0, results: {}, status: {}};
@@ -6283,11 +6490,21 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
 }
 // Play button, always there: the episode that's loaded, else the last one you started (ready to continue), else the Audio feed
 $("#nowBtn").onclick = () => {
+  if (isOG() && nowLong){ nowLong = false; return; }
+  if (isOG()){
+    if (pod.item){ pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); return; }
+    const st = startedEpisodes()[0]; if (st){ playEpisode(st); return; }
+  }
   const it = pod.item || startedEpisodes()[0];
   if (it){ openArticle(it); return; }
   view.saved = false; renderStatus();
   setView("type", "audio");
 };
+let nowLong = false;
+{ let t = 0; const nb = $("#nowBtn");
+  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); if (!isOG()) return; t = setTimeout(() => { const it = pod.item || startedEpisodes()[0]; if (it){ nowLong = true; ogEpisode(it); } }, 550); });
+  ["pointerup", "pointerleave", "pointercancel"].forEach(ev => nb.addEventListener(ev, () => clearTimeout(t)));
+  nb.addEventListener("contextmenu", e => { if (isOG()) e.preventDefault(); }); }
 $("#savedBtn").onclick = () => {
   if (!view.saved && !state.saved.length && !isOG()){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
   view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
@@ -6333,6 +6550,7 @@ const nms = (fn, ...args) => { try{ const r = NativeMS && NativeMS[fn] && Native
 let nmsState = "none", nmsPosAt = 0;
 const SPEEDS = [0.8, 1, 1.25, 1.5, 1.75, 2];
 const BACK_S = 15, FWD_S = 30;
+const OG_SPEEDS = [1, 1.25, 1.5, 2];
 const fmtTime = t => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`; };
 const ICONS = {
   play: '<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z" fill="currentColor"/></svg>',
@@ -6364,7 +6582,7 @@ function playEpisode(it){
   const resume = pod.pos[it.id] || 0;
   if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
   pod.audio.play().catch(() => {});
-  pod.lastT = -1; pod.lastMove = Date.now(); pod.retries = 0;
+  pod.lastT = -1; pod.lastMove = Date.now(); pod.retries = 0; pod.failed = false;
   state.read.add(it.id); save(); renderChips();
   const card = cardFor(it.id); if (card) card.classList.add("read");
   setMediaSession(it);
@@ -6372,7 +6590,8 @@ function playEpisode(it){
 }
 const skip = s => { if (!pod.item) return; pod.audio.currentTime = Math.max(0, Math.min((pod.audio.duration || 1e9) - 1, pod.audio.currentTime + s)); syncPod(); };
 function cycleSpeed(){
-  pod.speed = SPEEDS.at((SPEEDS.indexOf(pod.speed) + 1) % SPEEDS.length) || 1;
+  const list = isOG() ? OG_SPEEDS : SPEEDS;
+  pod.speed = list.at((list.indexOf(pod.speed) + 1) % list.length) || 1;
   pod.audio.playbackRate = pod.speed; store.set("tl.podSpeed", pod.speed); syncPod();
 }
 function stopPod(){
@@ -6443,7 +6662,7 @@ function podFoot(it){
 const FS = () => IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem;
 const FT = () => IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.FileTransfer;
 const CAN_DOWNLOAD = !!(IS_APP && window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Filesystem && (window.Capacitor.Plugins.FileTransfer || window.Capacitor.Plugins.Filesystem.downloadFile));
-const dl = {list: store.get("yf.downloads", {}), busy: {}};
+const dl = {list: store.get("yf.downloads", {}), busy: {}, failed: {}};
 state.dlWifi = store.get("yf.dlWifi", true); state.dlAutoDelete = store.get("yf.dlAutoDelete", true);
 const saveDl = () => store.set("yf.downloads", dl.list);
 const isDownloaded = id => !!dl.list[id];
@@ -6454,6 +6673,7 @@ async function downloadEpisode(it){
   const c = navigator.connection;
   if (state.dlWifi && c && c.type === "cellular"){ toast("Downloads are set to Wi-Fi only (Settings → Podcasts)"); return; }
   const path = dlName(it);
+  delete dl.failed[it.id];
   dl.busy[it.id] = 0; refreshDlButtons(it.id);
   let sub = null;
   try{
@@ -6475,6 +6695,7 @@ async function downloadEpisode(it){
     toast("Downloaded: " + it.title);
   }catch(e){
     try{ await FS().deleteFile({path, directory: "DATA"}); }catch{}
+    dl.failed[it.id] = 1;
     toast("Couldn't download that episode" + (e && e.message ? ": " + String(e.message).slice(0, 90) : ". Check your connection and try again"));
   }finally{
     delete dl.busy[it.id]; if (sub && sub.remove) sub.remove();
@@ -6497,6 +6718,14 @@ function downloadBtn(it, asIcon){
 }
 function paintDl(b, id){
   const busy = dl.busy[id];
+  if (b.classList.contains("og-dl")){
+    // Off-grid: DOWNLOAD, 43%, DOWNLOADED (filled; tap once more within 3 s to remove), RETRY
+    const done = isDownloaded(id);
+    b.textContent = busy != null ? busy + "%" : done ? (b.dataset.arm ? "REMOVE?" : "DOWNLOADED") : dl.failed[id] ? "RETRY" : "DOWNLOAD";
+    b.classList.toggle("on", done);
+    b.setAttribute("aria-label", busy != null ? `Downloading, ${busy} percent` : done ? (b.dataset.arm ? "Tap again to remove the download" : "Downloaded. Tap to remove") : "Download for offline listening");
+    return;
+  }
   if (b.classList.contains("dl-icon")){
     // Small icon next to Save and Share: arrow, then the percentage, then a tick when it's on the phone
     if (busy != null) b.innerHTML = `<span class="dl-pct">${busy}%</span>`;
@@ -6542,7 +6771,10 @@ function placePodPanel(){
 // Mini player along the bottom, on every page while an episode is loaded
 function renderMini(){
   const m = $("#mini");
+  if (isOG()) ogStrip(); else { const s = $("#ogStrip"); if (s) s.remove(); }
   const nb = $("#nowBtn"); if (nb){ nb.hidden = false; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); nb.classList.toggle("loaded", !!pod.item); }
+  // Off-grid: the rail's Play button mirrors the strip (pause sign while playing)
+  if (nb){ if (!nb.dataset.icon) nb.dataset.icon = nb.innerHTML; const want = isOG() && pod.item && !pod.audio.paused ? ICONS.pause : nb.dataset.icon; if (nb.innerHTML !== want) nb.innerHTML = want; nb.setAttribute("aria-label", isOG() ? (pod.item ? (pod.audio.paused ? "Play" : "Pause") + ". Hold for the episode page" : "Listen") : "Listen: open the player or your audio"); }
   if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
   m.hidden = false; document.body.classList.add("has-mini");
   const f = feedById(pod.item.feedId) || {};
@@ -6591,6 +6823,7 @@ function syncPod(){
     if (d && isFinite(d) && Date.now() - nmsPosAt > 10000){ nmsPosAt = Date.now(); nms("setPositionState", {duration: d, position: Math.min(t, d), playbackRate: a.playbackRate || 1}); }
   }
   if (Date.now() - lastPosSave > 5000){ lastPosSave = Date.now(); savePos(); }
+  if (isOG()) ogSyncPod();
 }
 // Native notification and lock-screen buttons
 if (NativeMS){
@@ -6605,6 +6838,7 @@ if (NativeMS){
 // Stall guard: if an episode is meant to be playing but the clock hasn't moved (the stream
 // dropped, or the phone froze the app), reconnect and carry on from the same spot.
 function recoverPod(why){
+  if (pod.item && (pod.retries || 0) >= 5 && why === "error"){ pod.failed = true; syncPod(); return; }
   if (!pod.item || (pod.retries || 0) >= 5) return;
   pod.retries = (pod.retries || 0) + 1;
   const a = pod.audio, t = a.currentTime || pod.pos[pod.item.id] || 0, src = pod.item.audioUrl;
@@ -6650,6 +6884,7 @@ function refreshPodTags(){
 }
 pod.audio.addEventListener("pause", () => setTimeout(refreshPodTags, 50));
 pod.audio.addEventListener("play", () => pauseAllVideos());
+pod.audio.addEventListener("playing", () => { if (pod.failed){ pod.failed = false; syncPod(); } });
 pod.audio.addEventListener("pause", savePos);
 addEventListener("pagehide", savePos);
 $("#miniPlay").onclick = () => { if (pod.item) pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); };
@@ -6679,7 +6914,7 @@ function articleFragment(html, base){
 }
 async function openArticle(it){
   if (it.audioUrl && !it.videoId) return openPlayer(it);
-  $("#articlePage").classList.remove("is-pod"); $("#artOpen").style.display = "";
+  $("#articlePage").classList.remove("is-pod", "og-ep"); $("#artOpen").style.display = "";
   const page = $("#articlePage"), body = $("#artBody");
   const f = feedById(it.feedId) || {};
   const src = el("div", "meta"); const dot = iconFor(feedById(it.feedId) || f, 16);
@@ -6716,7 +6951,9 @@ async function openArticle(it){
 }
 // Episodes open as a full-screen player: artwork, title, controls, then Save / Share / Download / Website, then the notes
 function openPlayer(it){
+  if (isOG()) return ogEpisode(it);
   const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
+  page.classList.remove("og-ep");
   page.classList.add("is-pod");
   $("#artSrc").replaceChildren(el("span", "pp-now", pod.item && pod.item.id === it.id ? "Now playing" : "Episode"));
   $("#artOpen").style.display = "none";
@@ -7232,7 +7469,7 @@ function startOnboarding(){
   const first = chips.querySelector("button"); if (first) first.focus();
 }
 const TOUR = [
-  ["#manage", "Add your sources here", "Search for websites, YouTube channels, subreddits, podcasts and more, or paste a link."],
+  ["#manage", "Add your sources here", "Search for websites, YouTube channels, podcasts and more, or paste a link."],
   ["#filterBtn", "Choose what you see", "Everything, or just articles, videos, audio or conversations. Pick a category or one feed, how far back, and whether to stack stories."],
   ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now. The light in the middle is green when everything's working; tap the box beside it for details."]
 ];

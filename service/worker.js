@@ -3,7 +3,7 @@
 // facts it has extracted (a feed address, a YouTube channel ID). No keys, no logs kept by this code.
 //
 //   GET /feed?url=…               → the feed's text, only if it really is RSS, Atom, RDF or JSON Feed
-//   GET /json?url=…               → JSON from a short list of public APIs (Apple Podcasts, Reddit, Bluesky, Mastodon)
+//   GET /json?url=…               → JSON from a short list of public APIs (Apple Podcasts, Bluesky, Mastodon)
 //   GET /discover?url=…           → {feeds:[…], title} found on a website
 //   GET /youtube/channel?url=…    → {id, title, avatar} for a channel, @handle or video page
 //   GET /youtube/search?q=…       → {channels:[{id, title, avatar}]}
@@ -28,7 +28,7 @@ const ALLOWED_ORIGINS = [
   "https://localhost",            // the Android app
   "capacitor://localhost"         // the iPhone app, later
 ];
-const JSON_HOSTS = ["itunes.apple.com", "www.reddit.com", "old.reddit.com", "public.api.bsky.app", "mastodon.social"];
+const JSON_HOSTS = ["itunes.apple.com", "public.api.bsky.app", "mastodon.social"];
 const MAX_BYTES = 5 * 1024 * 1024;          // 5 MB per upstream answer
 const TIMEOUT_MS = 12000;
 const RATE = {perMinute: 120};              // per visitor IP, per worker instance (best effort; add a Cloudflare rate-limit rule too)
