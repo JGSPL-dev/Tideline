@@ -782,7 +782,10 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 .og-pic{flex:0 1 160px;min-width:0;aspect-ratio:3/2;margin:10px 4px 0 0;border:3px solid #000;background:#fff;transform:rotate(-4deg);overflow:hidden}
 .card.og:nth-of-type(2n) .og-pic{transform:rotate(3deg)}
 .og-pic img{width:100%;height:100%;object-fit:cover;display:block}
-.og-src{font-family:var(--og-disp);font-size:clamp(28px,10vw,40px);line-height:1.02;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:6px 0 8px}
+.og-top .og-b.main.big{position:relative;z-index:3;flex:1 1 auto;align-self:stretch;min-height:92px;margin:6px 0 0 6px;font:400 30px/1 var(--og-disp);border:3px solid #000;background:#000;color:#fff;transform:rotate(-1.5deg)}
+.card.og:nth-of-type(2n) .og-top .og-b.main.big{transform:rotate(1.5deg)}
+.og-top .og-b.main.big:active{transform:none}
+.og-src{font-family:var(--og-disp);font-size:clamp(28px,10vw,40px);line-height:1.02;text-transform:uppercase;white-space:normal;overflow-wrap:anywhere;margin:6px 0 8px}
 .og-tag{display:inline-block;background:currentColor;padding:3px 8px;font-size:12px;font-weight:700;margin-bottom:8px}
 .og-tag{background:#000;color:var(--og-paper)}
 #list > .card.og:nth-of-type(3n+2) .og-tag{background:#fff;color:#000}
@@ -829,7 +832,7 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .og-pic{position:relative}
 .og-play{position:absolute;right:0;bottom:0;width:28px;height:28px;background:#000}
 .og-play::after{content:"";position:absolute;left:10px;top:7px;border-left:11px solid #fff;border-top:7px solid transparent;border-bottom:7px solid transparent}
-.og-title{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.og-title{display:block;overflow:visible}
 /* seen: white slab, greyscale picture */
 :root[data-look="offgrid"] #list > .card.og.seen{background:#fff!important;color:#000!important;opacity:1}
 :root[data-look="offgrid"] #list > .card.og.seen .og-pic img{filter:grayscale(1)}
@@ -979,16 +982,16 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 /* source list */
 :root[data-look="offgrid"] dialog.drawer .group{border:0;border-radius:0;background:none;margin:0}
 :root[data-look="offgrid"] dialog.drawer .ghead{min-height:48px;border:0;border-top:3px solid #fff;border-radius:0;background:none;color:#fff;padding:0 2px}
-:root[data-look="offgrid"] dialog.drawer .gname{font:400 22px var(--og-disp);text-transform:uppercase}
+:root[data-look="offgrid"] dialog.drawer .gname{font:400 19px var(--og-disp);text-transform:uppercase}
 :root[data-look="offgrid"] dialog.drawer .gmeta{font:700 12px var(--og-mono)}
 :root[data-look="offgrid"] dialog.drawer .newdot,:root[data-look="offgrid"] dialog.drawer .hdot{background:var(--og-hot);border-radius:0}
 :root[data-look="offgrid"] dialog.drawer .hdot.warn{background:#FF5A4E}
 :root[data-look="offgrid"] dialog.drawer .flist{border:0;border-radius:0;background:none}
 :root[data-look="offgrid"] dialog.drawer .flist li{min-height:64px;border-bottom:1px solid #5A5A5A;border-top:0;border-radius:0;background:none}
 :root[data-look="offgrid"] dialog.drawer .pick{border-radius:0;color:#fff}
-:root[data-look="offgrid"] dialog.drawer .pick .nm{font:400 22px/1.1 var(--og-disp);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-:root[data-look="offgrid"] dialog.drawer .pick .sub{font:700 11px var(--og-mono);text-transform:uppercase;color:#C8C8C8}
-:root[data-look="offgrid"] dialog.drawer .pick .sicon{width:36px!important;height:36px!important;border-radius:0}
+:root[data-look="offgrid"] dialog.drawer .pick .nm{font:400 17px/1.1 var(--og-disp);text-transform:uppercase;white-space:normal;overflow-wrap:anywhere;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;letter-spacing:.01em}
+:root[data-look="offgrid"] dialog.drawer .pick .sub{font:700 10px var(--og-mono);text-transform:uppercase;color:#C8C8C8}
+:root[data-look="offgrid"] dialog.drawer .pick .sicon{width:30px!important;height:30px!important;border-radius:0}
 :root[data-look="offgrid"] dialog.drawer .pick[aria-current="true"]{background:#1b1b1b}
 .og-edit{min-width:44px;min-height:44px;border:0;background:none;color:#fff;font:700 13px var(--og-mono);text-decoration:underline;cursor:pointer;padding:0 6px}
 :root[data-look="offgrid"] dialog.drawer .editform{background:#111;border:3px solid #fff;border-radius:0;padding:14px}
@@ -1081,6 +1084,43 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] .tp-h{overflow-wrap:anywhere}
 :root[data-look="offgrid"] .tp-item .tp-meta{color:#000}
 :root[data-look="offgrid"] .tp-follow{white-space:normal;height:auto;min-height:44px;max-width:100%}
+/* build 5: logo row, pause, pull, thumb, focus, wide, landscape */
+.og-logorow{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.og-logorow .lbl{flex-basis:100%;display:none}
+.og-logorow .og-logo{width:92px;height:92px;transform:none;border-color:#fff;pointer-events:none}
+.og-logorow .og-b,.og-logoopts .og-b,.og-logolink .og-b{color:#fff;border-color:#fff}
+.og-logoopts{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+.og-logoopts[hidden]{display:none}
+.og-logoopts .og-b{width:100%;justify-content:flex-start;text-align:left}
+.og-logolink{display:flex;gap:6px;margin:0 0 12px}
+.og-logolink input{flex:1;min-width:0}
+.og-pull{background:#000;color:var(--og-paper);font:700 12px var(--og-mono);display:grid;place-items:center;overflow:hidden;text-transform:uppercase}
+.og-pull.go{color:var(--og-hot)}
+.og-sheetq{margin:0;padding:12px 16px 4px;color:var(--og-paper);font:400 40px/1 var(--og-disp);text-transform:uppercase}
+:root[data-look="offgrid"] :is(button,a,input,select,summary,[tabindex]):focus-visible{outline:3px solid #000;outline-offset:2px}
+:root[data-look="offgrid"] :is(.ograil,dialog.drawer,.og-strip,.og-sheet,#reportPage,.ogbar,.og-video) :is(button,a,input,select,summary,[tabindex]):focus-visible,:root[data-look="offgrid"] .card.og:nth-of-type(2n) :is(button,a):focus-visible{outline-color:#fff}
+:root[data-look="offgrid"][data-rail="left"] .ograil .bcount{right:auto;left:-5px}
+.og-paneempty{flex:1;display:grid;place-items:center;background:var(--og-paper);padding:24px}
+.og-paneempty h2{font:400 92px/.95 var(--og-disp);text-transform:uppercase;color:#000;margin:0;text-align:center}
+@media (min-width:900px){
+  :root[data-look="offgrid"]{--og-rail:72px}
+  :root[data-look="offgrid"] .ograil .btn.icon{width:56px;height:56px}
+  :root[data-look="offgrid"] .feedcol{border-right:3px solid #000}
+  :root[data-look="offgrid"] dialog.drawer,:root[data-look="offgrid"] .og-filter,:root[data-look="offgrid"] .ogf-foot,:root[data-look="offgrid"] #reportPage.og-rp,:root[data-look="offgrid"] .og-sheet{left:auto;width:440px;right:var(--og-rail)}
+  :root[data-look="offgrid"][data-rail="left"] dialog.drawer,:root[data-look="offgrid"][data-rail="left"] .og-filter,:root[data-look="offgrid"][data-rail="left"] .ogf-foot,:root[data-look="offgrid"][data-rail="left"] #reportPage.og-rp,:root[data-look="offgrid"][data-rail="left"] .og-sheet{right:auto;left:var(--og-rail)}
+  :root[data-look="offgrid"] .og-video .og-vplayer{max-width:960px;margin:0 auto;width:100%}
+  :root[data-look="offgrid"] .og-video .og-vinfo{max-width:960px;margin:0 auto;width:100%;box-sizing:border-box}
+}
+@media (orientation:landscape) and (max-height:520px){
+  :root[data-look="offgrid"] .ograil .brand{display:none}
+  :root[data-look="offgrid"] .og-strip{display:flex;align-items:center;gap:6px;height:calc(56px + env(safe-area-inset-bottom,0px));padding-top:0;padding-bottom:env(safe-area-inset-bottom,0px)}
+  :root[data-look="offgrid"] .og-strip .ogs-info{flex:1;min-width:0;width:auto}
+  :root[data-look="offgrid"] .og-strip .ogs-seek{display:none}
+  :root[data-look="offgrid"] .og-strip .ogs-btns{flex:none}
+  :root[data-look="offgrid"] .og-strip .ogs-b.speed,:root[data-look="offgrid"] .og-strip .ogs-b.web{display:none}
+  :root[data-look="offgrid"] .og-strip .ogs-b{width:56px;flex:none}
+}
+@media (prefers-reduced-motion:reduce){:root[data-look="offgrid"] .ograil #refresh.spin svg{animation:none}:root[data-look="offgrid"] dialog.drawer[open],.og-strip{animation:none}}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -1185,6 +1225,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
         <span><b>Keep links in the browser</b><br><span class="hint" id="keepBrowserHint">Stops apps like YouTube opening when you tap a story. Works on Android phones.</span></span>
       </label>
         <h4 class="set-sub">Podcasts</h4>
+      <div id="audioPrefs"></div>
       <label class="check" for="podQueue">
         <input type="checkbox" id="podQueue">
         <span><b>Play saved episodes one after another</b><br><span class="hint">When an episode you saved finishes, the next one in Saved → Audio starts, in the order you saved them.</span></span>
@@ -1389,6 +1430,20 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
       <button data-a="export" style="${btn}">Save my sources (OPML file)<br><small>Includes any private feed links, so keep the file to yourself</small></button>
       <button data-a="copy" style="${btn}">Copy error details</button>
       <pre id="bootErr" style="white-space:pre-wrap;font-size:12px;color:#666;margin-top:14px">${esc(B.errs.join("\n\n"))}</pre>`;
+    // Off-grid look: the same safety screen, drawn on Paper
+    let og = false; try{ og = (JSON.parse(localStorage.getItem("tl.design") || "{}") || {}).look === "offgrid"; }catch{}
+    if (og){
+      let paper = "#FFE600"; try{ paper = JSON.parse(localStorage.getItem("tl.design")).paper || paper; }catch{}
+      const ob = "display:block;width:100%;margin:10px 0;min-height:56px;padding:12px;border:3px solid #000;border-radius:0;background:none;color:#000;font:700 14px 'Space Mono',monospace;text-transform:uppercase;text-align:left";
+      box.setAttribute("style", `position:fixed;inset:0;z-index:99999;overflow:auto;background:${paper};color:#000;font:14px/1.5 'Space Mono',monospace;padding:max(24px,env(safe-area-inset-top)) 18px 24px`);
+      box.innerHTML = `<h2 style="margin:0 0 12px;font:400 64px/1 Anton,Impact,sans-serif;text-transform:uppercase">Something broke</h2>
+        <p style="margin:0 0 14px">YourFeed couldn't open. Your sources are still saved on this device.</p>
+        <button data-a="reload" style="${ob};background:#000;color:#fff">Reload</button>
+        <button data-a="export" style="${ob}">Export my sources</button>
+        <button data-a="stories" style="${ob}">Clear saved stories and reload</button>
+        <button data-a="copy" style="${ob}">Copy error details</button>
+        <pre id="bootErr" style="white-space:pre-wrap;font-size:11px;margin-top:14px">${esc(B.errs.join("\n\n"))}</pre>`;
+    }
     box.addEventListener("click", async e => {
       const a = e.target.closest("button") && e.target.closest("button").dataset.a; if (!a) return;
       try{
@@ -3481,6 +3536,29 @@ function placeLook(){
   });
   rail.hidden = bar.hidden = !on;
   document.body.classList.toggle("og", on);
+  if (!state.activeId && $("#pane")) renderPaneEmpty();
+  if (on && !store.get("yf.thumbAsked", 0) && !isWide()) setTimeout(ogThumb, 900);
+}
+// Asked once, the first time Off-grid is used: which side should the bar sit?
+function ogThumb(){
+  if (!isOG() || $("#ogThumb")) return;
+  store.set("yf.thumbAsked", 1);
+  const sh = el("div", "og-sheet"); sh.id = "ogThumb"; sh.setAttribute("role", "dialog"); sh.setAttribute("aria-labelledby", "ogThumbQ");
+  const q = el("p", "og-sheetq", "Which thumb?"); q.id = "ogThumbQ"; sh.append(q);
+  [["left", "LEFT"], ["right", "RIGHT"]].forEach(([v, t]) => { const b = el("button", "og-sheetb", t); b.type = "button"; b.onclick = () => { sh.remove(); design.rail = v; saveDesign(); renderDesign(); }; sh.append(b); });
+  document.body.append(sh); sh.querySelector("button").focus({preventScroll: true});
+}
+// Pull the feed down from the very top to check for new stories
+{ let y0 = null, pulled = false, strip = null;
+  const ready = () => isOG() && scrollY <= 0 && !dlg.open && !$("#ogFilter") && !$("#ogVideo") && !document.querySelector(".og-sheet");
+  addEventListener("touchstart", e => { y0 = ready() && e.touches.length === 1 && $("#list").contains(e.target) ? e.touches[0].clientY : null; pulled = false; }, {passive: true});
+  addEventListener("touchmove", e => {
+    if (y0 == null) return;
+    const dy = e.touches[0].clientY - y0;
+    if (dy > 20 && !strip){ strip = el("div", "og-pull"); strip.setAttribute("aria-hidden", "true"); $("#ogBar").after(strip); }
+    if (strip){ pulled = dy > 80; strip.textContent = pulled ? "LET GO TO CHECK" : "PULL TO CHECK"; strip.style.height = Math.min(56, Math.max(0, dy - 20)) + "px"; strip.classList.toggle("go", pulled); }
+  }, {passive: true});
+  addEventListener("touchend", () => { if (strip){ strip.remove(); strip = null; } if (pulled && y0 != null && !state.busy) $("#refresh").click(); y0 = null; pulled = false; }, {passive: true});
 }
 addEventListener("offline", () => { paintHealth(); if (isOG()) toast("YOU'RE OFFLINE"); });
 addEventListener("online", () => paintHealth());
@@ -3508,6 +3586,14 @@ function ogSheet(it){
   const add = (label, fn) => { const b = el("button", "og-sheetb", label); b.type = "button"; b.onclick = () => { sh.remove(); fn(); }; sh.append(b); return b; };
   if (f) add("ONLY THIS SOURCE", () => selectFeed(f.id));
   if (f) add("EDIT THIS SOURCE", () => { openMenu("feeds"); setTimeout(() => openEdit(f.id), 200); });
+  if (it.audioUrl && !it.videoId){
+    const played = pod.played.has(it.id);
+    add(played ? "MARK NOT PLAYED" : "MARK PLAYED", () => {
+      if (played){ pod.played.delete(it.id); store.set("yf.played", [...pod.played]); }
+      else { if (pod.item && pod.item.id === it.id) pod.audio.pause(); markPlayed(it.id); }
+      refreshPodTags(); renderList(); toast(played ? "MARKED NOT PLAYED" : "MARKED PLAYED");
+    });
+  }
   if (it.link) add("COPY LINK", () => { navigator.clipboard.writeText(it.link).then(() => toast("LINK COPIED"), () => toast("COULDN'T COPY")); });
   add("CANCEL", () => {});
   document.body.append(sh);
@@ -3519,7 +3605,7 @@ function ogSheet(it){
 function ogLogo(f, shape){
   const box = el("button", "og-logo " + shape); box.type = "button";
   const name = (f && f.title) || "Source";
-  box.setAttribute("aria-label", "Only " + name);
+  box.setAttribute("aria-label", name);
   const letters = () => { box.textContent = ""; const s = el("span", "og-letters", (name.replace(/^(r|bs|g)\//, "").match(/[\p{L}\p{N}]+/gu) || ["?"]).slice(0, 2).map(w => w[0]).join("").toUpperCase()); box.append(s); };
   let tries = f ? iconCandidates(f) : [];
   const touch = tries.findIndex(u => /apple-touch-icon/.test(u));
@@ -3531,6 +3617,19 @@ function ogLogo(f, shape){
   img.onload = () => { if (img.naturalWidth && img.naturalWidth < 48 && !/i\.ytimg|yt3\.|ggpht|bsky|cdn\.bsky/.test(img.src)) img.onerror(); };
   img.src = tries[0]; box.append(img);
   return box;
+}
+// A chosen picture: centre square, 256 × 256, stored on this device only
+async function squareLogo(blob){
+  const bmp = await createImageBitmap(blob);
+  const side = Math.min(bmp.width, bmp.height), c = document.createElement("canvas"); c.width = c.height = 256;
+  const g = c.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, 256, 256);
+  g.drawImage(bmp, (bmp.width - side) / 2, (bmp.height - side) / 2, side, side, 0, 0, 256, 256);
+  return c.toDataURL("image/jpeg", 0.88);
+}
+// What a podcast slab's big button says
+function ogPodWord(id){
+  const st = podStatus(id);
+  return pod.item && pod.item.id === id && !pod.audio.paused ? "PAUSE" : pod.item && pod.item.id === id ? "PLAY" : st.played ? "PLAY AGAIN" : st.pos ? "CONTINUE" : "LISTEN";
 }
 // Off-grid download button (cards and the episode page)
 function ogDlBtn(it){
@@ -3560,9 +3659,9 @@ function ogStrip(){
     const r3 = el("div", "ogs-btns");
     const b = (cls, label, fn, aria) => { const x = el("button", "ogs-b " + cls, label); x.type = "button"; if (aria) x.setAttribute("aria-label", aria); x.onclick = fn; return x; };
     r3.append(
-      b("back", "−15", () => skip(-BACK_S), "Back 15 seconds"),
+      b("back", "−" + BACK_S, () => skip(-BACK_S), `Back ${BACK_S} seconds`),
       b("play", "PLAY", () => { if (!pod.item) return; if (pod.failed){ pod.retries = 0; pod.failed = false; recoverPod("retry"); syncPod(); return; } pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); }),
-      b("fwd", "+30", () => skip(FWD_S), "Forward 30 seconds"),
+      b("fwd", "+" + FWD_S, () => skip(FWD_S), `Forward ${FWD_S} seconds`),
       b("speed", "1X", cycleSpeed, "Playback speed"),
       b("web", "WEBSITE", () => { if (pod.item && pod.item.link) openOutside(pod.item.link); }),
       b("close", "CLOSE", stopPod, "Stop and close the player"));
@@ -3592,8 +3691,7 @@ function ogSyncPod(){
   }
   // Slab buttons and the episode page follow along
   document.querySelectorAll("[data-og-pod]").forEach(b => {
-    const mine = cur && b.dataset.ogPod === cur.id, st = podStatus(b.dataset.ogPod);
-    b.textContent = mine && playing ? "PAUSE" : mine ? "PLAY" : st.pos ? "CONTINUE" : "LISTEN";
+    b.textContent = ogPodWord(b.dataset.ogPod);
   });
   const ep = document.querySelector(".og-epi");
   if (ep){
@@ -3639,9 +3737,9 @@ function ogEpisode(it){
   const mine = () => pod.item && pod.item.id === it.id;
   const tb = (cls, label, fn, aria) => { const b = el("button", cls, label); b.type = "button"; if (aria) b.setAttribute("aria-label", aria); b.onclick = fn; return b; };
   tr.append(
-    tb("oge-sq", "−15", () => { if (mine()) skip(-BACK_S); }, "Back 15 seconds"),
+    tb("oge-sq", "−" + BACK_S, () => { if (mine()) skip(-BACK_S); }, `Back ${BACK_S} seconds`),
     tb("oge-main", "PLAY", () => playEpisode(it)),
-    tb("oge-sq", "+30", () => { if (mine()) skip(FWD_S); }, "Forward 30 seconds"),
+    tb("oge-sq", "+" + FWD_S, () => { if (mine()) skip(FWD_S); }, `Forward ${FWD_S} seconds`),
     tb("oge-speed", "1X", cycleSpeed, "Playback speed"));
   // Actions
   const acts = el("div", "og-acts oge-acts");
@@ -3711,7 +3809,7 @@ function ogVideo(it){
   document.body.append(pg); document.body.classList.add("og-vopen");
   try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!short); }catch{}
   // Straight to full screen (this runs inside the tap, which browsers require); landscape in the app unless it's a Short
-  try{ const req = pl.requestFullscreen || pl.webkitRequestFullscreen; if (req) req.call(pl).catch(() => {}); }catch{}
+  if (!isWide()) try{ const req = pl.requestFullscreen || pl.webkitRequestFullscreen; if (req) req.call(pl).catch(() => {}); }catch{}
   close.focus({preventScroll: true});
   renderList();
 }
@@ -3815,12 +3913,14 @@ function ogAgo(ms){
 function ogCard(it){
   const a = el("article", "card og");
   if (state.read.has(it.id)) a.classList.add("read");
-  // Seen (tapped, or looked at before this view was drawn) turns the slab white; Saved keeps its colours
-  const seen = !view.saved && (state.read.has(it.id) || state.lookSnap.has(it.id));
-  if (seen) a.classList.add("seen");
   a.dataset.id = it.id;
   queueMicrotask(() => watchLook(a));
   const f = feedById(it.feedId), t = typeOf(it), isPod = !!it.audioUrl && !it.videoId;
+  // Done (opened, watched, or a podcast played to the end) turns the slab white with grey pictures; just scrolling
+  // past a story changes nothing. Saved keeps its colours.
+  const done = isPod ? pod.played.has(it.id) : state.read.has(it.id);
+  const seen = !view.saved && done;
+  if (seen) a.classList.add("seen");
   if (isPod){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); }
   // Logo shaped by type: websites square (favicon), channels and accounts round, podcasts rounded artwork
   const top = el("div", "og-top");
@@ -3830,6 +3930,8 @@ function ogCard(it){
   if (it.image && !isPod){
     const box = el("div", "og-pic" + (it.videoId ? " vid" : ""));
     const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
+    // The frame takes the picture's own shape (within reason) so it isn't cropped
+    img.onload = () => { const w = img.naturalWidth, hh = img.naturalHeight; if (w && hh) box.style.aspectRatio = String(Math.min(2.2, Math.max(0.75, w / hh))); };
     const tries = imageCandidates(it); let n = 0;
     img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else box.remove(); };
     img.src = tries[0]; box.append(img);
@@ -3844,7 +3946,8 @@ function ogCard(it){
   const kind = it.videoId ? (isShortItem(it) ? "SHORT" : "WATCH") : isPod ? (st.played ? "PLAYED" : st.pos ? "CONTINUE" : "LISTEN")
     : t === "conversations" ? "TALK" : t === "topics" ? "TOPIC" : "READ";
   const left = st && st.pos && st.left ? String(st.left).toUpperCase() + " LEFT" : "";
-  const tag = [ogAgo(it.date || it.seen), kind, left || (len ? (it.videoId ? clockLen(len) : minsLen(len).toUpperCase()) : ""), isPod && isDownloaded(it.id) ? "DOWNLOADED" : "", seen ? "SEEN" : ""].filter(Boolean).join(" / ");
+  const doneWord = done && !isPod ? (it.videoId ? "WATCHED" : "OPENED") : "";
+  const tag = [ogAgo(it.date || it.seen), kind, left || (len ? (it.videoId ? clockLen(len) : minsLen(len).toUpperCase()) : ""), isPod && isDownloaded(it.id) ? "DOWNLOADED" : "", doneWord].filter(Boolean).join(" / ");
   a.append(el("div", "og-tag", tag));
   const link = el(it.link ? "a" : "span", "cardlink");
   if (it.link){ link.href = it.link; link.target = "_blank"; link.rel = "noopener noreferrer"; }
@@ -3859,11 +3962,12 @@ function ogCard(it){
   };
   link.addEventListener("click", e => { go(e); });
   const acts = el("div", "og-acts");
-  const main = el("button", "og-b main", isPod ? (pod.item && pod.item.id === it.id && !pod.audio.paused ? "PAUSE" : st.pos ? "CONTINUE" : "LISTEN") : it.videoId ? "PLAY" : "OPEN");
+  const main = el("button", "og-b main", isPod ? ogPodWord(it.id) : it.videoId ? "PLAY" : "OPEN");
   main.type = "button"; main.setAttribute("aria-label", main.textContent.toLowerCase() + ": " + (it.title || ""));
   if (isPod) main.dataset.ogPod = it.id;
   main.onclick = () => { if (!go(null) && it.link) link.click(); };
-  acts.append(main);
+  // Podcasts have no picture, so the big LISTEN button sits in that space beside the artwork
+  if (isPod){ main.classList.add("big"); top.append(main); } else acts.append(main);
   if (it.link || it.audioUrl){
     const on = isSaved(it.id);
     const sv = el("button", "og-b" + (on ? " on" : ""), on ? "SAVED" : "SAVE"); sv.type = "button"; sv.setAttribute("aria-pressed", String(on));
@@ -4162,6 +4266,7 @@ function closeViewer(){
   renderPaneEmpty(); markActive();
 }
 function renderPaneEmpty(){
+  if (isOG()){ const p = el("div", "og-paneempty"); p.append(el("h2", null, "Pick something")); $("#pane").replaceChildren(p); return; }
   const p = el("div", "pane-empty");
   p.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="color:var(--accent)"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>';
   p.append(el("h2", null, "Pick a story from the feed"));
@@ -4437,7 +4542,7 @@ function jitterMin(f){
   let h = 0; for (const c of String(f.id)) h = (h * 31 + c.charCodeAt(0)) | 0;
   return (Math.abs(h) % 1000) / 1000 * everyMin(f) * 0.25;
 }
-const isDue = (f, now = Date.now()) => !f.crashPaused && !(redditGone() && isRedditFeed(f)) && nextCheck(f) <= now + 30000;
+const isDue = (f, now = Date.now()) => !f.crashPaused && !f.paused && !(redditGone() && isRedditFeed(f)) && nextCheck(f) <= now + 30000;
 // Reddit ends its RSS feeds on 13 Nov 2026 (and its public API by March 2027). Once Reddit sources start failing after
 // that date, all of them are paused together with one plain message instead of each one being flagged a day later.
 const REDDIT_END = Date.UTC(2026, 10, 13);
@@ -4644,6 +4749,7 @@ function feedSub(f){
   if (isPrivateFeed(f)) sub.append(lockEl(), document.createTextNode(" "));
   if (isPrivateFeed(f) && !IS_APP){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
   if (isRedditFeed(f)){ sub.append(el("span", "er", "Reddit no longer offers feeds")); return sub; }
+  if (f.paused){ sub.append(el("span", null, "Paused · not being checked")); return sub; }
   if (isTroubled(f)){ sub.append(el("span", "er", isOG() ? "NOT WORKING · TAP EDIT FOR WHY" : "Needs a look")); return sub; }
   const bits = [state.organise === "type" ? folderOf(f) : platformOf(f)];
   if (f.lastFetched) bits.push("checked " + ago(f.lastFetched));
@@ -4852,6 +4958,8 @@ function renderAttention(){
    The feed's own artwork or logo, a YouTube channel's or Bluesky account's picture, a subreddit's icon, or
    the website's favicon, all loaded straight from the publisher. Falls back to the coloured dot. */
 function iconCandidates(f){
+  if (f.logoMode === "letters") return [];
+  if (f.logo) return [f.logo];
   const out = [];
   const nq = newsQuery(f.url);
   // Websites: always the site's own tab icon (favicon) first; a feed's logo is often a wide banner
@@ -5016,6 +5124,44 @@ function editForm(f){
   privF.append(privC, privT);
   form.append(nameF, folder.node, urlF, privF, diag, colF, msg, row);
   if (isOG()){
+    // LOGO row (applies at once) and PAUSE
+    const lg = el("div", "og-logorow");
+    const tile = () => { const t = ogLogo(f, "square"); t.tabIndex = -1; t.onclick = null; t.setAttribute("aria-hidden", "true"); return t; };
+    let cur = tile();
+    const ch = el("button", "og-b", "CHANGE"); ch.type = "button";
+    const opts = el("div", "og-logoopts"); opts.hidden = true;
+    const setLogo = (patch, word) => { Object.assign(f, patch); save(); const n = tile(); cur.replaceWith(n); cur = n; opts.hidden = true; renderList(); toast(word); };
+    const file = el("input"); file.type = "file"; file.accept = "image/png,image/jpeg,image/webp"; file.hidden = true;
+    file.onchange = async () => {
+      const fl = file.files && file.files[0]; file.value = "";
+      if (!fl) return;
+      if (!/^image\/(png|jpeg|webp)$/.test(fl.type) || fl.size > 5e6){ toast("CAN'T USE THAT PICTURE"); return; }
+      try{ setLogo({logo: await squareLogo(fl), logoMode: ""}, "LOGO CHANGED"); }catch{ toast("CAN'T USE THAT PICTURE"); }
+    };
+    const o = (label, fn) => { const b = el("button", "og-b", label); b.type = "button"; b.onclick = fn; opts.append(b); };
+    o("CHOOSE A PICTURE", () => file.click());
+    o("PASTE AN IMAGE LINK", () => {
+      const w = el("div", "og-logolink");
+      const inp = el("input"); inp.type = "url"; inp.placeholder = "https://…"; inp.setAttribute("aria-label", "Image link");
+      const go = el("button", "og-b", "USE"); go.type = "button";
+      go.onclick = async () => {
+        const u = inp.value.trim(); if (!/^https:\/\//i.test(u)){ toast("CAN'T USE THAT PICTURE"); return; }
+        go.disabled = true;
+        try{ const r = await fetch(u, {credentials: "omit", referrerPolicy: "no-referrer"}); const b = await r.blob(); if (!r.ok || !/^image\/(png|jpeg|webp)$/.test(b.type) || b.size > 5e6) throw 0; setLogo({logo: await squareLogo(b), logoMode: ""}, "LOGO CHANGED"); w.remove(); }
+        catch{ toast("CAN'T USE THAT PICTURE"); go.disabled = false; }
+      };
+      w.append(inp, go); opts.after(w); inp.focus();
+    });
+    o("USE THE SITE'S OWN", () => setLogo({logo: "", logoMode: ""}, "USING THE SITE'S OWN"));
+    o("USE LETTERS", () => setLogo({logo: "", logoMode: "letters"}, "USING LETTERS"));
+    ch.onclick = () => { opts.hidden = !opts.hidden; };
+    lg.append(el("span", "lbl", "Logo"), cur, ch, file);
+    const pz = el("label", "check"); const pc = el("input"); pc.type = "checkbox"; pc.checked = !!f.paused;
+    pc.onchange = () => { f.paused = pc.checked; save(); toast(pc.checked ? "PAUSED" : "UNPAUSED"); };
+    pz.append(pc, el("span", null, ""));
+    pz.lastChild.append(el("b", null, "Pause"), el("br"), el("span", "hint", "A paused source keeps its stories and isn't checked."));
+    form.prepend(lg, opts);
+    privF.after(pz);
     const rmw = el("div", "og-rmrow");
     const rmb = el("button", "og-rm", "REMOVE"); rmb.type = "button";
     rmb.onclick = () => {
@@ -5103,17 +5249,18 @@ function openMenu(tab){
 }
 function closeMenu(){
   if (!dlg.open || dlg.classList.contains("closing")) return;
-  const done = () => { dlg.classList.remove("closing"); dlg.close(); };
-  if (matchMedia("(prefers-reduced-motion:reduce)").matches){ done(); return; }
+  const done = () => { if (!dlg.classList.contains("closing")) return; dlg.classList.remove("closing"); dlg.close(); };
+  if (matchMedia("(prefers-reduced-motion:reduce)").matches){ dlg.close(); return; }
   dlg.classList.add("closing"); setTimeout(done, 180);
 }
+const menuShowing = () => dlg.open && !dlg.classList.contains("closing");
 dlg.addEventListener("close", () => {
   $("#manage").setAttribute("aria-expanded", "false");
   // The "Added to X · Change" note is for the moment you add something: gone once the menu closes
   const fn = $("#addFolder"); fn.hidden = true; fn.textContent = "";
 });
 dlg.addEventListener("cancel", e => { e.preventDefault(); closeMenu(); });
-$("#manage").onclick = () => { if (isOG()){ if (dlg.open) closeMenu(); else openMenu(store.get("yf.menuTab", "feeds")); return; } openMenu("feeds"); };
+$("#manage").onclick = () => { if (isOG()){ if (menuShowing()) closeMenu(); else openMenu(store.get("yf.menuTab", "feeds")); return; } openMenu("feeds"); };
 $("#ogMenuBack").onclick = closeMenu;
 $("#ogSetBack").onclick = () => ogSetPage(null);
 // Off-grid settings: six rows, each opens as a page inside the panel
@@ -6737,7 +6884,7 @@ const NativeMS = IS_APP && window.Capacitor ? ((window.Capacitor.Plugins && wind
 const nms = (fn, ...args) => { try{ const r = NativeMS && NativeMS[fn] && NativeMS[fn](...args); if (r && r.catch) r.catch(() => {}); }catch{} };
 let nmsState = "none", nmsPosAt = 0;
 const SPEEDS = [0.8, 1, 1.25, 1.5, 1.75, 2];
-const BACK_S = 15, FWD_S = 30;
+let BACK_S = store.get("yf.skipBack", 15), FWD_S = store.get("yf.skipFwd", 30);
 const OG_SPEEDS = [1, 1.25, 1.5, 2];
 const fmtTime = t => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`; };
 const ICONS = {
@@ -6766,6 +6913,7 @@ function playEpisode(it){
   const local = isDownloaded(it.id) && dlSrc(it.id);
   pod.audio.src = local || it.audioUrl;
   if (local) pod.audio.addEventListener("error", () => { if (pod.item === it && pod.audio.src !== it.audioUrl){ delete dl.list[it.id]; saveDl(); pod.audio.src = it.audioUrl; pod.audio.play().catch(() => {}); } }, {once: true});
+  { const ss = store.get("yf.startSpeed", 0); if (ss){ pod.speed = ss; store.set("tl.podSpeed", ss); } }
   pod.audio.playbackRate = pod.speed;
   const resume = pod.pos[it.id] || 0;
   if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
@@ -7355,6 +7503,20 @@ function ogReport(R, focusId){
   if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
   else back.focus({preventScroll: true});
 }
+// Podcast controls: skip lengths and the speed each new episode starts at
+function renderAudioPrefs(){
+  const box = $("#audioPrefs"); if (!box) return; box.textContent = "";
+  const row = (label, opts, cur, set) => {
+    const r = el("div", "set-row"); r.append(el("span", null, label));
+    const g = el("div", "seg"); g.setAttribute("role", "group"); g.setAttribute("aria-label", label);
+    opts.forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(v === cur)); b.onclick = () => { set(v); renderAudioPrefs(); const s2 = $("#ogStrip"); if (s2){ s2.remove(); ogStrip(); } }; g.append(b); });
+    r.append(g); box.append(r);
+  };
+  row("Skip back", [[10, "10 s"], [15, "15 s"], [30, "30 s"]], BACK_S, v => { BACK_S = v; store.set("yf.skipBack", v); });
+  row("Skip forward", [[10, "10 s"], [15, "15 s"], [30, "30 s"]], FWD_S, v => { FWD_S = v; store.set("yf.skipFwd", v); });
+  row("Starting speed", [[0, "Last used"], [1, "1×"], [1.25, "1.25×"], [1.5, "1.5×"], [2, "2×"]], store.get("yf.startSpeed", 0), v => store.set("yf.startSpeed", v));
+}
+renderAudioPrefs();
 document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
 $("#shareSites").checked = store.get("yf.shareSites", null) === true;
 $("#shareSites").onchange = e => store.set("yf.shareSites", e.target.checked);
