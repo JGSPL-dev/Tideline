@@ -4566,7 +4566,7 @@ async function loadReader(it, body){
 // How often each kind of source is checked when its feed doesn't say (minutes)
 function defaultEveryMin(f){
   const u = f.url || "";
-  if (/youtube\.com\/feeds/.test(u)) return 30;          // YouTube limits connections that ask too often; 30 minutes is plenty for new videos
+  if (/youtube\.com\/feeds/.test(u)) return serviceBase() ? 10 : 30;   // through the service it's a cheap shared copy; asking YouTube directly, it limits connections that ask too often
   if (/reddit\.com/.test(u)) return 15;                    // keep well inside Reddit's request limits
   if (/news\.google\.com/.test(u)) return 15;
   if (/bsky\.app|mastodon|\.rss$/.test(u) && /bsky|@/.test(u)) return 15;
@@ -4691,18 +4691,20 @@ async function refreshOne(f){
   }
   save(); renderChips(); renderStatus(); renderFeedList(); renderList();
 }
-async function refreshAll(){
+async function refreshAll(force){
   await itemsReady;
   if (state.busy || !state.feeds.length) return;
-  try{ await refreshAllInner(); }
+  try{ await refreshAllInner(force === true); }
   finally{
     // Whatever happens, Refresh must work again
     if (state.busy){ state.busy = false; const btn = $("#refresh"); btn.disabled = false; btn.classList.remove("spin"); renderStatus(); }
   }
 }
-async function refreshAllInner(){
-  // Only feeds whose own refresh time has come are fetched; the rest keep what they have
-  let due = state.feeds.filter(f => isDue(f));
+async function refreshAllInner(force){
+  // Only feeds whose own refresh time has come are fetched; the rest keep what they have. Tapping refresh (or
+  // pulling down) also checks every source not checked in the last 5 minutes.
+  const recent = f => f.lastFetched && Date.now() - f.lastFetched < 5 * 60000;
+  let due = state.feeds.filter(f => isDue(f) || (force && !f.paused && !f.crashPaused && !(redditGone() && isRedditFeed(f)) && !f.error && !recent(f)));
   // YouTube: none while it's pausing us, and at most 10 channels per round (the rest follow a minute later),
   // so a big import or a long gap never turns into a burst of requests
   const isYT = f => !!ytChannelOf(f.url);
@@ -6899,7 +6901,7 @@ $("#refresh").onclick = async () => {
   if (state.busy) return;
   state.baseline = Date.now(); store.set("tl.baseline", state.baseline);
   snapLooked(); state.shown = PAGE; renderList(); renderChips();
-  await refreshAll();
+  await refreshAll(true);
   if (state.note === "upToDate") setTimeout(() => { state.note = ""; renderStatus(); }, 4000);
 };
 $("#chips").addEventListener("scroll", updateChipFades, {passive: true});

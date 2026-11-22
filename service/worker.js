@@ -10,7 +10,7 @@
 //   GET /youtube/videos?id=UC…    → {title, videos:[{id, title, date}]} from the channel's Videos page
 //                                   (a fallback for when YouTube's own channel feeds are down)
 //   GET /youtube/latest?id=UC…    → {title, avatar, videos:[{id, title, date, dur, short}]} via the official YouTube Data API (dur = seconds; short = it's a YouTube Short)
-//                                   (needs the secret YT_API_KEY; 1 quota unit per call, cached 30 min)
+//                                   (needs the secret YT_API_KEY; 1 quota unit per call, re-asked every 15 min, or hourly while YouTube pushes)
 //   GET/POST /websub/youtube?id=UC… → YouTube's push hub: confirms subscriptions and delivers new videos
 //                                   (subscribed automatically for channels people follow; needs YF_CACHE + YT_API_KEY)
 //   POST /community/add {domain}  → counts a website someone added; shared once enough people have and the owner approves
@@ -374,10 +374,14 @@ async function handle(req, url, origin, env, ctx){
     if (edge) return sendJson(origin, edge, {"X-YourFeed-Cache": "edge"});
     if (await edgeGet("ytmiss:" + id)) return fail(origin, 404, "YouTube has no uploads for that channel");
     // 2. The shared copy. While YouTube pushes this channel's new videos to us it stays current on its own,
-    //    so it's only re-checked every 6 hours (a safety net); otherwise every 30 minutes.
+    //    so it's only re-checked every hour (a safety net: YouTube's pushes are sometimes late or missing);
+    //    otherwise every 15 minutes.
     const kv = await kvGet(env, "ytl:" + id);
     const pushing = kv && kv.pushUntil > Date.now();
-    const FRESH = pushing ? 6 * 3600000 : 30 * 60000;
+    const FRESH = pushing ? 3600000 : 15 * 60000;
+    // This location's copy is kept for 5 minutes at most. A push only clears the copy at the location that
+    // received it, so a longer edge copy elsewhere would hide a new video for hours.
+    const EDGE_MAX = 300;
     // Push subscriptions only for channels the API has confirmed exist (a shared copy means it has)
     if (ctx && kv && (!kv.pushUntil || kv.pushUntil - Date.now() < 86400000)) ctx.waitUntil(ensurePush(env, id, url.origin));
     if (kv && Date.now() - kv.at < FRESH){
@@ -386,7 +390,7 @@ async function handle(req, url, origin, env, ctx){
       if (!kv.avatarAt && env && env.YT_API_KEY){ kv.avatar = await channelAvatar(id, env); kv.avatarAt = Date.now(); learned = true; }
       if (learned) await kvPut(env, "ytl:" + id, kv, 14 * 86400);
       const text = JSON.stringify({title: kv.title, avatar: kv.avatar || undefined, videos: (kv.videos || []).map(forApp)});
-      await edgePut("ytl:" + id, text, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000)));
+      await edgePut("ytl:" + id, text, Math.min(EDGE_MAX, Math.max(60, Math.round((FRESH - (Date.now() - kv.at)) / 1000))));
       return sendJson(origin, text, {"X-YourFeed-Cache": "shared"});
     }
     // 3. Ask YouTube's API (1 unit)
@@ -416,7 +420,7 @@ async function handle(req, url, origin, env, ctx){
     if (!avatarAt){ avatar = await channelAvatar(id, env); avatarAt = Date.now(); learned = true; }
     const title = (items[0] && items[0].snippet && items[0].snippet.channelTitle) || (kv && kv.title) || null;
     const text = JSON.stringify({title, avatar: avatar || undefined, videos: videos.map(forApp)});
-    await edgePut("ytl:" + id, text, Math.round(FRESH / 1000));
+    await edgePut("ytl:" + id, text, EDGE_MAX);
     // Rewrite the shared copy only when there's a new video (KV writes are the scarcest free resource)
     const top = videos[0] && videos[0].id;
     if (!kv || kv.top !== top || learned) await kvPut(env, "ytl:" + id, {at: Date.now(), top, title, videos, avatar, avatarAt, pushUntil: kv ? kv.pushUntil : 0}, 14 * 86400);
