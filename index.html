@@ -4067,7 +4067,7 @@ function renderOgFilter(first){
   const ws = sec("Find words");
   if (!box){
     box = el("input", "ogf-words"); box.id = "ogWords"; box.type = "search"; box.autocomplete = "off"; box.value = view.q || "";
-    box.setAttribute("aria-label", "Find words in headlines and source names");
+    box.setAttribute("aria-label", "Find words in headlines and feed names");
     let t = 0; box.oninput = () => { clearTimeout(t); t = setTimeout(() => { view.q = box.value; saveView(); state.shown = PAGE; renderList(); renderFilterBar(); renderOgFilter(); }, 200); };
   }
   ws.append(box);
@@ -4088,7 +4088,7 @@ function renderOgFilter(first){
     const fw = sec("From where");
     const mode = state.ogWhere || (view.source.startsWith("feed:") ? "source" : "category");
     const sw = el("div", "ogf-switch");
-    [["category", "Category"], ["source", "Source"]].forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(mode === v)); b.onclick = () => { state.ogWhere = v; renderOgFilter(); }; sw.append(b); });
+    [["category", "Categories"], ["source", "Feeds"]].forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(mode === v)); b.onclick = () => { state.ogWhere = v; renderOgFilter(); }; sw.append(b); });
     fw.append(sw);
     const chips = el("div", "ogf-chips");
     const chip = (label, val) => { const b = el("button", "ogf-chip", label); b.type = "button"; const on = view.source === val; b.setAttribute("aria-pressed", String(on)); b.onclick = () => ogFilterSet("source", on ? "all" : val); chips.append(b); };
@@ -4102,7 +4102,7 @@ function renderOgFilter(first){
       const newest = new Map(); state.items.forEach(i => newest.set(i.feedId, Math.max(newest.get(i.feedId) || 0, i.date || 0)));
       const fs = [...state.feeds].sort((a, b) => (newest.get(b.id) || 0) - (newest.get(a.id) || 0));
       const shown = state.ogMoreSources ? fs : fs.slice(0, 12);
-      shown.forEach(f => chip(f.title || "Source", "feed:" + f.id));
+      shown.forEach(f => chip(f.title || "Feed", "feed:" + f.id));
       if (fs.length > 12 && !state.ogMoreSources){ const m = el("button", "ogf-chip more", `MORE (${fs.length - 12})`); m.type = "button"; m.onclick = () => { state.ogMoreSources = true; renderOgFilter(); }; chips.append(m); }
       fw.append(chips);
     }
