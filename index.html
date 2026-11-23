@@ -1268,6 +1268,15 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 .tp-net{background:#000;color:#fff;padding:1px 6px;margin-right:6px;font:700 10px var(--og-mono,monospace);text-transform:uppercase}
 .tp-live,.tp-live .tp-scroll,.tp-live .tp-item{min-width:0;max-width:100%;box-sizing:border-box}
 .tp-post{overflow-wrap:anywhere;word-break:break-word;font:400 14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;text-transform:none!important}
+/* "You can follow" box in the menu */
+:root[data-look="offgrid"] dialog.drawer .support-box{border:3px solid #fff;border-radius:0;background:#000;padding:14px}
+:root[data-look="offgrid"] .support-sec h4{font:400 22px var(--og-disp);text-transform:uppercase;color:var(--og-paper)}
+:root[data-look="offgrid"] .support-sec li{font:400 12px/1.45 var(--og-mono);color:#C8C8C8}
+:root[data-look="offgrid"] .support-sec li b{font:700 13px var(--og-mono);color:#fff;text-transform:uppercase}
+:root[data-look="offgrid"] .support-sec.yes li::before{color:var(--og-paper)}
+:root[data-look="offgrid"] .support-sec.no li::before{color:#FF5A4E}
+:root[data-look="offgrid"] .support-foot .hint{font:400 11px var(--og-mono)}
+:root[data-look="offgrid"] dialog.drawer .msg{font:700 12px/1.5 var(--og-mono)}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -1392,7 +1401,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
         <div class="iorow"><button class="btn" type="button" id="reportBtn">Open Source health</button></div>
         <div id="attnBox" hidden></div>
         <h4 class="set-sub">Import and export</h4>
-        <p class="hint">Move your sources between devices, or add lots at once. Import works with OPML (the standard format other feed readers use), YouTube's subscriptions.csv from Google Takeout, or a text file with one address, @handle, r/name or "youtube: Channel name" per line.</p>
+        <p class="hint">Move your feeds between devices, or add lots at once. Import works with OPML (the standard format other feed readers use), YouTube's subscriptions.csv from Google Takeout, or a text file with one address, @handle or "youtube: Channel name" per line.</p>
         <div class="iorow">
           <button class="btn" type="button" id="importBtn">Import sources</button>
           <button class="btn" type="button" id="exportBtn">Export sources</button>
@@ -3552,7 +3561,7 @@ $("#activeFilter").onclick = () => { state.topic = null; selectFeed("all"); };  
 $("#infoBtn").onclick = e => { e.stopPropagation(); toggleStatusPop(); };
 $("#healthLink").onclick = () => {
   toggleStatusPop(false);
-  state.attnOpen = true; openMenu("settings"); $("#sf-sources").open = true; renderAttention();
+  state.attnOpen = true; openMenu("settings"); ogSetPage($("#sf-sources")); renderAttention();
   setTimeout(() => { const b = $("#attnBox"); if (b && !b.hidden) b.scrollIntoView({block: "center"}); }, 250);
 };
 document.addEventListener("pointerdown", e => { const pop = $("#statusPop"); if (!pop.hidden && !pop.contains(e.target) && !$("#infoBtn").contains(e.target)){ toggleStatusPop(false); eatTap(); } });
@@ -4477,8 +4486,10 @@ function renderListNow(){
       e.append(h, el("p", "curated", "Curated by you."),
         el("p", null, "You decide what you see. No recommended posts and no AI-generated channels you never followed: your feed is 100% yours."),
         el("p", null, "Search for websites, YouTube channels, social feeds, podcasts and news topics, and see them side by side in one simple feed. No account and no tracking: your list stays on your device."));
-      const go = el("button", "btn primary", "Get started"); go.type = "button"; go.onclick = startOnboarding;
-      const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); $("#sf-sources").open = true; setTimeout(() => { $("#importBtn").scrollIntoView({block: "center"}); $("#importBtn").focus(); }, 250); };
+      const done = store.get("yf.onboarded", false);
+      const go = el("button", "btn primary", done ? "Add your first feed" : "Get started"); go.type = "button";
+      go.onclick = done ? () => { openMenu("feeds"); setTimeout(() => $("#addInput").focus(), 250); } : startOnboarding;
+      const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); ogSetPage($("#sf-sources")); setTimeout(() => { $("#importBtn").scrollIntoView({block: "center"}); $("#importBtn").focus(); }, 250); };
       const row = el("div", "iorow welcome-acts"); row.append(go, imp); e.append(row);
     }
     else if (state.items.length && shortsGrid()){
@@ -5197,7 +5208,7 @@ function renderFeedList(){
   syncPrivateRow();
   const box = $("#flist"); box.textContent = "";
   if (!state.feeds.length){
-    box.append(el("p", "hint", "No sources yet. Search or paste a link above."));
+    box.append(el("p", "hint", "No feeds yet. Search or paste a link above."));
     // Once only: what you can and can't follow. After that it lives in Settings → FAQs
     if (!store.get("yf.supportSeen", false)){
       const sb = el("section", "support-box"); sb.setAttribute("aria-label", "What you can follow");
@@ -7098,7 +7109,8 @@ $("#addForm").addEventListener("submit", async e => {
     input.value = ""; btn.textContent = "Add";
     setMsg(`Added ${feed.title} with ${storyCount(count)}.` + (feed.private ? " It's private: only this device fetches it, and its link is left out of reports and exports." : ""));
   }catch(err){
-    setMsg(err.message.replace(/\.$/, "") + ".", true);
+    const m = String(err && err.message || "");
+    setMsg(/failed to fetch|networkerror|load failed|couldn't connect/i.test(m) ? "Couldn't reach that address. Check the link, or try again when you're online." : m.replace(/\.$/, "") + ".", true);
   }finally{ btn.disabled = false; }
 });
 // Full "Add to your feed" page
@@ -8150,7 +8162,7 @@ function parseSourcesFile(text){
       if (m) out.push({url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + m[1], title: m[2].replace(/^"|"$/g, "").replace(/""/g, '"').trim(), folder: ""});
     });
   } else {
-    // A plain list: one address, @handle, r/name or "youtube: Channel name" per line; "[Folder]" starts a folder
+    // A plain list: one address, @handle or "youtube: Channel name" per line; "[Folder]" starts a folder
     let folder = "";
     text.split(/\r?\n/).map(l => l.trim()).filter(l => l && !l.startsWith("#")).forEach(l => {
       const f = l.match(/^\[(.{1,40})\]$/);
@@ -8315,7 +8327,7 @@ function startOnboarding(){
     picked.forEach(n => makeFolder(n));
     store.set("yf.onboarded", true);
     dlgO.close(); dlgO.remove();
-    renderFeedList();
+    renderFeedList(); renderList();
     startTour();
   };
   inner.append(chips, next); dlgO.append(inner);
