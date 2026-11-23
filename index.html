@@ -3787,12 +3787,12 @@ function ogLogo(f, shape){
   if (!tries.length){ letters(); return box; }
   const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
   let n = 0;
-  // Big tiles need big pictures: anything under 96 px is only kept if nothing sharper turns up; under 48 never
+  // Big tiles need big pictures: anything under 96 px is only kept if nothing sharper turns up; under 32 never
   let fallback = "";
   img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else if (fallback){ img.onload = null; img.src = fallback; } else letters(); };
   img.onload = () => {
     const w = img.naturalWidth; if (!w || /i\.ytimg|yt3\.|ggpht|bsky|cdn\.bsky|^data:/.test(img.src)) return;
-    if (w < 96){ if (w >= 48 && !fallback) fallback = img.src; img.onerror(); }
+    if (w < 96){ if (w >= 32 && !fallback) fallback = img.src; img.onerror(); }
   };
   img.src = tries[0]; box.append(img);
   return box;
@@ -3800,7 +3800,9 @@ function ogLogo(f, shape){
 // Sharper logos for websites (app only: the phone can read the site's home page directly). Looks once a month
 // for the biggest square icon the site offers: apple-touch-icon, sized <link rel=icon>, or its web app manifest.
 async function findSiteIcon(f){
-  let base = ""; try{ base = new URL(f.site || f.url).origin; }catch{ return; }
+  const nq = newsQuery(f.url);
+  let base = ""; try{ base = new URL(nq && nq.site ? "https://" + nq.site.split("/")[0] : (f.site || f.url)).origin; }catch{ return; }
+  if (/google\./.test(base)) return;
   f.hiIconAt = Date.now();
   try{
     const r = await fetchWithTimeout(base + "/", 10000); if (!r.ok) return;
@@ -3823,7 +3825,8 @@ async function findSiteIcon(f){
 }
 function sharpenLogos(){
   if (!IS_APP) return;
-  const todo = state.feeds.filter(f => platformOf(f) === "Websites" && !f.audio && !isPrivateFeed(f) && !newsQuery(f.url) && !f.logo && f.logoMode !== "letters" && Date.now() - (f.hiIconAt || 0) > 30 * 86400000);
+  if (!store.get("yf.hiIcon2", 0)){ state.feeds.forEach(f => { if (newsQuery(f.url)) delete f.hiIconAt; }); store.set("yf.hiIcon2", 1); }
+  const todo = state.feeds.filter(f => platformOf(f) === "Websites" && !f.audio && !isPrivateFeed(f) && !(newsQuery(f.url) && !newsQuery(f.url).site) && !f.logo && f.logoMode !== "letters" && Date.now() - (f.hiIconAt || 0) > 30 * 86400000);
   if (todo.length) pool(todo.slice(0, 40), 3, findSiteIcon);
 }
 setTimeout(sharpenLogos, 8000);
@@ -5230,7 +5233,8 @@ function iconCandidates(f){
     try{ base = new URL(nq && nq.site ? "https://" + nq.site.split("/")[0] : (f.site || f.url)).origin; }catch{}
     if (f.hiIcon) out.push(f.hiIcon);
     if (base) out.push(base + "/apple-touch-icon.png", base + "/favicon.ico");
-    if (f.icon && !f.iconFailed) out.push(f.icon);
+    // A publisher followed through Google News: its feed's own picture is Google News's logo, never use it
+    if (f.icon && !f.iconFailed && !nq) out.push(f.icon);
     return out;
   }
   if (f.icon && !f.iconFailed) out.push(f.icon);
