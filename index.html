@@ -1172,6 +1172,27 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] .tpage .tp-foot .btn:disabled{background:none;color:#000;opacity:1}
 :root[data-look="offgrid"] .tpage .tp-foot .hint{font:400 12px/1.5 var(--og-mono);color:#000}
 :root[data-look="offgrid"] .tpage .tp-follow{width:100%;justify-content:flex-start}
+/* in-app reader (Trending only): Paper, covers the main area, the rail stays */
+:root[data-look="offgrid"] .article-page.og-rd{margin:0;inset:0 var(--og-rail) 0 0;width:auto;max-width:none;height:100%;max-height:none;background:var(--og-paper);border:0;border-radius:0;padding:0}
+:root[data-look="offgrid"][data-rail="left"] .article-page.og-rd{inset:0 0 0 var(--og-rail)}
+.article-page.og-rd::backdrop{background:transparent}
+.article-page.og-rd .art-bar{display:none}
+.article-page.og-rd .dlg{background:var(--og-paper);color:#000;height:100%}
+.article-page.og-rd .art-body{display:block;background:var(--og-paper);padding:0 0 calc(40px + env(safe-area-inset-bottom,0px))}
+.ogr-bar{position:sticky;top:0;z-index:2;display:flex;justify-content:space-between;gap:8px;align-items:center;background:#000;padding:calc(8px + env(safe-area-inset-top,0px)) 12px 8px}
+.ogr-bar .oge-back{background:#fff;color:#000}
+.ogr-bar .ogr-open{background:var(--og-paper);border-color:var(--og-paper);color:#000}
+.article-page.og-rd .reader{max-width:680px;margin:0 auto;padding:16px 16px 0;color:#000;font:400 17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.article-page.og-rd .reader .kicker{display:flex;flex-wrap:wrap;gap:4px 10px;font:700 11px var(--og-mono);text-transform:uppercase;color:#000;margin:0 0 10px}
+.article-page.og-rd .reader .kicker span{background:#000;color:#fff;padding:3px 7px}
+.article-page.og-rd .reader h1{font:400 40px/1.02 var(--og-disp);text-transform:uppercase;margin:0 0 16px;overflow-wrap:anywhere;color:#000}
+.article-page.og-rd .reader :is(h2,h3,h4){font-family:var(--og-disp);font-weight:400;text-transform:uppercase;line-height:1.1;color:#000}
+.article-page.og-rd .reader img,.article-page.og-rd .reader .art-hero{display:block;max-width:100%;height:auto;border:3px solid #000;box-sizing:border-box;margin:12px 0}
+.article-page.og-rd .reader .art-hero{transform:rotate(-1.5deg);margin:4px 0 18px}
+.article-page.og-rd .reader a{color:#000;text-decoration:underline;text-decoration-thickness:2px}
+.article-page.og-rd .reader blockquote{margin:14px 0;padding:6px 0 6px 14px;border-left:6px solid #000}
+.article-page.og-rd .reader figcaption,.article-page.og-rd .reader small{font:400 12px var(--og-mono);color:#000}
+.article-page.og-rd .reader .orig{margin:22px 0 0;padding-top:12px;border-top:3px solid #000;font:700 13px var(--og-mono);text-transform:uppercase}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -3819,6 +3840,7 @@ function ogSyncPod(){
 // Episode page (Off-grid): opened from the strip, a long press on the rail's Play, or an episode's title
 function ogEpisode(it){
   const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
+  page.classList.remove("og-rd");
   page.classList.add("is-pod", "og-ep");
   body.textContent = "";
   const ep = el("div", "og-epi"); ep.dataset.id = it.id;
@@ -7413,6 +7435,7 @@ function articleFragment(html, base){
 async function openArticle(it){
   if (it.audioUrl && !it.videoId) return openPlayer(it);
   $("#articlePage").classList.remove("is-pod", "og-ep"); $("#artOpen").style.display = "";
+  $("#articlePage").classList.toggle("og-rd", isOG());
   const page = $("#articlePage"), body = $("#artBody");
   const f = feedById(it.feedId) || {};
   const src = el("div", "meta"); const dot = iconFor(feedById(it.feedId) || f, 16);
@@ -7423,6 +7446,16 @@ async function openArticle(it){
   const kick = el("div", "kicker");
   kick.append(el("span", null, f.title || ""));
   if (it.date) kick.append(el("span", null, "· " + new Date(it.date).toLocaleString(undefined, {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})));
+  if (isOG()){
+    // Off-grid reader: BACK and OPEN WEBSITE on a black bar, then the story on Paper
+    const top = el("div", "ogr-bar");
+    const bk = el("button", "oge-back", "BACK"); bk.type = "button"; bk.onclick = () => page.close();
+    top.append(bk);
+    if (it.link){ const ow = el("button", "og-b ogr-open", "OPEN WEBSITE"); ow.type = "button"; ow.onclick = () => openOutside(it.link); top.append(ow); }
+    body.append(top);
+    kick.textContent = "";
+    kick.append(el("span", null, (f.title || it.feedTitle || "")), el("span", null, ogAgo(it.date || it.seen)));
+  }
   r.append(kick, el("h1", null, it.title));
   if (it.audioUrl) r.append(podControls(it, false));
   body.append(r);
@@ -7451,7 +7484,7 @@ async function openArticle(it){
 function openPlayer(it){
   if (isOG()) return ogEpisode(it);
   const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
-  page.classList.remove("og-ep");
+  page.classList.remove("og-ep", "og-rd");
   page.classList.add("is-pod");
   $("#artSrc").replaceChildren(el("span", "pp-now", pod.item && pod.item.id === it.id ? "Now playing" : "Episode"));
   $("#artOpen").style.display = "none";
