@@ -1072,7 +1072,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] .tp-video,:root[data-look="offgrid"] .tp-col{background:var(--og-paper);margin:0 12px 12px}
 :root[data-look="offgrid"] .tp-opt{border-radius:0;border:3px solid #000;background:#000;color:#fff}
 :root[data-look="offgrid"] .tp-opt.on{border-color:var(--og-hot)}
-:root[data-look="offgrid"] .tp-optt{font:400 15px/1.1 var(--og-disp);text-transform:uppercase}
+:root[data-look="offgrid"] .tp-optt{font:400 15px/1.1 var(--og-disp);text-transform:uppercase;padding:0;margin:0 6px 6px;max-height:2.2em;overflow:hidden}
 :root[data-look="offgrid"] .tp-item{border:0;border-top:1px solid #000;border-radius:0;background:none;color:#000}
 :root[data-look="offgrid"] .tp-item .tp-t{font:400 20px/1.1 var(--og-disp);text-transform:uppercase}
 :root[data-look="offgrid"] .tp-item .tp-meta{font:700 11px var(--og-mono);text-transform:uppercase}
@@ -1164,6 +1164,10 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] #list > .card.og.ogshort.seen{background:#fff!important;color:#000!important}
 :root[data-look="offgrid"] #list > .card.og.ogshort.seen img{filter:grayscale(1)}
 /* trending page boxes and footer */
+:root[data-look="offgrid"] body{overflow-x:clip}
+:root[data-look="offgrid"] .tpage,:root[data-look="offgrid"] .tp-cols,:root[data-look="offgrid"] .tp-col,:root[data-look="offgrid"] .tp-video{min-width:0;max-width:100%;box-sizing:border-box}
+:root[data-look="offgrid"] .tp-col{overflow:hidden}
+:root[data-look="offgrid"] .tp-item,:root[data-look="offgrid"] .tp-item .tp-t{min-width:0;max-width:100%;overflow-wrap:anywhere}
 @media (max-width:700px){:root[data-look="offgrid"] .tp-opts{grid-auto-columns:calc((100% - 8px) / 2)}}
 :root[data-look="offgrid"] .tp-scroll.capped{border-bottom:3px solid #000;scrollbar-color:#000 transparent}
 :root[data-look="offgrid"] .tp-more{font:700 11px var(--og-mono);text-transform:uppercase;color:#000}
@@ -2828,6 +2832,8 @@ const TREND_PART_SKIP = new Set(("monday tuesday wednesday thursday friday satur
 const TREND_STOP = new Set((
   "the a an of to in and for on is are was were with at by from as after how why what who whom when where which while new over into out up down about it its it's this that these those be been being has have had will would can could should may might must says said say tells told not no yes more most than his her their our your my we you they he she i me him them us after before just only also all any some every each other another first last next best top big little old young good great bad worst latest live watch video videos photos photo pictures gallery listen podcast episode ep part series season review reviews preview analysis opinion comment column explainer interview exclusive breaking update updates news report reports today tonight yesterday tomorrow week weekend month year years day days time times now here there home way back still even again ever never always plus vs v via full official new one two three four five six seven eight nine ten million billion per cent percent monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec morning evening night afternoon man woman men women people boy girl family uk us mr mrs ms dr sir lord lady st how-to guide tips things ways reasons why don't can't won't isn't i'm you're we're they're get gets got make makes made take takes took give gives gave go goes going come comes see sees know want look looks find finds call calls set sets win wins won lose loses lost beat beats hit hits back backs face faces join joins leave leaves sign signs open opens close closes help helps show shows reveal reveals reveals claim claims warn warns urge urges deal deals plan plans move moves bid bids ban bans row rows boost boosts cut cuts hike hikes rise rises fall falls star stars fans fan club clubs team teams game games match matches player players coach boss league cup final finals goal goals score scores result results line-up lineup transfer transfers rumours rumour latest story stories world global national local city country state government police court health school"
 ).split(" "));
+// Shopping words that headlines capitalise but that are never the subject
+["off", "sale", "sales", "deal", "deals", "save", "saving", "savings", "price", "prices", "discount", "discounts", "offer", "offers", "cheap", "cheapest", "bargain", "bargains", "now", "free"].forEach(w => TREND_STOP.add(w));
 const trendNorm = w => w.toLowerCase().replace(/[’']s$/, "").replace(/[’'.]/g, "");
 function trendTokens(it){
   let t = String(it.title || "");
@@ -2896,7 +2902,7 @@ function trendTopics(){
   // Trending: mentioned by 3+ different publishers (2 for someone following only a few)
   const pubCount = new Set(state.feeds.map(trendPub)).size;
   const need = pubCount < 15 ? 2 : 3;
-  let list = [...terms.values()].filter(t => t.pubs.size >= need && (!t.key.includes(" ") || t.named));
+  let list = [...terms.values()].filter(t => t.pubs.size >= need && (t.key.includes(" ") ? t.named : !TREND_PART_SKIP.has(t.key)));
   list.forEach(t => { t.score = t.pubs.size * 3 + t.ids.size + t.recent; t.label = [...t.shows].sort((a, b) => b[1] - a[1])[0][0]; });
   // A name's pair is the label over its single words when it covers most of their stories ("Rachel Reeves", not
   // "Reeves"); the single word still joins the topic, bringing stories that only say "Reeves"
@@ -2924,7 +2930,10 @@ function trendTopics(){
   const weekCut = now - 7 * 86400000;
   const recentAll = state.items.filter(i => (i.date || i.seen || 0) >= weekCut && i.title);
   topics.forEach(tp => {
-    const main = tp.terms[0], phrases = [main.key, ...tp.terms.filter(t => t.inside === main).map(t => t.key)];
+    // A name's last word counts on its own ("Reeves" for "Rachel Reeves"); its first word never does
+    // ("Black" would bring in Sunderland's "Black Cats")
+    const main = tp.terms[0], last = main.key.split(" ").pop();
+    const phrases = [main.key, ...tp.terms.filter(t => t.inside === main && t.key === last && main.key.includes(" ")).map(t => t.key)];
     const esc = x => x.split(" ").map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s-]+");
     const re = new RegExp("(^|[^\\p{L}\\p{N}])(" + phrases.map(esc).join("|") + ")(?=$|[^\\p{L}\\p{N}])", "iu");
     const ids = new Set(), pubs = new Set(); let newest = 0;
