@@ -3752,11 +3752,46 @@ function ogLogo(f, shape){
   if (!tries.length){ letters(); return box; }
   const img = el("img"); img.alt = ""; img.loading = "lazy"; img.decoding = "async"; img.referrerPolicy = "no-referrer";
   let n = 0;
-  img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else letters(); };
-  img.onload = () => { if (img.naturalWidth && img.naturalWidth < 48 && !/i\.ytimg|yt3\.|ggpht|bsky|cdn\.bsky/.test(img.src)) img.onerror(); };
+  // Big tiles need big pictures: anything under 96 px is only kept if nothing sharper turns up; under 48 never
+  let fallback = "";
+  img.onerror = () => { n++; if (n < tries.length) img.src = tries[n]; else if (fallback){ img.onload = null; img.src = fallback; } else letters(); };
+  img.onload = () => {
+    const w = img.naturalWidth; if (!w || /i\.ytimg|yt3\.|ggpht|bsky|cdn\.bsky|^data:/.test(img.src)) return;
+    if (w < 96){ if (w >= 48 && !fallback) fallback = img.src; img.onerror(); }
+  };
   img.src = tries[0]; box.append(img);
   return box;
 }
+// Sharper logos for websites (app only: the phone can read the site's home page directly). Looks once a month
+// for the biggest square icon the site offers: apple-touch-icon, sized <link rel=icon>, or its web app manifest.
+async function findSiteIcon(f){
+  let base = ""; try{ base = new URL(f.site || f.url).origin; }catch{ return; }
+  f.hiIconAt = Date.now();
+  try{
+    const r = await fetchWithTimeout(base + "/", 10000); if (!r.ok) return;
+    const html = (await readCapped(r, MAX_PAGE, "That page")).slice(0, 200000);
+    const found = [];
+    for (const m of html.matchAll(/<link\b[^>]*>/gi)){
+      const tag = m[0], rel = (tag.match(/rel=["']?([^"'>]+)/i) || [])[1] || "", href = (tag.match(/href=["']([^"']+)["']/i) || [])[1];
+      if (!href) continue;
+      const abs = (() => { try{ return new URL(href.replace(/&amp;/g, "&"), r.url || base).href; }catch{ return ""; } })();
+      if (!/^https:/.test(abs)) continue;
+      if (/apple-touch-icon/i.test(rel)) found.push({u: abs, s: +((tag.match(/sizes=["']?(\d+)/i) || [])[1]) || 180});
+      else if (/(^|\s)icon(\s|$)/i.test(rel)){ const sz = +((tag.match(/sizes=["']?(\d+)/i) || [])[1]) || (/\.svg/i.test(abs) ? 512 : 0); if (sz) found.push({u: abs, s: sz}); }
+      else if (/manifest/i.test(rel)){
+        try{ const mr = await fetchWithTimeout(abs, 8000); if (mr.ok){ const j = JSON.parse(await readCapped(mr, 300000, "That file")); (j.icons || []).forEach(ic => { const sz = +String(ic.sizes || "").split(/[x\s]/)[0] || 0; const u = new URL(ic.src, abs).href; if (sz && /^https:/.test(u) && !/maskable/.test(ic.purpose || "")) found.push({u, s: sz}); }); } }catch{}
+      }
+    }
+    const best = found.filter(x => x.s >= 96).sort((a, b) => Math.abs(a.s - 256) - Math.abs(b.s - 256))[0];
+    if (best && best.u !== f.hiIcon){ f.hiIcon = best.u; save(); renderList(); }
+  }catch{} finally { save(); }
+}
+function sharpenLogos(){
+  if (!IS_APP) return;
+  const todo = state.feeds.filter(f => platformOf(f) === "Websites" && !f.audio && !isPrivateFeed(f) && !newsQuery(f.url) && !f.logo && f.logoMode !== "letters" && Date.now() - (f.hiIconAt || 0) > 30 * 86400000);
+  if (todo.length) pool(todo.slice(0, 40), 3, findSiteIcon);
+}
+setTimeout(sharpenLogos, 8000);
 // A chosen picture: centre square, 256 × 256, stored on this device only
 async function squareLogo(blob){
   const bmp = await createImageBitmap(blob);
@@ -5158,7 +5193,8 @@ function iconCandidates(f){
   if (platformOf(f) === "Websites" && !f.audio && !(isPrivateFeed(f) && !f.icon)){
     let base = "";
     try{ base = new URL(nq && nq.site ? "https://" + nq.site.split("/")[0] : (f.site || f.url)).origin; }catch{}
-    if (base) out.push(base + "/favicon.ico", base + "/apple-touch-icon.png");
+    if (f.hiIcon) out.push(f.hiIcon);
+    if (base) out.push(base + "/apple-touch-icon.png", base + "/favicon.ico");
     if (f.icon && !f.iconFailed) out.push(f.icon);
     return out;
   }
@@ -7380,10 +7416,21 @@ function checkPod(){
   const a = pod.audio;
   if (!pod.item || a.paused || a.ended) return;
   if (a.currentTime !== pod.lastT){ pod.lastT = a.currentTime; pod.lastMove = Date.now(); if (a.currentTime > 0) pod.retries = 0; return; }
-  if (Date.now() - (pod.lastMove || 0) > 20000) recoverPod("stalled");
+  const still = Date.now() - (pod.lastMove || 0);
+  // Stuck for over a minute means Android stopped it (headphones gone, the app frozen in the background):
+  // leave it paused rather than bursting into sound when YourFeed is next opened
+  if (still > 60000){ pod.audio.pause(); savePos(); syncPod(); return; }
+  if (still > 20000) recoverPod("stalled");
 }
 setInterval(checkPod, 5000);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkPod(); });
+// Headphones unplugged or Bluetooth disconnected (Android tells the app): pause, like every podcast app
+window.yfNoisy = () => {
+  const was = pod.item && !pod.audio.paused;
+  if (was){ pod.audio.pause(); savePos(); syncPod(); }
+  pauseAllVideos();
+  if (was) toast(isOG() ? "PAUSED · HEADPHONES DISCONNECTED" : "Paused: headphones disconnected");
+};
 pod.audio.addEventListener("error", () => { if (pod.item && pod.audio.getAttribute("src")) setTimeout(() => recoverPod("error"), 2000); });
 ["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "ratechange", "waiting", "playing"].forEach(ev => pod.audio.addEventListener(ev, syncPod));
 pod.audio.addEventListener("ended", () => {

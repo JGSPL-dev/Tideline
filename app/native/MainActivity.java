@@ -1,6 +1,10 @@
 package uk.co.appsforus.yourfeed;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
@@ -17,6 +21,7 @@ import android.webkit.WebChromeClient;
 import android.widget.FrameLayout;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -33,11 +38,21 @@ public class MainActivity extends BridgeActivity {
     private OnBackPressedCallback exitFull;
     // Set by the page before a video plays: short clips (mostly Shorts) stay upright in full screen
     private volatile boolean rotateFull = true;
+    // Headphones unplugged or a Bluetooth headset gone: Android says audio is "becoming noisy", so pause
+    private BroadcastReceiver noisy;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (bridge == null) return;
+        noisy = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (!AudioManager.ACTION_AUDIO_BECOMING_NOISY.equals(intent.getAction()) || bridge == null) return;
+                runOnUiThread(() -> bridge.getWebView().evaluateJavascript("window.yfNoisy && window.yfNoisy()", null));
+            }
+        };
+        ContextCompat.registerReceiver(this, noisy, new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY), ContextCompat.RECEIVER_NOT_EXPORTED);
         bridge.getWebView().addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void setRotateFull(boolean landscape) { rotateFull = landscape; }
@@ -184,5 +199,11 @@ public class MainActivity extends BridgeActivity {
         if (fullCallback != null) { fullCallback.onCustomViewHidden(); fullCallback = null; }
         // Tell the page: it pauses the video and scrolls back to where you were
         bridge.getWebView().evaluateJavascript("window.yfVideoExit && window.yfVideoExit()", null);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (noisy != null) { try { unregisterReceiver(noisy); } catch (Exception ignored) {} noisy = null; }
+        super.onDestroy();
     }
 }
