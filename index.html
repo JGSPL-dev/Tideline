@@ -1257,6 +1257,18 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] .spot-tip .hint{color:#C8C8C8;font:700 11px var(--og-mono);text-transform:uppercase}
 :root[data-look="offgrid"] .spot-tip .btn{border-radius:0;border:3px solid #fff;background:none;color:#fff;font:700 12px var(--og-mono);text-transform:uppercase;box-shadow:none}
 :root[data-look="offgrid"] .spot-tip .btn.primary{background:var(--og-paper);border-color:var(--og-paper);color:#000}
+/* topic page: "there's more in this box" and live posts */
+:root .tp-more.tp-down,:root .tp-more.tp-swipe,:root[data-look="offgrid"] .tp-more.tp-down,:root[data-look="offgrid"] .tp-more.tp-swipe{display:block;width:100%;margin:0;padding:10px 12px;border:0;background:#000;color:var(--og-paper,#FFE600);font:700 12px var(--og-mono,monospace);text-transform:uppercase;text-align:left;cursor:pointer}
+.tp-video.at-end .tp-swipe{opacity:.6}
+.tp-scroll.capped{-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
+.tp-scroll.capped.at-end{-webkit-mask-image:none;mask-image:none}
+.tp-opts{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+.tp-video.at-end .tp-opts{-webkit-mask-image:none;mask-image:none}
+.tp-live{margin-top:12px}
+.tp-sub{margin:4px 0 6px;font:700 12px var(--og-mono,monospace);text-transform:uppercase}
+.tp-item.live{display:block;text-decoration:none;color:inherit}
+.tp-net{background:#000;color:#fff;padding:1px 6px;margin-right:6px;font:700 10px var(--og-mono,monospace);text-transform:uppercase}
+.tp-post{font:400 14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;text-transform:none!important}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -3083,8 +3095,18 @@ function topicPage(tp){
     };
     opts.append(b);
   });
-  vsec.append(el("h3", "tp-h", "Videos"));
-  if (vids.length){ vsec.append(player, opts); if (vids.length > 3) opts.classList.add("two"); }
+  vsec.append(el("h3", "tp-h", vids.length ? `Videos (${vids.length})` : "Videos"));
+  if (vids.length){
+    vsec.append(player, opts); if (vids.length > 3) opts.classList.add("two");
+    // Say plainly that the row goes on, and how far
+    const shown = vids.length > 3 ? 4 : 2;
+    if (vids.length > shown){
+      const more = el("button", "tp-more tp-swipe", `Swipe for ${vids.length - shown} more →`); more.type = "button";
+      more.onclick = () => opts.scrollBy({left: opts.clientWidth * 0.9, behavior: "smooth"});
+      vsec.append(more);
+      opts.addEventListener("scroll", () => { const end = opts.scrollLeft + opts.clientWidth >= opts.scrollWidth - 8; more.textContent = end ? "That's all" : `Swipe for more →`; vsec.classList.toggle("at-end", end); }, {passive: true});
+    }
+  }
   else vsec.append(el("p", "tp-none", "No videos on this from your channels yet."));
   page.append(vsec);
   // Two columns: news, and conversation
@@ -3102,7 +3124,13 @@ function topicPage(tp){
   const cols = el("div", "tp-cols");
   const news = its.filter(i => ["articles", "topics", "audio"].includes(typeOf(i)));
   const talk = its.filter(i => typeOf(i) === "conversations");
-  // Each box shows five stories; the rest scroll inside the box
+  // Each box shows five stories; the rest scroll inside the box, with a bar under it that says so (tap it to move on)
+  const moreBar = (box, n, what) => {
+    const b = el("button", "tp-more tp-down", `${n} more ${what} in this box ↓`); b.type = "button";
+    b.onclick = () => box.scrollBy({top: box.clientHeight * 0.85, behavior: "smooth"});
+    box.addEventListener("scroll", () => { const end = box.scrollTop + box.clientHeight >= box.scrollHeight - 6; b.textContent = end ? "That's all" : `More ${what} below ↓`; box.classList.toggle("at-end", end); }, {passive: true});
+    return b;
+  };
   const scroller = (list, cls) => {
     const box = el("div", "tp-scroll"); box.tabIndex = 0; box.setAttribute("role", "region");
     list.slice(0, 60).forEach(i => box.append(row(i, cls)));
@@ -3114,11 +3142,14 @@ function topicPage(tp){
     return box;
   };
   const left = el("div", "tp-col"); left.append(el("h3", "tp-h", `News (${news.length})`));
-  if (news.length){ left.append(scroller(news, "news")); if (news.length > 5) left.append(el("p", "tp-more", `Scroll for ${Math.min(60, news.length) - 5} more`)); }
+  if (news.length){ const sc = scroller(news, "news"); left.append(sc); if (news.length > 5) left.append(moreBar(sc, Math.min(60, news.length) - 5, "stories")); }
   else left.append(el("p", "tp-none", "No articles yet."));
-  const right = el("div", "tp-col"); right.append(el("h3", "tp-h", `Conversation (${talk.length})`));
-  if (talk.length){ right.append(scroller(talk, "talk")); if (talk.length > 5) right.append(el("p", "tp-more", `Scroll for ${Math.min(60, talk.length) - 5} more`)); }
-  else right.append(el("p", "tp-none", "Nobody you follow is talking about it yet."));
+  const right = el("div", "tp-col");
+  const talkH = el("h3", "tp-h", `Conversation (${talk.length})`); right.append(talkH);
+  if (talk.length){ const sc = scroller(talk, "talk"); right.append(sc); if (talk.length > 5) right.append(moreBar(sc, Math.min(60, talk.length) - 5, "posts")); }
+  // What people are saying right now on Mastodon and Bluesky about this topic, without following anything
+  const live = el("div", "tp-live"); right.append(live);
+  liveTalk(state.topic, live, talkH, talk.length, moreBar);
   // Follow the hashtag: Mastodon has a public feed for every tag
   const tag = state.topic.label.replace(/[^\p{L}\p{N}]+/gu, "");
   if (tag.length >= 3){
@@ -3140,6 +3171,55 @@ function topicPage(tp){
     catch(e){ fol.disabled = false; fol.textContent = "Follow this topic"; toast(e.message); } };
   const foot = el("div", "tp-foot"); foot.append(fol, el("span", "hint", "Adds it as a News topic, so you keep getting stories about it.")); page.append(foot);
   return page;
+}
+// Live conversation for a trending topic: public posts from Mastodon (the topic as a hashtag) and Bluesky (a
+// search), newest first, in the app's language only. Asked straight from the device (the service's /json is the
+// fallback); nothing is followed or saved. Each topic is fetched for itself, so switching topics switches the posts.
+const liveCache = new Map();   // topic key → {at, posts}
+const APP_LANG = "en";
+function liveText(html){ const d = document.createElement("div"); d.innerHTML = String(html || "").replace(/<br\s*\/?>/gi, " ").replace(/<\/p>/gi, " "); return (d.textContent || "").replace(/\s+/g, " ").trim(); }
+async function fetchLive(tp){
+  const hit = liveCache.get(tp.key); if (hit && Date.now() - hit.at < 5 * 60000) return hit.posts;
+  const tag = tp.label.replace(/[^\p{L}\p{N}]+/gu, "");
+  const asks = [];
+  if (tag.length >= 3) asks.push(getJSON(`https://mastodon.social/api/v1/timelines/tag/${encodeURIComponent(tag)}?limit=40`).then(list => (Array.isArray(list) ? list : []).filter(p => (p.language || "").slice(0, 2) === APP_LANG && !p.sensitive && !p.spoiler_text).map(p => ({
+    id: "m:" + p.id, who: p.account && (p.account.display_name || p.account.acct) || "", handle: "@" + (p.account && p.account.acct || ""), where: "Mastodon",
+    at: Date.parse(p.created_at) || 0, text: liveText(p.content), url: p.url || p.uri }))).catch(() => []));
+  asks.push(getJSON(`https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent('"' + tp.label + '"')}&lang=${APP_LANG}&sort=latest&limit=40`).then(j => ((j && j.posts) || []).filter(p => { const l = p.record && p.record.langs; return !l || !l.length || l.some(x => String(x).slice(0, 2) === APP_LANG); }).map(p => ({
+    id: "b:" + p.uri, who: p.author && (p.author.displayName || p.author.handle) || "", handle: "@" + (p.author && p.author.handle || ""), where: "Bluesky",
+    at: Date.parse(p.record && p.record.createdAt || p.indexedAt) || 0, text: String(p.record && p.record.text || "").replace(/\s+/g, " ").trim(),
+    url: p.author && p.uri ? `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split("/").pop()}` : "" }))).catch(() => []));
+  const all = (await Promise.all(asks)).flat().filter(p => p.text && p.url && /^https:/.test(p.url));
+  // Must actually mention the topic, and no near-copies
+  const words = tp.label.toLowerCase().split(/\s+/), seen = new Set();
+  const posts = all.filter(p => { const t = p.text.toLowerCase(), k = t.slice(0, 80); if (seen.has(k)) return false; seen.add(k); return words.every(w => t.includes(w)) || t.includes("#" + tag.toLowerCase()); })
+    .sort((a, b) => b.at - a.at).slice(0, 40);
+  liveCache.set(tp.key, {at: Date.now(), posts});
+  return posts;
+}
+async function liveTalk(topic, box, head, followed, moreBar){
+  const key = topic.key;
+  box.append(el("p", "tp-none", "Looking on Mastodon and Bluesky…"));
+  let posts = [];
+  try{ posts = await fetchLive(topic); }catch{}
+  if (!state.topic || state.topic.key !== key || !box.isConnected) return;   // moved on to another topic
+  box.textContent = "";
+  head.textContent = `Conversation (${followed + posts.length})`;
+  if (!posts.length){ if (!followed) box.append(el("p", "tp-none", "No public posts about it right now.")); return; }
+  box.append(el("h4", "tp-sub", `Live on Mastodon and Bluesky (${posts.length})`));
+  const list = el("div", "tp-scroll"); list.tabIndex = 0; list.setAttribute("role", "region"); list.setAttribute("aria-label", "Public posts about " + topic.label);
+  posts.forEach(p => {
+    const a = el("a", "tp-item talk live"); a.href = p.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    const m = el("span", "tp-meta"); m.append(el("span", "tp-net", p.where), el("span", null, `${p.who} · ${ago(p.at)}`));
+    a.append(m, el("span", "tp-t tp-post", p.text.length > 280 ? p.text.slice(0, 277) + "…" : p.text));
+    list.append(a);
+  });
+  box.append(list);
+  if (posts.length > 5){
+    list.classList.add("capped");
+    requestAnimationFrame(() => { const r = list.children[5]; if (r) list.style.maxHeight = (r.offsetTop - list.firstChild.offsetTop) + "px"; });
+    box.append(moreBar(list, posts.length - 5, "posts"));
+  }
 }
 // New = not seen yet: never on screen long enough to read the headline, and never tapped
 const isNew = i => !state.looked.has(i.id) && !state.read.has(i.id);
