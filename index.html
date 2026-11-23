@@ -6,7 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="YourFeed">
-<meta name="theme-color" content="#edf0f3">
+<meta name="theme-color" content="#000000">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="manifest" href="manifest.webmanifest">
@@ -1230,6 +1230,33 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-tone="basic"] .ogf-chip[aria-pressed="true"]{background:var(--og-paper)}
 :root[data-tone="basic"] .og-vclose{background:var(--og-paper)}
 :root[data-tone="basic"] .ogs-b.close{color:#fff}
+/* website and wide screens: the feed is one centred column beside the rail */
+:root[data-look="offgrid"] .app,:root[data-look="offgrid"] .app.solo{display:block;height:auto;max-width:none;margin:0;padding-right:var(--og-rail);padding-left:0;box-sizing:border-box}
+:root[data-look="offgrid"][data-rail="left"] .app,:root[data-look="offgrid"][data-rail="left"] .app.solo{padding-right:0;padding-left:var(--og-rail)}
+:root[data-look="offgrid"] .feedcol,:root[data-look="offgrid"][data-rail="left"] .feedcol{margin:0 auto;max-width:720px}
+@media (min-width:760px){:root[data-look="offgrid"] .feedcol{border-left:3px solid #000;border-right:3px solid #000}}
+:root[data-look="offgrid"] #list:not(.shortgrid){display:block}
+:root[data-look="offgrid"] .empty.welcome .accent{color:#000;background:var(--og-hot);padding:0 .12em;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+:root[data-tone="basic"] .empty.welcome .accent{background:var(--og-paper)}
+:root[data-look="offgrid"] #list .empty.welcome h3{line-height:1.16;overflow:visible}
+/* first run: interest picker and tour */
+:root[data-look="offgrid"] dialog.onboard{background:var(--og-paper);color:#000;border:0;border-radius:0;font-family:var(--og-mono)}
+:root[data-tone="basic"] dialog.onboard{background:#fff}
+:root[data-look="offgrid"] dialog.onboard::backdrop{background:#000}
+:root[data-look="offgrid"] .ob-inner{max-width:640px;padding-top:calc(28px + env(safe-area-inset-top,0px))}
+:root[data-look="offgrid"] .ob-inner h2{font:400 clamp(44px,13vw,72px)/1 var(--og-disp);text-transform:uppercase;color:#000}
+:root[data-look="offgrid"] .ob-inner .hint{font:400 13px/1.5 var(--og-mono);color:#000}
+:root[data-look="offgrid"] .ob-chips{gap:8px}
+:root[data-look="offgrid"] .ob-chips .chip{min-height:44px;border:3px solid #000;border-radius:0;background:none;color:#000;font:700 13px var(--og-mono);text-transform:uppercase;padding:0 12px;box-shadow:none}
+:root[data-look="offgrid"] .ob-chips .chip[aria-pressed="true"]{background:#000;color:var(--og-paper)}
+:root[data-look="offgrid"] .ob-next{height:64px;border:3px solid #000;border-radius:0;background:#000;color:var(--og-paper);font:400 28px var(--og-disp);text-transform:uppercase;box-shadow:none}
+:root[data-look="offgrid"] .spot{border-radius:0;outline:4px solid var(--og-paper);box-shadow:0 0 0 9999px rgba(0,0,0,.72)}
+:root[data-look="offgrid"] .spot-tip{background:#000;color:#fff;border:3px solid var(--og-paper);border-radius:0;box-shadow:none;font-family:var(--og-mono)}
+:root[data-look="offgrid"] .spot-tip b{font:400 28px/1 var(--og-disp);text-transform:uppercase;color:var(--og-paper)}
+:root[data-look="offgrid"] .spot-tip p{color:#fff;font:400 13px/1.5 var(--og-mono)}
+:root[data-look="offgrid"] .spot-tip .hint{color:#C8C8C8;font:700 11px var(--og-mono);text-transform:uppercase}
+:root[data-look="offgrid"] .spot-tip .btn{border-radius:0;border:3px solid #fff;background:none;color:#fff;font:700 12px var(--og-mono);text-transform:uppercase;box-shadow:none}
+:root[data-look="offgrid"] .spot-tip .btn.primary{background:var(--og-paper);border-color:var(--og-paper);color:#000}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -1238,7 +1265,6 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] #list .empty h3{font:400 52px/1 var(--og-disp);text-transform:uppercase;margin:0 0 14px;color:#000}
 :root[data-look="offgrid"] #list .empty p{font:400 14px/1.5 var(--og-mono);color:#000}
 :root[data-look="offgrid"] #list .empty .btn{height:52px;border-radius:0;border:3px solid #000;background:#000;color:#fff;font:700 13px var(--og-mono);text-transform:uppercase;box-shadow:none;padding:0 18px}
-@media (min-width:900px){:root[data-look="offgrid"] .app{margin-right:var(--og-rail)}:root[data-look="offgrid"][data-rail="left"] .app{margin-right:0;margin-left:var(--og-rail)}:root[data-look="offgrid"] .feedcol{margin:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -3714,7 +3740,9 @@ function placeLook(){
 }
 // Asked once, the first time Off-grid is used: which side should the bar sit?
 function ogThumb(){
-  if (!isOG() || $("#ogThumb")) return;
+  if (!isOG() || $("#ogThumb") || store.get("yf.thumbAsked", 0)) return;
+  // Not on top of the first-run screens: wait until there's a feed and the tour is over
+  if (!state.feeds.length || document.querySelector(".spot, dialog.onboard[open]") || (typeof dlg !== "undefined" && dlg.open)){ setTimeout(ogThumb, 5000); return; }
   store.set("yf.thumbAsked", 1);
   const sh = el("div", "og-sheet"); sh.id = "ogThumb"; sh.setAttribute("role", "dialog"); sh.setAttribute("aria-labelledby", "ogThumbQ");
   const q = el("p", "og-sheetq", "Which thumb?"); q.id = "ogThumbQ"; sh.append(q);
@@ -8198,9 +8226,9 @@ function startOnboarding(){
   const first = chips.querySelector("button"); if (first) first.focus();
 }
 const TOUR = [
-  ["#manage", "Add your sources here", "Search for websites, YouTube channels, podcasts and more, or paste a link."],
-  ["#filterBtn", "Choose what you see", "Everything, or just articles, videos, audio or conversations. Pick a category or one feed, how far back, and whether to stack stories."],
-  ["#refresh", "Always up to date", "YourFeed checks each source on its own schedule. Tap here to check now. The light in the middle is green when everything's working; tap the box beside it for details."]
+  ["#manage", "Add your feeds here", "Search for websites, YouTube channels, podcasts and more, or paste a link."],
+  ["#filterBtn", "Choose what you see", "Find words, pick what kind (read, watch, listen, talk), a category or one feed, and how far back."],
+  ["#refresh", "Always up to date", "YourFeed checks each feed on its own schedule. Tap here, or pull the feed down, to check now. The side bar says if anything isn't working."]
 ];
 function startTour(step = 0){
   document.querySelectorAll(".spot,.spot-tip").forEach(n => n.remove());
@@ -8216,7 +8244,7 @@ function startTour(step = 0){
   tip.append(el("b", null, title), el("p", null, text));
   const row = el("div", "iorow");
   const skip = el("button", "btn", "Skip tour"); skip.type = "button"; skip.onclick = () => startTour(TOUR.length);
-  const nx = el("button", "btn primary", step === TOUR.length - 1 ? "Add my first source" : "Next"); nx.type = "button"; nx.onclick = () => startTour(step + 1);
+  const nx = el("button", "btn primary", step === TOUR.length - 1 ? "Add my first feed" : "Next"); nx.type = "button"; nx.onclick = () => startTour(step + 1);
   row.append(skip, nx); tip.append(el("span", "hint", `${step + 1} of ${TOUR.length}`), row);
   document.body.append(spot, tip);
   const below = r.bottom + 14, w = Math.min(320, innerWidth - 24);
