@@ -41,7 +41,11 @@ const admin = async (body, auth = env.ADMIN_KEY) => { const r = await call("/com
 test("health answers", async () => {
   const r = await call("/health");
   assert.equal(r.status, 200);
-  assert.deepEqual(await r.json(), {ok: true, youtubeApi: true, sharedStore: true});
+  const j = await r.json();
+  assert.equal(j.ok, true); assert.equal(j.youtubeApi, true); assert.equal(j.sharedStore, true);
+  // only yes/no for secrets, never their values
+  for (const k of ["pushSigning", "ownerKey", "rateLimiter"]) assert.equal(typeof j[k], "boolean");
+  assert.ok(!JSON.stringify(j).includes("test-key"));
 });
 
 test("other websites can't use the service", async () => {

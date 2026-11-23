@@ -16,7 +16,7 @@
 //   POST /community/add {domain}  → counts a website someone added; shared once enough people have and the owner approves
 //   GET /community/list           → {sites:[…]} approved websites
 //   POST /community/admin         → owner only (ADMIN_KEY): list pending, approve, deny, remove
-//   GET /health                   → {ok:true, youtubeApi:true|false}
+//   GET /health                   → {ok, version, youtubeApi, sharedStore, pushSigning, ownerKey, rateLimiter, communityMin}
 //
 // Secrets and settings (Cloudflare → Worker → Settings): YT_API_KEY, WEBSUB_SECRET (signs YouTube push deliveries),
 // ADMIN_KEY (community approvals), optional COMMUNITY_MIN. Optional binding LIMITER (Workers rate limiting) on top of the
@@ -360,7 +360,9 @@ function videosFrom(t){
 
 async function handle(req, url, origin, env, ctx){
   const p = url.pathname.replace(/\/+$/, "") || "/";
-  if (p === "/health") return json(origin, {ok: true, youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE)});
+  // Says which settings are present (never their values), so set-up can be checked from a browser
+  if (p === "/health") return json(origin, {ok: true, version: "2026-11-23", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
+    pushSigning: !!(env && env.WEBSUB_SECRET), ownerKey: !!(env && env.ADMIN_KEY), rateLimiter: !!(env && env.LIMITER), communityMin: Number(env && env.COMMUNITY_MIN) || COMMUNITY_MIN});
 
   if (p === "/youtube/latest"){
     const id = url.searchParams.get("id") || "";
