@@ -440,7 +440,8 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .tp-item{display:flex;flex-direction:column;gap:3px;text-align:left;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;padding:9px 0;cursor:pointer;min-width:0}
 .tp-col .tp-h + .tp-item{border-top:0;padding-top:0}
 .tp-meta{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);min-width:0}
-.tp-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tp-meta span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.tp-meta .tp-net{flex:none}
 .tp-t{font-size:14px;line-height:1.3;font-weight:600;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .tp-item.talk .tp-t{font-weight:500}
 .tp-item.read .tp-t{opacity:.6}
@@ -1166,7 +1167,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 /* trending page boxes and footer */
 :root[data-look="offgrid"] body{overflow-x:clip}
 :root[data-look="offgrid"] .tpage,:root[data-look="offgrid"] .tp-cols,:root[data-look="offgrid"] .tp-col,:root[data-look="offgrid"] .tp-video{min-width:0;max-width:100%;box-sizing:border-box}
-:root[data-look="offgrid"] .tp-col{overflow:hidden}
+:root[data-look="offgrid"] .tp-col{overflow:hidden;max-width:calc(100% - 24px)}
 :root[data-look="offgrid"] .tp-item,:root[data-look="offgrid"] .tp-item .tp-t{min-width:0;max-width:100%;overflow-wrap:anywhere}
 @media (max-width:700px){:root[data-look="offgrid"] .tp-opts{grid-auto-columns:calc((100% - 8px) / 2)}}
 :root[data-look="offgrid"] .tp-scroll.capped{border-bottom:3px solid #000;scrollbar-color:#000 transparent}
@@ -3198,10 +3199,10 @@ async function fetchLive(tp){
   const tag = tp.label.replace(/[^\p{L}\p{N}]+/gu, "");
   const asks = [];
   if (tag.length >= 3) asks.push(getJSON(`https://mastodon.social/api/v1/timelines/tag/${encodeURIComponent(tag)}?limit=40`).then(list => (Array.isArray(list) ? list : []).filter(p => (p.language || "").slice(0, 2) === APP_LANG && !p.sensitive && !p.spoiler_text).map(p => ({
-    id: "m:" + p.id, who: p.account && (p.account.display_name || p.account.acct) || "", handle: "@" + (p.account && p.account.acct || ""), where: "Mastodon",
+    id: "m:" + p.id, who: (p.account && (p.account.display_name.replace(/:[\w+-]+:/g, "").trim() || p.account.username || p.account.acct) || "").slice(0, 40), handle: "@" + (p.account && p.account.acct || ""), where: "Mastodon",
     at: Date.parse(p.created_at) || 0, text: liveText(p.content), url: p.url || p.uri }))).catch(() => []));
   asks.push(getJSON(`https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent('"' + tp.label + '"')}&lang=${APP_LANG}&sort=latest&limit=40`).then(j => ((j && j.posts) || []).filter(p => { const l = p.record && p.record.langs; return !l || !l.length || l.some(x => String(x).slice(0, 2) === APP_LANG); }).map(p => ({
-    id: "b:" + p.uri, who: p.author && (p.author.displayName || p.author.handle) || "", handle: "@" + (p.author && p.author.handle || ""), where: "Bluesky",
+    id: "b:" + p.uri, who: (p.author && (p.author.displayName || p.author.handle) || "").slice(0, 40), handle: "@" + (p.author && p.author.handle || ""), where: "Bluesky",
     at: Date.parse(p.record && p.record.createdAt || p.indexedAt) || 0, text: String(p.record && p.record.text || "").replace(/\s+/g, " ").trim(),
     url: p.author && p.uri ? `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split("/").pop()}` : "" }))).catch(() => []));
   const all = (await Promise.all(asks)).flat().filter(p => p.text && p.url && /^https:/.test(p.url) && postIsEnglish(p.text));
