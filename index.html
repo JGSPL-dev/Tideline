@@ -426,6 +426,11 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .tp-stop{align-self:flex-start;margin-top:4px;border:1px solid var(--line);background:none;color:var(--ink);border-radius:99px;padding:3px 10px;font:inherit;font-size:12.5px;cursor:pointer}
 .tp-opts{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 16px) / 3);gap:8px;overflow-x:auto;scrollbar-width:none}
 .tp-opts::-webkit-scrollbar{display:none}
+.tp-opts.two{grid-template-rows:auto auto}
+.tp-scroll{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tp-scroll.capped{overflow-y:auto;overscroll-behavior:contain;position:relative;scrollbar-width:thin}
+.tp-scroll .tp-item:first-child{border-top:0;padding-top:0}
+.tp-more{margin:6px 0 0;font-size:12px;color:var(--muted)}
 .tp-opt{display:flex;flex-direction:column;gap:4px;padding:0;border:2px solid transparent;border-radius:10px;background:none;color:var(--ink);font:inherit;text-align:left;cursor:pointer;min-width:0}
 .tp-opt img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:8px;background:var(--sunk)}
 .tp-opt.on{border-color:var(--brand)}
@@ -1158,6 +1163,15 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] #list.shortgrid > .card.og.ogshort:is(:nth-of-type(4n+2),:nth-of-type(4n+3)) .og-b{color:#fff;border-color:#fff}
 :root[data-look="offgrid"] #list > .card.og.ogshort.seen{background:#fff!important;color:#000!important}
 :root[data-look="offgrid"] #list > .card.og.ogshort.seen img{filter:grayscale(1)}
+/* trending page boxes and footer */
+@media (max-width:700px){:root[data-look="offgrid"] .tp-opts{grid-auto-columns:calc((100% - 8px) / 2)}}
+:root[data-look="offgrid"] .tp-scroll.capped{border-bottom:3px solid #000;scrollbar-color:#000 transparent}
+:root[data-look="offgrid"] .tp-more{font:700 11px var(--og-mono);text-transform:uppercase;color:#000}
+:root[data-look="offgrid"] .tpage .tp-foot{margin:4px 12px 8px;display:flex;flex-direction:column;align-items:stretch;gap:8px}
+:root[data-look="offgrid"] .tpage .tp-foot .btn{height:56px;border-radius:0;border:3px solid #000;background:#000;color:var(--og-paper);font:400 24px var(--og-disp);text-transform:uppercase;box-shadow:none;justify-content:center}
+:root[data-look="offgrid"] .tpage .tp-foot .btn:disabled{background:none;color:#000;opacity:1}
+:root[data-look="offgrid"] .tpage .tp-foot .hint{font:400 12px/1.5 var(--og-mono);color:#000}
+:root[data-look="offgrid"] .tpage .tp-follow{width:100%;justify-content:flex-start}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -2950,7 +2964,7 @@ function topicPage(tp){
   const first = its.reduce((a, b) => (a && (a.date || 0) <= (b.date || 0)) ? a : b, null), ff = first && feedById(first.feedId);
   page.append(el("p", "tp-stats", `${its.length} ${its.length === 1 ? "story" : "stories"} from ${tp.pubs.size} sources · first ${first ? ago(first.date || first.seen) : ""}${ff ? " in " + ff.title : ""} · latest ${ago(tp.newest)}`));
   // Videos: pick one and it plays here, staying at the top while you read
-  const vids = its.filter(i => typeOf(i) === "videos").slice(0, 8);
+  const vids = its.filter(i => typeOf(i) === "videos").slice(0, 18);
   const vsec = el("div", "tp-video");
   const player = el("div", "tp-player"); player.hidden = true;
   const opts = el("div", "tp-opts");
@@ -2981,7 +2995,7 @@ function topicPage(tp){
     opts.append(b);
   });
   vsec.append(el("h3", "tp-h", "Videos"));
-  if (vids.length) vsec.append(player, opts);
+  if (vids.length){ vsec.append(player, opts); if (vids.length > 3) opts.classList.add("two"); }
   else vsec.append(el("p", "tp-none", "No videos on this from your channels yet."));
   page.append(vsec);
   // Two columns: news, and conversation
@@ -2999,11 +3013,23 @@ function topicPage(tp){
   const cols = el("div", "tp-cols");
   const news = its.filter(i => ["articles", "topics", "audio"].includes(typeOf(i)));
   const talk = its.filter(i => typeOf(i) === "conversations");
+  // Each box shows five stories; the rest scroll inside the box
+  const scroller = (list, cls) => {
+    const box = el("div", "tp-scroll"); box.tabIndex = 0; box.setAttribute("role", "region");
+    list.slice(0, 60).forEach(i => box.append(row(i, cls)));
+    if (list.length > 5){
+      box.classList.add("capped");
+      box.setAttribute("aria-label", `${list.length} stories, scroll for more`);
+      requestAnimationFrame(() => { const r = box.children[5]; if (r) box.style.maxHeight = (r.offsetTop - box.firstChild.offsetTop) + "px"; });
+    }
+    return box;
+  };
   const left = el("div", "tp-col"); left.append(el("h3", "tp-h", `News (${news.length})`));
-  if (news.length) news.slice(0, 40).forEach(i => left.append(row(i, "news"))); else left.append(el("p", "tp-none", "No articles yet."));
+  if (news.length){ left.append(scroller(news, "news")); if (news.length > 5) left.append(el("p", "tp-more", `Scroll for ${Math.min(60, news.length) - 5} more`)); }
+  else left.append(el("p", "tp-none", "No articles yet."));
   const right = el("div", "tp-col"); right.append(el("h3", "tp-h", `Conversation (${talk.length})`));
-  talk.slice(0, 40).forEach(i => right.append(row(i, "talk")));
-  if (!talk.length) right.append(el("p", "tp-none", "Nobody you follow is talking about it yet."));
+  if (talk.length){ right.append(scroller(talk, "talk")); if (talk.length > 5) right.append(el("p", "tp-more", `Scroll for ${Math.min(60, talk.length) - 5} more`)); }
+  else right.append(el("p", "tp-none", "Nobody you follow is talking about it yet."));
   // Follow the hashtag: Mastodon has a public feed for every tag
   const tag = state.topic.label.replace(/[^\p{L}\p{N}]+/gu, "");
   if (tag.length >= 3){
