@@ -7209,13 +7209,21 @@ function cycleSpeed(){
   pod.audio.playbackRate = pod.speed; store.set("tl.podSpeed", pod.speed); syncPod();
 }
 function stopPod(){
-  savePos(); pod.item = null;
-  // Stop it properly: pause, unload, and catch any late "play" (the lock-screen controls can send one)
-  const a = pod.audio; a.pause(); try{ a.currentTime = 0; }catch{} a.removeAttribute("src"); a.load();
-  setTimeout(() => { if (!pod.item && !a.paused) a.pause(); }, 300);
-  if ("mediaSession" in navigator) navigator.mediaSession.metadata = null;
+  // CLOSE means gone: the episode is unloaded, the strip and the phone's media notification go away.
+  // Each step is guarded so one failing step (on some phones the WebView throws on media calls) can't
+  // leave the bar on screen with the show merely paused.
+  try{ savePos(); }catch{}
+  pod.item = null; pod.failed = false;
+  const a = pod.audio;
+  try{ a.pause(); }catch{}
+  try{ a.currentTime = 0; }catch{}
+  try{ a.removeAttribute("src"); a.load(); }catch{}
+  setTimeout(() => { if (!pod.item && !a.paused) try{ a.pause(); }catch{} }, 300);
+  try{ if ("mediaSession" in navigator){ navigator.mediaSession.metadata = null; navigator.mediaSession.playbackState = "none"; } }catch{}
   nms("setPlaybackState", {playbackState: "none"}); nmsState = "none";
-  syncPod();
+  { const st = $("#ogStrip"); if (st) st.remove(); }
+  try{ syncPod(); }catch(e){ logError && logError(e); }
+  try{ renderMini(); }catch{}
 }
 function setMediaSession(it){
   const f = feedById(it.feedId) || {};
