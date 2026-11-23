@@ -1260,15 +1260,13 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 /* topic page: "there's more in this box" and live posts */
 :root .tp-more.tp-down,:root .tp-more.tp-swipe,:root[data-look="offgrid"] .tp-more.tp-down,:root[data-look="offgrid"] .tp-more.tp-swipe{display:block;width:100%;margin:0;padding:10px 12px;border:0;background:#000;color:var(--og-paper,#FFE600);font:700 12px var(--og-mono,monospace);text-transform:uppercase;text-align:left;cursor:pointer}
 .tp-video.at-end .tp-swipe{opacity:.6}
-.tp-scroll.capped{-webkit-mask-image:linear-gradient(#000 82%,transparent);mask-image:linear-gradient(#000 82%,transparent)}
-.tp-scroll.capped.at-end{-webkit-mask-image:none;mask-image:none}
-.tp-opts{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
-.tp-video.at-end .tp-opts{-webkit-mask-image:none;mask-image:none}
+.tp-swipe{margin-top:12px!important}
 .tp-live{margin-top:12px}
 .tp-sub{margin:4px 0 6px;font:700 12px var(--og-mono,monospace);text-transform:uppercase}
 .tp-item.live{display:block;text-decoration:none;color:inherit}
 .tp-net{background:#000;color:#fff;padding:1px 6px;margin-right:6px;font:700 10px var(--og-mono,monospace);text-transform:uppercase}
-.tp-post{font:400 14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;text-transform:none!important}
+.tp-live,.tp-live .tp-scroll,.tp-live .tp-item{min-width:0;max-width:100%;box-sizing:border-box}
+.tp-post{overflow-wrap:anywhere;word-break:break-word;font:400 14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif!important;text-transform:none!important}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -2904,7 +2902,7 @@ const TREND_STOP = new Set((
   "the a an of to in and for on is are was were with at by from as after how why what who whom when where which while new over into out up down about it its it's this that these those be been being has have had will would can could should may might must says said say tells told not no yes more most than his her their our your my we you they he she i me him them us after before just only also all any some every each other another first last next best top big little old young good great bad worst latest live watch video videos photos photo pictures gallery listen podcast episode ep part series season review reviews preview analysis opinion comment column explainer interview exclusive breaking update updates news report reports today tonight yesterday tomorrow week weekend month year years day days time times now here there home way back still even again ever never always plus vs v via full official new one two three four five six seven eight nine ten million billion per cent percent monday tuesday wednesday thursday friday saturday sunday january february march april may june july august september october november december jan feb mar apr jun jul aug sep sept oct nov dec morning evening night afternoon man woman men women people boy girl family uk us mr mrs ms dr sir lord lady st how-to guide tips things ways reasons why don't can't won't isn't i'm you're we're they're get gets got make makes made take takes took give gives gave go goes going come comes see sees know want look looks find finds call calls set sets win wins won lose loses lost beat beats hit hits back backs face faces join joins leave leaves sign signs open opens close closes help helps show shows reveal reveals reveals claim claims warn warns urge urges deal deals plan plans move moves bid bids ban bans row rows boost boosts cut cuts hike hikes rise rises fall falls star stars fans fan club clubs team teams game games match matches player players coach boss league cup final finals goal goals score scores result results line-up lineup transfer transfers rumours rumour latest story stories world global national local city country state government police court health school"
 ).split(" "));
 // Shopping words that headlines capitalise but that are never the subject
-["off", "sale", "sales", "deal", "deals", "save", "saving", "savings", "price", "prices", "discount", "discounts", "offer", "offers", "cheap", "cheapest", "bargain", "bargains", "now", "free"].forEach(w => TREND_STOP.add(w));
+["massive", "huge", "epic", "insane", "biggest", "dont", "cant", "wont", "its", "heres", "whats", "thats", "everything", "official", "exclusive", "breaking", "update", "latest", "review", "guide", "explained", "watch", "live", "off", "sale", "sales", "deal", "deals", "save", "saving", "savings", "price", "prices", "discount", "discounts", "offer", "offers", "cheap", "cheapest", "bargain", "bargains", "now", "free"].forEach(w => TREND_STOP.add(w));
 const trendNorm = w => w.toLowerCase().replace(/[’']s$/, "").replace(/[’'.]/g, "");
 function trendTokens(it){
   let t = String(it.title || "");
@@ -3177,6 +3175,23 @@ function topicPage(tp){
 // fallback); nothing is followed or saved. Each topic is fetched for itself, so switching topics switches the posts.
 const liveCache = new Map();   // topic key → {at, posts}
 const APP_LANG = "en";
+// Posts are often labelled English when they aren't, so the words decide: no other scripts, and at least a
+// quarter of the real words (links, #tags and @names left out) must be everyday English ones
+const POST_EN = new Set(("the a an of to in and for on is are was were be been being with at by from as after how why what who whom which when where new over into out up down about it its it's this that these those has have had having will would should could can can't cannot won't don't doesn't didn't isn't aren't wasn't not no yes more most less just only also very really so too but or if then than because while though still even ever never always all any some every each much many few other another same such own here there now today tonight tomorrow yesterday week year time day night " +
+  "i me my mine you your yours he him his she her hers we us our they them their what's that's there's here's i'm you're we're they're i've you've we've i'll you'll we'll i'd let's " +
+  "get got getting go going gone went come came coming make made making take took see saw seen look looking know knew think thought say said tell told want wanted need like love hate play played playing buy bought watch watched read try tried use used give gave find found keep kept start started finally " +
+  "good great best better bad worse worst big small little old young first last next long short high low right wrong real true fake sure free full whole " +
+  "one two three four five lot bit thing things stuff people guy guys someone something anything nothing everything way thanks thank please hey oh lol lmao yeah ok okay well actually probably maybe pretty kind sort").split(" "));
+function postIsEnglish(text){
+  const t = String(text || "").replace(/https?:\/\/\S+/g, " ").replace(/[#@][\p{L}\p{N}_.@-]+/gu, " ");
+  if (/[\u0370-\u03ff\u0400-\u04ff\u0590-\u05ff\u0600-\u06ff\u0900-\u0dff\u0e00-\u0e7f\u1100-\u11ff\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/.test(t)) return false;
+  const words = t.toLowerCase().match(/[\p{L}']+/gu) || [];
+  if (words.length < 3) return false;
+  const en = words.filter(w => POST_EN.has(w) || EN_WORDS.has(w.replace(/'s$/, ""))).length, other = words.filter(w => OTHER_WORDS.has(w)).length;
+  return en >= 2 && en / words.length >= 0.2 && en > other;
+}
+// Links shown as their site name, so a post reads as words
+const tidyPost = t => String(t || "").replace(/https?:\/\/(?:www\.)?([^\/\s]+)\S*/g, "($1)").replace(/\s+/g, " ").trim();
 function liveText(html){ const d = document.createElement("div"); d.innerHTML = String(html || "").replace(/<br\s*\/?>/gi, " ").replace(/<\/p>/gi, " "); return (d.textContent || "").replace(/\s+/g, " ").trim(); }
 async function fetchLive(tp){
   const hit = liveCache.get(tp.key); if (hit && Date.now() - hit.at < 5 * 60000) return hit.posts;
@@ -3189,7 +3204,7 @@ async function fetchLive(tp){
     id: "b:" + p.uri, who: p.author && (p.author.displayName || p.author.handle) || "", handle: "@" + (p.author && p.author.handle || ""), where: "Bluesky",
     at: Date.parse(p.record && p.record.createdAt || p.indexedAt) || 0, text: String(p.record && p.record.text || "").replace(/\s+/g, " ").trim(),
     url: p.author && p.uri ? `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split("/").pop()}` : "" }))).catch(() => []));
-  const all = (await Promise.all(asks)).flat().filter(p => p.text && p.url && /^https:/.test(p.url));
+  const all = (await Promise.all(asks)).flat().filter(p => p.text && p.url && /^https:/.test(p.url) && postIsEnglish(p.text));
   // Must actually mention the topic, and no near-copies
   const words = tp.label.toLowerCase().split(/\s+/), seen = new Set();
   const posts = all.filter(p => { const t = p.text.toLowerCase(), k = t.slice(0, 80); if (seen.has(k)) return false; seen.add(k); return words.every(w => t.includes(w)) || t.includes("#" + tag.toLowerCase()); })
@@ -3211,7 +3226,8 @@ async function liveTalk(topic, box, head, followed, moreBar){
   posts.forEach(p => {
     const a = el("a", "tp-item talk live"); a.href = p.url; a.target = "_blank"; a.rel = "noopener noreferrer";
     const m = el("span", "tp-meta"); m.append(el("span", "tp-net", p.where), el("span", null, `${p.who} · ${ago(p.at)}`));
-    a.append(m, el("span", "tp-t tp-post", p.text.length > 280 ? p.text.slice(0, 277) + "…" : p.text));
+    const tx = tidyPost(p.text);
+    a.append(m, el("span", "tp-t tp-post", tx.length > 280 ? tx.slice(0, 277) + "…" : tx));
     list.append(a);
   });
   box.append(list);
