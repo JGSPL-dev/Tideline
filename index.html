@@ -1197,6 +1197,39 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 .article-page.og-rd .reader blockquote{margin:14px 0;padding:6px 0 6px 14px;border-left:6px solid #000}
 .article-page.og-rd .reader figcaption,.article-page.og-rd .reader small{font:400 12px var(--og-mono);color:#000}
 .article-page.og-rd .reader .orig{margin:22px 0 0;padding-top:12px;border-top:3px solid #000;font:700 13px var(--og-mono);text-transform:uppercase}
+/* ===== Basic tone: the same layout in white, black and yellow, straight and calm ===== */
+:root[data-tone="basic"] .feedcol,:root[data-tone="basic"] .list,:root[data-tone="basic"] #list .empty,:root[data-tone="basic"] .og-vinfo,:root[data-tone="basic"] .og-filter,:root[data-tone="basic"] .ogf-foot,
+:root[data-tone="basic"] .article-page.og-ep,:root[data-tone="basic"] .article-page.og-ep .dlg,:root[data-tone="basic"] .article-page.og-ep .art-body,
+:root[data-tone="basic"] .article-page.og-rd,:root[data-tone="basic"] .article-page.og-rd .dlg,:root[data-tone="basic"] .article-page.og-rd .art-body,
+:root[data-tone="basic"] .tpage,:root[data-tone="basic"] .tp-video,:root[data-tone="basic"] .tp-col,:root[data-tone="basic"] .og-paneempty{background:#fff}
+/* every post white, a clean black line between posts */
+:root[data-tone="basic"] #list > .card.og,:root[data-tone="basic"] #list > .card.og:nth-of-type(n){background:#fff;color:#000;border-bottom:2px solid #000}
+:root[data-tone="basic"] #list > .card.og .og-tag{background:#000;color:#fff}
+:root[data-tone="basic"] #list > .card.og .og-b{color:#000;border-color:#000;background:#fff}
+:root[data-tone="basic"] #list > .card.og .og-b.main{background:var(--og-paper);color:#000;border-color:#000}
+:root[data-tone="basic"] #list > .card.og .og-b.on{background:#000;color:var(--og-paper);border-color:#000}
+:root[data-tone="basic"] #list > .card.og .og-acts .cact{color:#000;border-color:#000}
+/* straight pictures and logos, thinner frames */
+:root[data-tone="basic"] :is(.og-logo,.og-pic,.ogsh-pic,.oge-art,.og-top .og-b.main.big,.og-toast,.toast),:root[data-tone="basic"] .card.og:nth-of-type(n) :is(.og-logo,.og-pic,.ogsh-pic,.og-top .og-b.main.big){transform:none}
+:root[data-tone="basic"] .article-page.og-rd .reader .art-hero{transform:none}
+:root[data-tone="basic"] .og-logo{border-width:2px;border-color:#000}
+:root[data-tone="basic"] .og-pic,:root[data-tone="basic"] .ogsh-pic,:root[data-tone="basic"] .oge-art{border-width:2px;border-color:#000}
+:root[data-tone="basic"] .og-pic{margin-right:0}
+:root[data-tone="basic"] .og-top .og-b.main.big{background:var(--og-paper);color:#000;border:2px solid #000}
+/* done: white stays, text and pictures go grey */
+:root[data-tone="basic"] #list > .card.og.seen{color:#6b6b6b}
+:root[data-tone="basic"] #list > .card.og.seen .og-tag{background:#6b6b6b}
+/* Shorts grid: white tiles with black lines */
+:root[data-tone="basic"] #list.shortgrid > .card.og.ogshort:nth-of-type(n){background:#fff;color:#000;border-right:2px solid #000;border-bottom:2px solid #000}
+:root[data-tone="basic"] #list.shortgrid > .card.og.ogshort:nth-of-type(n) .og-tag{background:#000;color:#fff}
+:root[data-tone="basic"] #list.shortgrid > .card.og.ogshort:nth-of-type(n) .og-b{color:#000;border-color:#000}
+/* everything that was pink is yellow (set through --og-hot); text on it stays black */
+:root[data-tone="basic"] .og-strip{border-top-color:var(--og-paper)}
+:root[data-tone="basic"][data-look] .toast{background:var(--og-paper);color:#000;border:2px solid #000;transform:none}
+:root[data-tone="basic"] .og-new{background:var(--og-paper)}
+:root[data-tone="basic"] .ogf-chip[aria-pressed="true"]{background:var(--og-paper)}
+:root[data-tone="basic"] .og-vclose{background:var(--og-paper)}
+:root[data-tone="basic"] .ogs-b.close{color:#fff}
 /* toasts */
 :root[data-look="offgrid"] .toast{left:calc(14px + env(safe-area-inset-left,0px));top:calc(60px + env(safe-area-inset-top,0px));bottom:auto;transform:rotate(-3deg);background:var(--og-hot);color:#000;border:3px solid #000;border-radius:0;box-shadow:none;font:700 13px var(--og-mono);text-transform:uppercase;max-width:calc(100vw - var(--og-rail) - 40px)}
 :root[data-look="offgrid"][data-rail="left"] .toast{left:calc(var(--og-rail) + 14px)}
@@ -1507,9 +1540,9 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
       <button data-a="copy" style="${btn}">Copy error details</button>
       <pre id="bootErr" style="white-space:pre-wrap;font-size:12px;color:#666;margin-top:14px">${esc(B.errs.join("\n\n"))}</pre>`;
     // Off-grid look: the same safety screen, drawn on Paper
-    let og = false; try{ og = (JSON.parse(localStorage.getItem("tl.design") || "{}") || {}).look === "offgrid"; }catch{}
+    const og = true;   // one look now
     if (og){
-      let paper = "#FFE600"; try{ paper = JSON.parse(localStorage.getItem("tl.design")).paper || paper; }catch{}
+      let paper = "#FFE600"; try{ const d = JSON.parse(localStorage.getItem("tl.design")); if (d.look !== "basic" && d.look !== "classic") paper = d.paper || paper; }catch{}
       const ob = "display:block;width:100%;margin:10px 0;min-height:56px;padding:12px;border:3px solid #000;border-radius:0;background:none;color:#000;font:700 14px 'Space Mono',monospace;text-transform:uppercase;text-align:left";
       box.setAttribute("style", `position:fixed;inset:0;z-index:99999;overflow:auto;background:${paper};color:#000;font:14px/1.5 'Space Mono',monospace;padding:max(24px,env(safe-area-inset-top)) 18px 24px`);
       box.innerHTML = `<h2 style="margin:0 0 12px;font:400 64px/1 Anton,Impact,sans-serif;text-transform:uppercase">Something broke</h2>
@@ -1665,7 +1698,7 @@ state.stackShown = {};
 state.saved = store.get("yf.saved", []);
 const saveSaved = () => store.set("yf.saved", state.saved);
 const isSaved = id => state.saved.some(x => x.id === id);
-const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "week", sort: "newest", saved: false, vkind: "videos"};
+const VIEW_DEFAULT = {type: "all", unread: false, source: "all", from: "week", sort: "newest", saved: false, vkind: "videos", q: ""};
 const view = {...VIEW_DEFAULT, ...store.get("tl.view", {})};
 // Tabs renamed Nov 2026: Reddit + Social → Conversations, Podcasts → Audio, Saved → its own button
 view.type = {reddit: "conversations", social: "conversations", podcasts: "audio"}[view.type] || view.type;
@@ -3634,7 +3667,8 @@ function ogShort(it){
 /* ---------- Off-grid look (Settings → Look → Style) ----------
    From the Nov 2026 design canvas, option E: a black side bar for the controls, the feed in colour slabs
    (yellow, black, pink) with the source's logo shaped by type, big uppercase headlines, and one clear action. */
-const isOG = () => design.look === "offgrid";
+const isOG = () => true;            // one layout now (Colourful or Basic); the old Classic layout code is unused
+const isBasic = () => design.look === "basic";
 const OG_PARKED = ["#manage", ".top .brand", "#savedBtn", "#nowBtn", "#refresh", "#statusPop", "#activeFilter", "#filterBtn", "#filterBox"];
 function placeLook(){
   const on = isOG();
@@ -3712,7 +3746,8 @@ function paintOgNew(){
 // The strip's CLEAR / BACK TO FEED: everything, out of Saved and out of a topic
 function ogReset(){
   state.topic = null; state.ogNew = 0; paintOgNew();
-  Object.assign(view, {type: "all", source: "all", unread: false, saved: false, from: VIEW_DEFAULT.from, sort: VIEW_DEFAULT.sort});
+  Object.assign(view, {type: "all", source: "all", unread: false, saved: false, from: VIEW_DEFAULT.from, sort: VIEW_DEFAULT.sort, q: ""});
+  { const w = $("#ogWords"); if (w) w.value = ""; }
   saveView(); state.shown = PAGE; snapLooked();
   if (typeof closeFilterBox === "function" && !$("#filterBox").hidden) closeFilterBox(true);
   renderChips(); renderStatus(); renderList(); renderFilterBar(); renderFilterBox(); scrollFeedTop();
@@ -6942,14 +6977,14 @@ $("#searchPage").addEventListener("close", () => { renderTopResults(); renderFee
 renderFilterChips($("#searchFilters"), renderAllResults);
 
 /* ---------- design settings ---------- */
-const DESIGN_DEFAULT = {look:"classic", rail:"right", paper:"#FFE600", hot:"#FF6FB5", theme:"system", accent:"orange", scale:"m", head:"serif", layout:"magazine", density:"normal", thumbs:"large", sum:"on", width:"narrow", stack:"off"};
+const DESIGN_DEFAULT = {look:"colourful", rail:"right", paper:"#FFE600", hot:"#FF6FB5", theme:"system", accent:"orange", scale:"m", head:"serif", layout:"magazine", density:"normal", thumbs:"large", sum:"on", width:"narrow", stack:"off"};
 const ACCENTS = {
   orange:["#c2410c","#ff8a4c"], teal:["#0d6b63","#55bdb1"], blue:["#1d5fd1","#79a8ff"], violet:["#6b3fd4","#b49cff"], rose:["#b4235a","#ff8fb4"],
   amber:["#9a5b00","#f2b453"], green:["#2f7a1f","#8fd47a"], slate:["#3d4a5c","#a9b6c8"], red:["#c0362c","#ff8a7e"]
 };
 const DESIGN_ROWS = [
-  ["look","Style",[["classic","Classic"],["offgrid","Off-grid"]]],
-  ["rail","Off-grid side bar",[["right","Right"],["left","Left"]]],
+  ["look","Style",[["colourful","Colourful"],["basic","Basic"]]],
+  ["rail","Side bar",[["right","Right"],["left","Left"]]],
   ["paper","Paper colour",[["#FFE600","Yellow"],["#FFFFFF","White"],["#B8FF5A","Lime"],["#FFB3A1","Peach"]]],
   ["hot","Hot colour",[["#FF6FB5","Pink"],["#FF7A3D","Orange"],["#6FD3FF","Sky"],["#FFFFFF","White"]]],
   ["theme","Theme",[["system","Auto"],["light","Light"],["dark","Dark"],["black","Black"]]],
@@ -6963,6 +6998,11 @@ const DESIGN_ROWS = [
   ["width","Width on desktop",[["narrow","Narrow"],["wide","Wide"]]]
 ];
 let design = {...DESIGN_DEFAULT, ...store.get("tl.design", {})};
+// 23 Nov 2026: one look with two tones. Off-grid became Colourful (the default); Classic became Basic, which uses
+// the same layout in white, black and yellow. Old saved choices move across.
+if (design.look === "offgrid") design.look = "colourful";
+if (design.look === "classic") design.look = "basic";
+if (design.look !== "colourful" && design.look !== "basic") design.look = "colourful";
 // Nov 2026: Magazine with large images became the default; move people still on the old defaults
 if (!store.get("yf.design2", false)){ if (design.layout === "list" && design.thumbs === "small"){ design.layout = "magazine"; design.thumbs = "large"; store.set("tl.design", design); } store.set("yf.design2", true); }
 design.accent = "orange";   // accent colour setting removed Nov 2026: always the brand orange
@@ -6974,14 +7014,15 @@ function applyDesign(){
   r.style.setProperty("--accent-l", ac[0]); r.style.setProperty("--accent-d", ac[1]);
   r.style.setProperty("--scale", {s:.9, m:1, l:1.12, xl:1.25}[design.scale] || 1);
   r.style.setProperty("--head", design.head === "sans" ? "var(--ui)" : "var(--read)");
-  ["layout","density","thumbs","sum","width","look","rail"].forEach(k => r.dataset[k] = design[k]);
+  ["layout","density","thumbs","sum","width","rail"].forEach(k => r.dataset[k] = design[k]);
+  r.dataset.look = "offgrid"; r.dataset.tone = design.look;
   // Off-grid colours; if both are white, Hot falls back to pink so slabs still alternate
   const hot = design.paper === "#FFFFFF" && design.hot === "#FFFFFF" ? "#FF6FB5" : design.hot;
-  if (design.look === "offgrid"){ r.style.setProperty("--og-paper", design.paper || "#FFE600"); r.style.setProperty("--og-hot", hot || "#FF6FB5"); }
-  else { r.style.removeProperty("--og-paper"); r.style.removeProperty("--og-hot"); }
+  if (isBasic()){ r.style.setProperty("--og-paper", "#FFE600"); r.style.setProperty("--og-hot", "#FFE600"); }
+  else { r.style.setProperty("--og-paper", design.paper || "#FFE600"); r.style.setProperty("--og-hot", hot || "#FF6FB5"); }
   try{ placeLook(); }catch(e){ console.warn(e); }
   const meta = document.querySelector('meta[name="theme-color"]');
-  const bg = design.look === "offgrid" ? "#000000" : (getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3");
+  const bg = isOG() ? "#000000" : (getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3");
   if (meta) meta.content = bg;
   // In the app: Android's status and navigation bars take the page background (not orange), with matching icons
   try{
@@ -6997,6 +7038,7 @@ function renderDesign(){
   const OG_ROWS = ["look", "rail", "paper", "hot", "thumbs", "sum", "scale"], CLASSIC_HIDE = ["rail", "paper", "hot"];
   DESIGN_ROWS.forEach(([key, label, opts]) => {
     if (isOG() ? !OG_ROWS.includes(key) : CLASSIC_HIDE.includes(key)) return;
+    if (isBasic() && (key === "paper" || key === "hot")) return;   // Basic is always yellow, white and black
     if (isOG()){
       if (key === "thumbs") opts = [["large", "Big"], ["small", "Small"], ["off", "None"]];
       if (key === "sum") opts = [["on", "On"], ["off", "Off"]];
@@ -7143,8 +7185,12 @@ function playEpisode(it){
   if (local) pod.audio.addEventListener("error", () => { if (pod.item === it && pod.audio.src !== it.audioUrl){ delete dl.list[it.id]; saveDl(); pod.audio.src = it.audioUrl; pod.audio.play().catch(() => {}); } }, {once: true});
   { const ss = store.get("yf.startSpeed", 0); if (ss){ pod.speed = ss; store.set("tl.podSpeed", ss); } }
   pod.audio.playbackRate = pod.speed;
+  // Where to start: where you left off, otherwise your chosen starting point (skips most intros and adverts at
+  // the top; never past a third of a short episode)
+  const startAt = pod.played.has(it.id) ? 0 : store.get("yf.startAt", 0);
   const resume = pod.pos[it.id] || 0;
   if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
+  else if (startAt) pod.audio.addEventListener("loadedmetadata", () => { const d = pod.audio.duration; if (!isFinite(d) || d > startAt * 3) pod.audio.currentTime = startAt; }, {once: true});
   pod.audio.play().catch(() => {});
   pod.lastT = -1; pod.lastMove = Date.now(); pod.retries = 0; pod.failed = false;
   state.read.add(it.id); save(); renderChips();
@@ -7159,7 +7205,10 @@ function cycleSpeed(){
   pod.audio.playbackRate = pod.speed; store.set("tl.podSpeed", pod.speed); syncPod();
 }
 function stopPod(){
-  savePos(); pod.audio.pause(); pod.audio.removeAttribute("src"); pod.audio.load(); pod.item = null;
+  savePos(); pod.item = null;
+  // Stop it properly: pause, unload, and catch any late "play" (the lock-screen controls can send one)
+  const a = pod.audio; a.pause(); try{ a.currentTime = 0; }catch{} a.removeAttribute("src"); a.load();
+  setTimeout(() => { if (!pod.item && !a.paused) a.pause(); }, 300);
   if ("mediaSession" in navigator) navigator.mediaSession.metadata = null;
   nms("setPlaybackState", {playbackState: "none"}); nmsState = "none";
   syncPod();
@@ -7460,6 +7509,8 @@ function refreshPodTags(){
 }
 pod.audio.addEventListener("pause", () => setTimeout(refreshPodTags, 50));
 pod.audio.addEventListener("play", () => pauseAllVideos());
+// Nothing should ever play once the player is closed
+pod.audio.addEventListener("playing", () => { if (!pod.item) pod.audio.pause(); });
 pod.audio.addEventListener("playing", () => { if (pod.failed){ pod.failed = false; syncPod(); } });
 pod.audio.addEventListener("pause", savePos);
 addEventListener("pagehide", savePos);
@@ -7765,6 +7816,7 @@ function renderAudioPrefs(){
   row("Skip back", [[10, "10 s"], [15, "15 s"], [30, "30 s"]], BACK_S, v => { BACK_S = v; store.set("yf.skipBack", v); });
   row("Skip forward", [[10, "10 s"], [15, "15 s"], [30, "30 s"]], FWD_S, v => { FWD_S = v; store.set("yf.skipFwd", v); });
   row("Starting speed", [[0, "Last used"], [1, "1×"], [1.25, "1.25×"], [1.5, "1.5×"], [2, "2×"]], store.get("yf.startSpeed", 0), v => store.set("yf.startSpeed", v));
+  row("Start new episodes at", [[0, "Beginning"], [30, "0:30"], [60, "1:00"], [90, "1:30"], [120, "2:00"], [180, "3:00"]], store.get("yf.startAt", 0), v => store.set("yf.startAt", v));
 }
 renderAudioPrefs();
 document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
