@@ -7,7 +7,7 @@ A small Cloudflare Worker that does the few things a browser can't: read feeds f
 1. Cloudflare dashboard → Workers & Pages → Create → Create Worker. Name it `yourfeed-service` → Deploy.
 2. Edit code → select everything → paste all of `worker.js` → Deploy.
 3. Optional, recommended: Settings → Domains & Routes → add `service.appsforus.co.uk` (needs the domain on Cloudflare).
-4. Recommended: your domain (appsforus.co.uk) → Security → WAF → Rate limiting rules → Create rule: name `yourfeed-service`; if incoming requests match Hostname equals `service.appsforus.co.uk`; with the same characteristics IP; when rate exceeds 100 requests per 10 seconds; then Block for 10 seconds → Deploy. (The free plan allows one rule with a 10-second period; the service also limits each visitor to 120 requests a minute itself.)
+4. Recommended: your domain (appsforus.co.uk) → Security → WAF → Rate limiting rules → Create rule: name `yourfeed-service`; the free plan can only match paths, so Edit expression: `(starts_with(http.request.uri.path, "/youtube/") or starts_with(http.request.uri.path, "/feed") or starts_with(http.request.uri.path, "/json") or starts_with(http.request.uri.path, "/discover") or starts_with(http.request.uri.path, "/community/"))` (leave /websub out); with the same characteristics IP; when rate exceeds 100 requests per 10 seconds; then Block for 10 seconds → Deploy. (The free plan allows one rule with a 10-second period; the service also limits each visitor to 120 requests a minute itself.)
 5. Put the address into YourFeed: Menu → Settings → YourFeed service → Test. Once it works, it can be built in as `SERVICE_DEFAULT` in `index.html`.
 
 ## Optional: the official YouTube Data API (recommended)
