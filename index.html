@@ -3860,9 +3860,17 @@ function ogDlBtn(it){
   paintDl(b, it.id); return b;
 }
 // Player strip (Off-grid): black, along the bottom of the main area, while an episode is loaded
+// CLOSE only hides the bar: the episode carries on, and the side bar's play button (and the phone's own media
+// controls) still play and pause it. The bar comes back with the next episode, or by holding the play button.
+function hideStrip(){
+  pod.stripHidden = true;
+  const s = $("#ogStrip"); if (s) s.remove();
+  document.body.classList.remove("has-mini");
+  toast(pod.audio.paused ? "PLAYER HIDDEN · HOLD ▶ TO BRING IT BACK" : "PLAYER HIDDEN · STILL PLAYING");
+}
 function ogStrip(){
   let s = $("#ogStrip");
-  if (!pod.item){ if (s) s.remove(); return; }
+  if (!pod.item || pod.stripHidden){ if (s) s.remove(); return; }
   if (!s){
     s = el("div", "og-strip"); s.id = "ogStrip"; s.setAttribute("role", "region"); s.setAttribute("aria-label", "Episode player");
     const r1 = el("button", "ogs-info"); r1.type = "button"; r1.onclick = () => { if (pod.item) ogEpisode(pod.item); };
@@ -3877,7 +3885,7 @@ function ogStrip(){
       b("fwd", "+" + FWD_S, () => skip(FWD_S), `Forward ${FWD_S} seconds`),
       b("speed", "1X", cycleSpeed, "Playback speed"),
       b("web", "WEBSITE", () => { if (pod.item && pod.item.link) openOutside(pod.item.link); }),
-      b("close", "CLOSE", stopPod, "Stop and close the player"));
+      b("close", "CLOSE", hideStrip, "Hide the player. The episode keeps playing; the play button on the side bar still plays and pauses it"));
     s.append(r1, seek, r3);
     document.body.append(s);
   }
@@ -7111,7 +7119,7 @@ $("#nowBtn").onclick = () => {
 };
 let nowLong = false;
 { let t = 0; const nb = $("#nowBtn");
-  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); if (!isOG()) return; t = setTimeout(() => { const it = pod.item || startedEpisodes()[0]; if (it){ nowLong = true; ogEpisode(it); } }, 550); });
+  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); if (!isOG()) return; t = setTimeout(() => { const it = pod.item || startedEpisodes()[0]; if (it){ nowLong = true; if (pod.stripHidden){ pod.stripHidden = false; renderMini(); } ogEpisode(it); } }, 550); });
   ["pointerup", "pointerleave", "pointercancel"].forEach(ev => nb.addEventListener(ev, () => clearTimeout(t)));
   nb.addEventListener("contextmenu", e => { if (isOG()) e.preventDefault(); }); }
 $("#savedBtn").onclick = () => {
@@ -7182,7 +7190,7 @@ function savePos(){
 function playEpisode(it){
   if (pod.item && pod.item.id === it.id){ pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); return; }
   savePos();
-  pod.item = it;
+  pod.item = it; pod.stripHidden = false;
   if (pod.played.has(it.id)){ pod.played.delete(it.id); store.set("yf.played", [...pod.played]); }
   const local = isDownloaded(it.id) && dlSrc(it.id);
   pod.audio.src = local || it.audioUrl;
@@ -7402,7 +7410,7 @@ function renderMini(){
   if (nb){ if (!nb.dataset.icon) nb.dataset.icon = nb.innerHTML; const never = isOG() && !pod.item && !Object.keys(pod.pos).length && !pod.played.size;
     const want = never ? '<span class="og-playword">PLAY</span>' : isOG() && pod.item && !pod.audio.paused ? ICONS.pause : nb.dataset.icon; if (nb.innerHTML !== want) nb.innerHTML = want; nb.setAttribute("aria-label", isOG() ? (pod.item ? (pod.audio.paused ? "Play" : "Pause") + ". Hold for the episode page" : "Listen") : "Listen: open the player or your audio"); }
   if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
-  m.hidden = false; document.body.classList.add("has-mini");
+  m.hidden = false; document.body.classList.toggle("has-mini", !(isOG() && pod.stripHidden));
   const f = feedById(pod.item.feedId) || {};
   $("#miniTitle").textContent = pod.item.title;
   $("#miniSrc").textContent = f.title || "";
