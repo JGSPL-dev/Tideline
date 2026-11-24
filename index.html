@@ -5673,6 +5673,8 @@ function folderField(cur){
 }
 // The Off-grid EDIT FEED screen (from a feed's EDIT): one feed, drawn like the FEEDS panel, CANCEL / SAVE footer
 const ogEditScreen = () => isOG() && dlg.open && dlg.dataset.mode === "edit";
+const startPoint = f => !f ? 0 : typeof f.startAt === "number" ? f.startAt : sourceType(f) === "Audio" ? store.get("yf.startAtOld", 0) : 0;
+const START_POINTS = [[0, "Start"], [30, "0:30"], [60, "1:00"], [90, "1:30"], [120, "2:00"], [180, "3:00"]];
 function editForm(f){
   const form = el("form", "editform"); form.autocomplete = "off";
   const nameF = el("label", "field"); nameF.append(el("span", "lbl", "Name"));
@@ -5755,6 +5757,18 @@ function editForm(f){
     pz.lastChild.append(el("b", null, "Pause"), el("br"), el("span", "hint", "A paused source keeps its stories and isn't checked."));
     form.prepend(lg, opts);
     privF.after(pz);
+    // Podcasts: where new episodes of this show start (skips its intro or opening adverts); applies at once
+    if (sourceType(f) === "Audio"){
+      const sa = el("div", "field ef-startat"); sa.append(el("span", "lbl", "Start new episodes at"));
+      const chips = el("div", "ogf-chips"); chips.setAttribute("role", "group"); chips.setAttribute("aria-label", "Start new episodes at");
+      START_POINTS.forEach(([v, t]) => {
+        const b = el("button", "ogf-chip", t); b.type = "button"; b.setAttribute("aria-pressed", String(startPoint(f) === v));
+        b.onclick = () => { f.startAt = v; save(); chips.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b))); toast(v ? "NEW EPISODES START AT " + t : "NEW EPISODES START AT THE BEGINNING"); };
+        chips.append(b);
+      });
+      sa.append(chips, el("span", "hint", "Skips this show's intro or opening adverts. Episodes you've started carry on where you left off; never more than a third into a short episode."));
+      pz.after(sa);
+    }
     const rmw = el("div", "og-rmrow");
     const rmb = el("button", "og-rm", "REMOVE"); rmb.type = "button";
     rmb.onclick = () => {
@@ -7553,7 +7567,8 @@ function playEpisode(it){
   pod.audio.playbackRate = pod.speed;
   // Where to start: where you left off, otherwise your chosen starting point (skips most intros and adverts at
   // the top; never past a third of a short episode)
-  const startAt = pod.played.has(it.id) ? 0 : store.get("yf.startAt", 0);
+  // The starting point is set per show (edit form → START NEW EPISODES AT, `f.startAt`)
+  const startAt = pod.played.has(it.id) ? 0 : startPoint(feedById(it.feedId));
   const resume = pod.pos[it.id] || 0;
   if (resume) pod.audio.addEventListener("loadedmetadata", () => { pod.audio.currentTime = resume; }, {once: true});
   else if (startAt) pod.audio.addEventListener("loadedmetadata", () => { const d = pod.audio.duration; if (!isFinite(d) || d > startAt * 3) pod.audio.currentTime = startAt; }, {once: true});
@@ -8198,7 +8213,6 @@ function renderAudioPrefs(){
   row("Skip back", [[10, "10 s"], [15, "15 s"], [30, "30 s"]], BACK_S, v => { BACK_S = v; store.set("yf.skipBack", v); });
   row("Skip forward", [[10, "10 s"], [15, "15 s"], [30, "30 s"]], FWD_S, v => { FWD_S = v; store.set("yf.skipFwd", v); });
   row("Starting speed", [[0, "Last used"], [1, "1×"], [1.25, "1.25×"], [1.5, "1.5×"], [2, "2×"]], store.get("yf.startSpeed", 0), v => store.set("yf.startSpeed", v));
-  row("Start new episodes at", [[0, "Beginning"], [30, "0:30"], [60, "1:00"], [90, "1:30"], [120, "2:00"], [180, "3:00"]], store.get("yf.startAt", 0), v => store.set("yf.startAt", v));
 }
 renderAudioPrefs();
 document.querySelectorAll(".setfold .sf-chev").forEach(c => c.innerHTML = ICON_CHEV);
@@ -8629,6 +8643,10 @@ const MIGRATIONS = [
   [2, "yf.noViaGoogle", () => state.feeds.forEach(f => { if (/ via Google$/.test(f.title || "") && /news\.google\.com/.test(f.url)) f.title = f.title.replace(/ via Google$/, ""); })],
   // Nov 2026: strip filler from website names ("IGN All" → "IGN")
   [3, "yf.tidyNames", () => state.feeds.forEach(f => { if (platformOf(f) !== "Websites" || /news\.google\.com/.test(f.url)) return; const t = tidySiteName(f.title); if (t && t !== f.title) f.title = t; })],
+  // Nov 2026: the podcast starting point moved from Settings to each show (edit form); keep what was chosen
+  // (stories aren't loaded yet, so which feeds are podcasts isn't known: the old choice is kept as yf.startAtOld and
+  // used by `startPoint` for any podcast whose own starting point hasn't been set)
+  [4, null, () => { const g = store.get("yf.startAt", 0); if (g) store.set("yf.startAtOld", g); try{ localStorage.removeItem("yf.startAt"); }catch{} }],
 ];
 function runMigrations(){
   const done = store.get("yf.migrated", 0); let changed = false;

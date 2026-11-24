@@ -27,8 +27,8 @@ const STATES = {
   "before November 2026 (stories in localStorage, old flags, no migrations run)": {
     ls: {"yf.onboarded": true, "tl.feeds": OLD_FEEDS, "tl.items": OLD_ITEMS, "tl.read": [OLD_ITEMS[0].id], "tl.folders": ["Videos", "Podcasts"],
          "tl.updated": now - 2 * H, "tl.view": {source: "all", type: "all"}, "yf.lookedMig": true},
-    expect: {cards: 1, migrated: 3, legacyGone: true}},
-  "300 sources, 3,000 stories": {ls: {"yf.onboarded": true, "tl.feeds": BIG_FEEDS, "tl.items": BIG_ITEMS, "tl.updated": now}, expect: {cards: 1, migrated: 3}},
+    expect: {cards: 1, migrated: 4, legacyGone: true}},
+  "300 sources, 3,000 stories": {ls: {"yf.onboarded": true, "tl.feeds": BIG_FEEDS, "tl.items": BIG_ITEMS, "tl.updated": now}, expect: {cards: 1, migrated: 4}},
 };
 
 let failed = 0;
