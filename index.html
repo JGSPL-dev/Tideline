@@ -940,11 +940,12 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .oge-scrub::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;margin-top:-7px;background:#000;border:0;border-radius:0}
 .oge-scrub::-moz-range-thumb{width:24px;height:24px;background:#000;border:0;border-radius:0}
 .oge-times{display:flex;justify-content:space-between;font:700 12px var(--og-mono);margin-top:2px}
-.oge-tr{display:flex;align-items:center;gap:10px;margin:16px 0 18px}
-.oge-sq,.oge-speed{width:56px;height:56px;border:3px solid #000;background:none;color:#000;font:700 14px var(--og-mono);cursor:pointer;border-radius:0;padding:0}
-.oge-main{width:72px;height:72px;border:0;background:#000;color:#fff;font:400 22px var(--og-disp);cursor:pointer;border-radius:0}
-.oge-speed{margin-left:auto}
-.oge-acts .og-b{color:#000}
+/* four equal boxes in a row: −15, PLAY/PAUSE, +30, speed; then the four actions as an even 2 × 2 */
+.oge-tr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0 18px}
+.oge-sq,.oge-speed,.oge-main{width:100%;height:64px;border:3px solid #000;background:none;color:#000;font:700 15px var(--og-mono);cursor:pointer;border-radius:0;padding:0;box-sizing:border-box}
+.oge-main{background:#000;color:#fff;font:400 24px var(--og-disp)}
+.oge-acts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.oge-acts .og-b{color:#000;width:100%;justify-content:center;text-align:center;box-sizing:border-box;margin:0}
 .og-b.og-dl.on{background:#000;color:var(--og-paper);border-color:#000}
 .oge-notes{border-top:3px solid #000;margin-top:22px;padding-top:12px}
 .oge-notes h2{font:700 12px var(--og-mono);margin:0 0 8px}
@@ -3892,8 +3893,8 @@ function ogSheet(it){
   const f = feedById(it.feedId);
   const sh = el("div", "og-sheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "Story options");
   const add = (label, fn) => { const b = el("button", "og-sheetb", label); b.type = "button"; b.onclick = () => { sh.remove(); fn(); }; sh.append(b); return b; };
-  if (f) add("ONLY THIS SOURCE", () => selectFeed(f.id));
-  if (f) add("EDIT THIS SOURCE", () => { openMenu("feeds"); setTimeout(() => openEdit(f.id), 200); });
+  if (f) add("ONLY THIS FEED", () => selectFeed(f.id));
+  if (f) add("EDIT THIS FEED", () => { openMenu("feeds"); setTimeout(() => openEdit(f.id), 200); });
   if (it.audioUrl && !it.videoId){
     const played = pod.played.has(it.id);
     add(played ? "MARK NOT PLAYED" : "MARK PLAYED", () => {
@@ -7256,9 +7257,18 @@ $("#nowBtn").onclick = () => {
 };
 let nowLong = false;
 { let t = 0; const nb = $("#nowBtn");
-  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); if (!isOG()) return; t = setTimeout(() => { const it = pod.item || startedEpisodes()[0]; if (it){ nowLong = true; if (pod.stripHidden){ pod.stripHidden = false; renderMini(); } ogEpisode(it); } }, 550); });
+  // Holding the rail's play button opens the full episode page (the bar comes back too, if it was hidden)
+  const openFull = () => {
+    const it = pod.item || startedEpisodes()[0]; if (!it) return;
+    nowLong = true;
+    if ($("#articlePage").open && $("#articlePage").classList.contains("og-ep")) return;
+    try{ ogEpisode(it); }catch(e){ logError(e); }
+    if (pod.stripHidden){ pod.stripHidden = false; try{ ogStrip(); }catch{} }
+  };
+  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); if (!isOG()) return; t = setTimeout(openFull, 550); });
   ["pointerup", "pointerleave", "pointercancel"].forEach(ev => nb.addEventListener(ev, () => clearTimeout(t)));
-  nb.addEventListener("contextmenu", e => { if (isOG()) e.preventDefault(); }); }
+  // Android's own long press arrives as a context menu: treat it the same
+  nb.addEventListener("contextmenu", e => { if (!isOG()) return; e.preventDefault(); clearTimeout(t); openFull(); }); }
 $("#savedBtn").onclick = () => {
   if (!view.saved && !state.saved.length && !isOG()){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
   view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
