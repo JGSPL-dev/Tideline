@@ -4039,6 +4039,12 @@ function ogSheet(it){
       if (played){ pod.played.delete(it.id); store.set("yf.played", [...pod.played]); }
       else { if (pod.item && pod.item.id === it.id) pod.audio.pause(); markPlayed(it.id); }
       refreshPodTags(); renderList(); toast(played ? "MARKED NOT PLAYED" : "MARKED PLAYED");
+    });  } else {
+    // Articles and videos: the same choice, kept in the read list (opened / watched); the slab turns white once done
+    const done = state.read.has(it.id), word = it.videoId || typeOf(it) === "videos" ? "WATCHED" : "READ";
+    add(done ? "MARK NOT " + word : "MARK " + word, () => {
+      if (done) state.read.delete(it.id); else { state.read.add(it.id); markLooked(it.id); }
+      save(); renderChips(); renderList(); toast(done ? "MARKED NOT " + word : "MARKED " + word);
     });
   }
   if (it.link) add("COPY LINK", () => { navigator.clipboard.writeText(it.link).then(() => toast("LINK COPIED"), () => toast("COULDN'T COPY")); });
