@@ -5430,7 +5430,9 @@ function renderFeedList(){
   const mode = state.organise;
   groupList().forEach(([name, feeds], gi) => {
     const key = (mode === "type" ? "type:" : "cat:") + name;
-    const open = !state.collapsed.has(key);
+    // The group holding the feed being edited is always drawn open (else EDIT FEED came up empty when its
+    // category was folded in the list)
+    const open = !state.collapsed.has(key) || (editingId != null && feeds.some(f => f.id === editingId));
     const sec = el("section", "group"); sec.setAttribute("aria-label", name);
     const h = el("button", "ghead"); h.type = "button"; h.id = "gh-" + gi; h.setAttribute("aria-expanded", String(open));
     h.innerHTML = ICON_CHEV;
@@ -5492,6 +5494,7 @@ function setFolder(f, name){
 function openEdit(id){
   editingId = id; renderFeedList();
   const form = document.querySelector(".editform");
+  if (!form && ogEditScreen()){ menuBack(); toast("CAN'T FIND THAT FEED"); return; }
   if (form){ form.tabIndex = -1; form.focus({preventScroll: true}); form.scrollIntoView({block: "start", behavior: "smooth"}); }
 }
 const ATTN_ICONS = {
