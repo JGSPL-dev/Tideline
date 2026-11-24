@@ -887,6 +887,40 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .ogf-chip{min-height:40px;border:3px solid #000;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;padding:0 10px;cursor:pointer;border-radius:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ogf-chip[aria-pressed="true"]{background:var(--og-hot)}
 .ogf-chip.more{border-style:dashed}
+.ogf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
+.ogf-head .ogf-title{margin:0}
+.ogf-add{flex:none;height:48px;padding:0 16px;border:3px solid #000;border-radius:0;background:#000;color:var(--og-paper);font:400 24px var(--og-disp);text-transform:uppercase;cursor:pointer}
+.ogf-kinds{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.ogf-kinds .ogf-row{font-size:22px}
+.ogf-sec .ogf-chips:has(.seen){flex-wrap:nowrap;gap:5px}
+.ogf-chips:has(.seen) .ogf-chip{padding:0 4px;flex:1 1 auto;min-width:0;font-size:11px}
+.ogf-chip.seen{margin-left:4px}
+.ogf-chip.seen[aria-pressed="true"]{background:#000;color:var(--og-paper)}
+.ogf-empty{width:100%;min-height:56px;border:3px dashed #000;background:none;color:#000;font:700 13px var(--og-mono);text-transform:uppercase;cursor:pointer;border-radius:0}
+.ogf-cat{border-bottom:1px solid #000}
+.ogf-cathead{display:flex;align-items:center;gap:10px;width:100%;min-height:52px;border:0;background:none;color:#000;padding:0 4px;cursor:pointer;text-align:left}
+.ogf-catname{flex:1;min-width:0;font:400 24px/1.05 var(--og-disp);text-transform:uppercase;overflow-wrap:anywhere}
+.ogf-cathead.on .ogf-catname{text-decoration:underline;text-decoration-thickness:3px;text-underline-offset:4px}
+.ogf-chev{flex:none;width:28px;text-align:center;font:700 24px/1 var(--og-mono)}
+.ogf-dot{display:inline-block;width:10px;height:10px;margin-left:8px;vertical-align:middle;background:var(--og-hot);border:2px solid #000}
+.ogf-dot.bad{background:#FF5A4E}
+.ogf-all{display:block;width:100%;min-height:44px;border:3px solid #000;border-radius:0;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;text-align:left;padding:0 10px;margin:0 0 6px;cursor:pointer}
+.ogf-all[aria-pressed="true"]{background:#000;color:var(--og-paper)}
+.ogf-feed{display:flex;align-items:stretch;border-top:1px solid rgba(0,0,0,.25)}
+.ogf-feed.on{background:#000;color:var(--og-paper)}
+.ogf-pick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;min-height:60px;border:0;background:none;color:inherit;padding:6px 4px;cursor:pointer;text-align:left}
+.ogf-pick .sicon{width:30px!important;height:30px!important;border-radius:0;flex:none}
+.ogf-ftxt{display:flex;flex-direction:column;min-width:0;gap:3px}
+.ogf-fname{font:400 18px/1.1 var(--og-disp);text-transform:uppercase;overflow-wrap:anywhere}
+.ogf-fsub{font:700 10px var(--og-mono);text-transform:uppercase;opacity:.75}
+.ogf-fsub.bad{color:#C2160A;opacity:1}
+.ogf-edit{flex:none;min-width:56px;border:0;background:none;color:inherit;font:700 12px var(--og-mono);text-transform:uppercase;text-decoration:underline;cursor:pointer}
+/* menu screens: add, edit, settings */
+.og-mtitle{display:none}
+:root[data-look="offgrid"] dialog.drawer .og-mtitle{display:block;margin:14px 16px 4px;font:400 40px/1 var(--og-disp);text-transform:uppercase;color:#fff}
+:root[data-look="offgrid"] dialog.drawer .tabs.seg{display:none!important}
+:root[data-look="offgrid"] dialog.drawer[data-mode="add"] #flist{display:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] :is(.og-addlbl,#addForm,#searchFilters,.addhint,#searchResults){display:none!important}
 .og-filter .catmanage{margin-top:12px;font-family:var(--og-mono)}
 .ogf-foot{position:fixed;left:0;right:var(--og-rail);bottom:0;display:flex;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--og-paper);border-top:3px solid #000}
 :root[data-rail="left"] .ogf-foot{left:var(--og-rail);right:0}
@@ -1294,9 +1328,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
   <section class="feedcol">
     <div class="top">
       <div class="toprow">
-        <button class="btn icon" id="manage" aria-label="Open menu" aria-controls="dlg" aria-expanded="false" title="Menu">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
+        <button class="btn icon" id="manage" aria-label="Settings" aria-controls="dlg" aria-expanded="false" title="Settings"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
         <h1 class="brand" aria-label="YourFeed"><svg class="logo" width="28" height="28" viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="15" fill="var(--brand-fill)"/><path d="M15 19h20" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/><path d="M15 30h12" fill="none" stroke="#fff" stroke-width="5.5" stroke-linecap="round" opacity=".75"/><path d="M20 41l9.5 9.5L50 24" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="brandtext"><span class="wordmark">Your<span class="rss">Feed</span></span><span class="byline">by Apps For Us</span></span></h1>
         <div class="topacts">
           <button class="btn icon" id="savedBtn" aria-label="Saved posts" aria-pressed="false" title="Saved"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg><span class="bcount" id="savedCount" hidden></span></button>
@@ -1313,7 +1345,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
         <span class="statusgap"></span>
         <div class="statuspop" id="statusPop" role="status" hidden><div class="status" id="status" aria-live="polite"></div><button type="button" class="linkbtn" id="healthLink" hidden>Open Source health</button></div>
         <button type="button" class="fpill" id="activeFilter" hidden></button>
-        <button type="button" class="btn filterbtn" id="filterBtn" aria-expanded="false" aria-controls="filterBox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Filter<span class="fcount" id="filterCount" hidden></span></button>
+        <button type="button" class="btn filterbtn" id="filterBtn" aria-expanded="false" aria-controls="filterBox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Feeds<span class="fcount" id="filterCount" hidden></span></button>
       </div>
       <div class="filterbox" id="filterBox" role="dialog" aria-label="Filter your feed" hidden></div>
     </div>
@@ -1330,6 +1362,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       </button>
     </header>
+    <h2 class="og-mtitle" id="ogMenuTitle"></h2>
     <div class="tabs seg" role="tablist" aria-label="Menu sections">
       <button type="button" role="tab" id="tab-feeds" aria-controls="panelFeeds" aria-selected="true" aria-pressed="true">Your feeds</button>
       <button type="button" role="tab" id="tab-settings" aria-controls="panelSettings" aria-selected="false" aria-pressed="false">Settings</button>
@@ -3432,7 +3465,7 @@ function renderFilterBar(){
     if (clr){ const on = n > 0 || !!state.topic; clr.hidden = !(on || view.saved); clr.textContent = view.saved && !on ? "BACK TO FEED" : "CLEAR"; }
   }
   const fc = $("#filterCount"); fc.hidden = !n; fc.textContent = String(n);
-  $("#filterBtn").setAttribute("aria-label", n ? `Filter, ${n} on` : "Filter");
+  $("#filterBtn").setAttribute("aria-label", n ? `Feeds and filters, ${n} on` : "Feeds and filters");
 }
 
 /* ---------- filter box ---------- */
@@ -3894,7 +3927,7 @@ function ogSheet(it){
   const sh = el("div", "og-sheet"); sh.setAttribute("role", "dialog"); sh.setAttribute("aria-label", "Story options");
   const add = (label, fn) => { const b = el("button", "og-sheetb", label); b.type = "button"; b.onclick = () => { sh.remove(); fn(); }; sh.append(b); return b; };
   if (f) add("ONLY THIS FEED", () => selectFeed(f.id));
-  if (f) add("EDIT THIS FEED", () => { openMenu("feeds"); setTimeout(() => openEdit(f.id), 200); });
+  if (f) add("EDIT THIS FEED", () => { openMenu("edit"); setTimeout(() => openEdit(f.id), 200); });
   if (it.audioUrl && !it.videoId){
     const played = pod.played.has(it.id);
     add(played ? "MARK NOT PLAYED" : "MARK PLAYED", () => {
@@ -4183,7 +4216,7 @@ function closeOgVideo(){
 function openOgFilter(){
   closeOgFilter();
   if (dlg.open) closeMenu();
-  const p = el("section", "og-filter"); p.id = "ogFilter"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Filter");
+  const p = el("section", "og-filter"); p.id = "ogFilter"; p.setAttribute("role", "dialog"); p.setAttribute("aria-label", "Feeds and filters");
   document.body.append(p);
   $("#filterBtn").setAttribute("aria-expanded", "true");
   renderOgFilter(true);
@@ -4198,7 +4231,10 @@ function renderOgFilter(first){
   const typing = box && document.activeElement === box, sel = typing ? [box.selectionStart, box.selectionEnd] : null;
   p.textContent = "";
   const sec = (label) => { const d = el("div", "ogf-sec"); const h = el("h3", "ogf-lbl", label); d.append(h); p.append(d); return d; };
-  p.append(el("h2", "ogf-title", "Filter"));
+  const head = el("div", "ogf-head");
+  const add = el("button", "ogf-add", "+ Add"); add.type = "button"; add.id = "ogAdd"; add.setAttribute("aria-label", "Add a feed");
+  add.onclick = () => { openMenu("add"); };
+  head.append(el("h2", "ogf-title", "Feeds"), add); p.append(head);
   const ws = sec("Find words");
   if (!box){
     box = el("input", "ogf-words"); box.id = "ogWords"; box.type = "search"; box.autocomplete = "off"; box.value = view.q || "";
@@ -4207,8 +4243,8 @@ function renderOgFilter(first){
   }
   ws.append(box);
   if (typing){ box.focus({preventScroll: true}); try{ box.setSelectionRange(sel[0], sel[1]); }catch{} }
-  // WHAT KIND, with counts under the other filters
-  const ks = sec("What kind");
+  // WHAT KIND, two to a row, with counts under the other filters
+  const ks = sec("What kind"); const grid = el("div", "ogf-kinds");
   const saved = view.saved;
   const base = saved ? state.saved.filter(i => { const w = wordsMatch(); return !w || w(i); }) : baseItems();
   [["all", "Everything"], ["articles", "Read"], ["topics", "Topics"], ["videos", "Watch"], ["audio", "Listen"], ["conversations", "Talk"]].forEach(([k, name]) => {
@@ -4216,39 +4252,67 @@ function renderOgFilter(first){
     const b = el("button", "ogf-row"); b.type = "button"; b.setAttribute("aria-pressed", String(view.type === k));
     b.append(el("span", null, name), el("span", "ogf-n", String(n)));
     b.onclick = () => ogFilterSet("type", k);
-    ks.append(b);
+    grid.append(b);
   });
+  ks.append(grid);
   if (!saved){
-    // FROM WHERE: categories or sources
-    const fw = sec("From where");
-    const mode = state.ogWhere || (view.source.startsWith("feed:") ? "source" : "category");
-    const sw = el("div", "ogf-switch");
-    [["category", "Categories"], ["source", "Feeds"]].forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(mode === v)); b.onclick = () => { state.ogWhere = v; renderOgFilter(); }; sw.append(b); });
-    fw.append(sw);
-    const chips = el("div", "ogf-chips");
-    const chip = (label, val) => { const b = el("button", "ogf-chip", label); b.type = "button"; const on = view.source === val; b.setAttribute("aria-pressed", String(on)); b.onclick = () => ogFilterSet("source", on ? "all" : val); chips.append(b); };
-    if (mode === "category"){
-      const used = new Map(); state.feeds.forEach(f => { const g = folderOf(f); used.set(g, (used.get(g) || 0) + 1); });
-      [...used.keys()].sort((a, b) => a === UNSORTED ? 1 : b === UNSORTED ? -1 : a.localeCompare(b)).forEach(g => chip(g, "folder:" + g));
-      fw.append(chips);
-      const fixed = INTERESTS.map(([n]) => n), custom = state.folders.filter(n => !fixed.includes(n));
-      if (custom.length) fw.append(manageCategories(custom, used));
-    } else {
-      const newest = new Map(); state.items.forEach(i => newest.set(i.feedId, Math.max(newest.get(i.feedId) || 0, i.date || 0)));
-      const fs = [...state.feeds].sort((a, b) => (newest.get(b.id) || 0) - (newest.get(a.id) || 0));
-      const shown = state.ogMoreSources ? fs : fs.slice(0, 12);
-      shown.forEach(f => chip(f.title || "Feed", "feed:" + f.id));
-      if (fs.length > 12 && !state.ogMoreSources){ const m = el("button", "ogf-chip more", `MORE (${fs.length - 12})`); m.type = "button"; m.onclick = () => { state.ogMoreSources = true; renderOgFilter(); }; chips.append(m); }
-      fw.append(chips);
-    }
-    // HOW FAR BACK
+    // HOW FAR BACK, with HIDE SEEN on the same row
     const hb = sec("How far back"); const hc = el("div", "ogf-chips");
     [["today", "Today"], ["3d", "3 days"], ["week", "Week"], ["any", "All"]].forEach(([v, t]) => { const b = el("button", "ogf-chip", t); b.type = "button"; b.setAttribute("aria-pressed", String(view.from === v)); b.onclick = () => ogFilterSet("from", v); hc.append(b); });
-    hb.append(hc);
-    // SEEN
-    const sn = sec("Seen"); const tg = el("div", "ogf-switch"); tg.setAttribute("aria-label", "Hide seen");
-    [[true, "Hide seen: on"], [false, "Off"]].forEach(([v, t]) => { const b = el("button", null, t); b.type = "button"; b.setAttribute("aria-pressed", String(!!view.unread === v)); b.onclick = () => ogFilterSet("unread", v); tg.append(b); });
-    sn.append(tg);
+    const hs = el("button", "ogf-chip seen", "Hide seen"); hs.type = "button"; hs.setAttribute("aria-pressed", String(!!view.unread)); hs.onclick = () => ogFilterSet("unread", !view.unread);
+    hc.append(hs); hb.append(hc);
+    // YOUR FEEDS: categories folded, each opens to its feeds
+    const fsx = sec(`Your feeds · ${state.feeds.length}`);
+    if (!state.feeds.length){
+      const e = el("button", "ogf-empty", "No feeds yet · + Add your first"); e.type = "button"; e.onclick = () => openMenu("add"); fsx.append(e);
+    }
+    const since = new Date().setHours(0, 0, 0, 0);
+    const todayN = new Map(), newest = new Map();
+    state.items.forEach(i => { newest.set(i.feedId, Math.max(newest.get(i.feedId) || 0, i.date || 0)); if ((i.date || 0) >= since && isNew(i)) todayN.set(i.feedId, (todayN.get(i.feedId) || 0) + 1); });
+    const groups = new Map(); state.feeds.forEach(f => { const g = folderOf(f); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(f); });
+    const open = state.ogOpenCats || (state.ogOpenCats = new Set());
+    const selFeed = view.source.startsWith("feed:") ? state.feeds.find(f => "feed:" + f.id === view.source) : null;
+    if (selFeed && first) open.add(folderOf(selFeed));
+    if (view.source.startsWith("folder:") && first) open.add(view.source.slice(7));
+    [...groups.keys()].sort((a, b) => a === UNSORTED ? 1 : b === UNSORTED ? -1 : a.localeCompare(b)).forEach(g => {
+      const fs = groups.get(g).sort((a, b) => (newest.get(b.id) || 0) - (newest.get(a.id) || 0));
+      const isOpen = open.has(g), fresh = fs.some(f => todayN.get(f.id)), bad = fs.some(isTroubled);
+      const cat = el("div", "ogf-cat");
+      const h = el("button", "ogf-cathead"); h.type = "button"; h.setAttribute("aria-expanded", String(isOpen));
+      const nm = el("span", "ogf-catname", g);
+      if (fresh){ const d = el("span", "ogf-dot", ""); d.setAttribute("aria-label", "new today"); nm.append(d); }
+      if (bad){ const w = el("span", "ogf-dot bad", ""); w.setAttribute("aria-label", "a feed isn't working"); nm.append(w); }
+      if (view.source === "folder:" + g || (selFeed && folderOf(selFeed) === g)) h.classList.add("on");
+      h.append(nm, el("span", "ogf-n", String(fs.length)), el("span", "ogf-chev", isOpen ? "−" : "+"));
+      h.onclick = () => { isOpen ? open.delete(g) : open.add(g); renderOgFilter(); };
+      cat.append(h);
+      if (isOpen){
+        const allOn = view.source === "folder:" + g;
+        const all = el("button", "ogf-all"); all.type = "button"; all.setAttribute("aria-pressed", String(allOn));
+        all.textContent = allOn ? `Showing all of ${g}` : `Show all of ${g} · ${fs.length}`;
+        all.onclick = () => ogFilterSet("source", allOn ? "all" : "folder:" + g);
+        cat.append(all);
+        fs.forEach(f => {
+          const on = view.source === "feed:" + f.id;
+          const row = el("div", "ogf-feed" + (on ? " on" : ""));
+          const pick = el("button", "ogf-pick"); pick.type = "button"; pick.setAttribute("aria-pressed", String(on));
+          let sub;
+          if (on) sub = "Only this feed";
+          else if (f.paused) sub = "Paused";
+          else if (isTroubled(f)) sub = "Not working · edit for why";
+          else { const n = todayN.get(f.id) || 0, last = newest.get(f.id); sub = [n ? `${n} new today` : "", last ? ago(last) : "Nothing yet"].filter(Boolean).join(" · "); }
+          const txt = el("span", "ogf-ftxt"); txt.append(el("span", "ogf-fname", f.title || "Feed"), el("span", "ogf-fsub" + (isTroubled(f) && !on ? " bad" : ""), sub));
+          pick.append(srcIcon(f, 30), txt);
+          pick.onclick = () => ogFilterSet("source", on ? "all" : "feed:" + f.id);
+          const ed = el("button", "ogf-edit", "Edit"); ed.type = "button"; ed.setAttribute("aria-label", `Edit ${f.title || "feed"}`);
+          ed.onclick = () => { openMenu("edit"); setTimeout(() => openEdit(f.id), 60); };
+          row.append(pick, ed); cat.append(row);
+        });
+      }
+      fsx.append(cat);
+    });
+    const fixed = INTERESTS.map(([n]) => n), custom = state.folders.filter(n => !fixed.includes(n));
+    if (custom.length){ const used = new Map([...groups].map(([g, fs]) => [g, fs.length])); fsx.append(manageCategories(custom, used)); }
   }
   // Footer
   const foot = el("div", "ogf-foot");
@@ -4489,7 +4553,7 @@ function renderListNow(){
         el("p", null, "Search for websites, YouTube channels, social feeds, podcasts and news topics, and see them side by side in one simple feed. No account and no tracking: your list stays on your device."));
       const done = store.get("yf.onboarded", false);
       const go = el("button", "btn primary", done ? "Add your first feed" : "Get started"); go.type = "button";
-      go.onclick = done ? () => { openMenu("feeds"); setTimeout(() => $("#addInput").focus(), 250); } : startOnboarding;
+      go.onclick = done ? () => { openMenu("add"); setTimeout(() => $("#addInput").focus(), 250); } : startOnboarding;
       const imp = el("button", "btn", "Import a list"); imp.type = "button"; imp.onclick = () => { openMenu("settings"); ogSetPage($("#sf-sources")); setTimeout(() => { $("#importBtn").scrollIntoView({block: "center"}); $("#importBtn").focus(); }, 250); };
       const row = el("div", "iorow welcome-acts"); row.append(go, imp); e.append(row);
     }
@@ -5648,8 +5712,14 @@ function showTab(which){
   if (feeds){ renderFeedList(); }
   else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#hideShorts").checked = state.hideShorts; $("#showTrending").checked = store.get("yf.trending", true); $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
+const MENU_TITLES = {add: "Add a feed", edit: "Edit feeds", settings: "Settings"};
 function openMenu(tab){
-  setMsg(""); showTab(tab || "feeds");
+  // Three screens: add a feed, edit feeds (from the FEEDS panel), settings (the gear)
+  const mode = tab === "settings" ? "settings" : tab === "edit" ? "edit" : "add";
+  dlg.dataset.mode = mode; $("#ogMenuTitle").textContent = MENU_TITLES[mode];
+  dlg.setAttribute("aria-label", MENU_TITLES[mode]);
+  $("#ogMenuBack").textContent = mode === "settings" ? "Back to the feed" : "Back to feeds";
+  setMsg(""); showTab(mode === "settings" ? "settings" : "feeds");
   // Start clean: no leftover search, no source open for editing
   if ($("#addInput").value || search.q){ $("#addInput").value = ""; $("#addBtn").textContent = "Add"; search.q = ""; search.seq++; renderTopResults(); }
   if (editingId){ editingId = null; renderFeedList(); }
@@ -5657,8 +5727,10 @@ function openMenu(tab){
   if (isOG()){ closeOgFilter(); if (!dlg.open) dlg.show(); } else dlg.showModal();
   // Don't open the keyboard by itself: focus the menu, not the search box
   if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)){ document.activeElement.blur(); dlg.tabIndex = -1; dlg.focus({preventScroll: true}); }
-  $("#manage").setAttribute("aria-expanded", "true");
+  $("#manage").setAttribute("aria-expanded", String(mode === "settings"));
 }
+// Add and edit screens come from the FEEDS panel, so going back returns there
+function menuBack(){ const toPanel = dlg.dataset.mode !== "settings"; closeMenu(); if (toPanel) openOgFilter(); }
 function closeMenu(){
   if (!dlg.open || dlg.classList.contains("closing")) return;
   const done = () => { if (!dlg.classList.contains("closing")) return; dlg.classList.remove("closing"); dlg.close(); };
@@ -5672,8 +5744,8 @@ dlg.addEventListener("close", () => {
   const fn = $("#addFolder"); fn.hidden = true; fn.textContent = "";
 });
 dlg.addEventListener("cancel", e => { e.preventDefault(); closeMenu(); });
-$("#manage").onclick = () => { if (isOG()){ if (menuShowing()) closeMenu(); else openMenu(store.get("yf.menuTab", "feeds")); return; } openMenu("feeds"); };
-$("#ogMenuBack").onclick = closeMenu;
+$("#manage").onclick = () => { if (menuShowing() && dlg.dataset.mode === "settings") closeMenu(); else openMenu("settings"); };
+$("#ogMenuBack").onclick = menuBack;
 $("#ogSetBack").onclick = () => ogSetPage(null);
 // Off-grid settings: six rows, each opens as a page inside the panel
 function ogSetPage(d){
@@ -7961,7 +8033,7 @@ function ogReport(R, focusId){
       const chk = el("button", "og-b", "CHECK NOW"); chk.type = "button";
       chk.onclick = async () => { chk.disabled = true; chk.textContent = "CHECKING…"; await refreshOne(r.f); openReport(r.f.id); };
       const ed = el("button", "og-b", "EDIT"); ed.type = "button";
-      ed.onclick = () => { $("#reportPage").close(); openMenu("feeds"); openEdit(r.f.id); };
+      ed.onclick = () => { $("#reportPage").close(); openMenu("edit"); openEdit(r.f.id); };
       b.append(chk, ed); li.append(b);
     }
     list.append(li);
@@ -8345,13 +8417,13 @@ function startOnboarding(){
   const first = chips.querySelector("button"); if (first) first.focus();
 }
 const TOUR = [
-  ["#manage", "Add your feeds here", "Search for websites, YouTube channels, podcasts and more, or paste a link."],
-  ["#filterBtn", "Choose what you see", "Find words, pick what kind (read, watch, listen, talk), a category or one feed, and how far back."],
+  ["#filterBtn", "Your feeds live here", "Add feeds with + ADD. Find words, pick what kind (read, watch, listen, talk), how far back, or tap a category or one feed to see just that."],
+  ["#manage", "Settings", "Look, podcasts, videos, feed health and the rest."],
   ["#refresh", "Always up to date", "YourFeed checks each feed on its own schedule. Tap here, or pull the feed down, to check now. The side bar says if anything isn't working."]
 ];
 function startTour(step = 0){
   document.querySelectorAll(".spot,.spot-tip").forEach(n => n.remove());
-  if (step >= TOUR.length){ openMenu("feeds"); setTimeout(() => $("#addInput").focus(), 250); return; }
+  if (step >= TOUR.length){ openMenu("add"); setTimeout(() => $("#addInput").focus(), 250); return; }
   const [sel, title, text] = TOUR[step];
   const target = $(sel);
   if (!target || !target.getBoundingClientRect().width){ startTour(step + 1); return; }
@@ -8384,7 +8456,7 @@ function goBack(){
   if (dlg.open){
     if (editingId){ editingId = null; renderFeedList(); return true; }
     if ($("#panelSettings").classList.contains("og-sub")){ ogSetPage(null); return true; }
-    closeMenu(); return true;
+    menuBack(); return true;
   }
   if ($("#ogVideo")){ closeOgVideo(); return true; }
   if ($("#ogFilter")){ closeOgFilter(); return true; }
