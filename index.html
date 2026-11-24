@@ -978,8 +978,9 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .oge-tr{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:16px 0 18px}
 .oge-sq,.oge-speed,.oge-main{width:100%;height:64px;border:3px solid #000;background:none;color:#000;font:700 15px var(--og-mono);cursor:pointer;border-radius:0;padding:0;box-sizing:border-box}
 .oge-main{background:#000;color:#fff;font:400 24px var(--og-disp)}
-.oge-acts{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.oge-acts .og-b{color:#000;width:100%;justify-content:center;text-align:center;box-sizing:border-box;margin:0}
+.oge-acts{display:flex!important;flex-wrap:nowrap!important;gap:6px}
+.oge-acts .og-b{color:#000;flex:1 1 auto;min-width:0;height:48px;padding:0 4px;font-size:11px;letter-spacing:0;white-space:nowrap;justify-content:center;text-align:center;box-sizing:border-box;margin:0}
+@media (max-width:359px){.oge-acts{gap:4px}.oge-acts .og-b{font-size:10px;padding:0 2px}}
 .og-b.og-dl.on{background:#000;color:var(--og-paper);border-color:#000}
 .oge-notes{border-top:3px solid #000;margin-top:22px;padding-top:12px}
 .oge-notes h2{font:700 12px var(--og-mono);margin:0 0 8px}
@@ -4194,7 +4195,9 @@ function ogEpisode(it){
   const sh = el("button", "og-b", "SHARE"); sh.type = "button"; sh.onclick = () => sharePost(it);
   acts.append(sv, sh);
   if (CAN_DOWNLOAD) acts.append(ogDlBtn(it));
-  if (it.link && it.link !== it.audioUrl && !(isPrivateFeed(f) && isPrivateUrl(it.link))){ const w = el("button", "og-b", "WEBSITE"); w.type = "button"; w.onclick = () => openOutside(it.link); acts.append(w); }
+  // WEBSITE: the episode's own page, or the show's site when the feed gives episodes no page of their own
+  const web = [it.link && it.link !== it.audioUrl ? it.link : "", f.site || ""].find(u => /^https?:\/\//i.test(u) && !(isPrivateFeed(f) && isPrivateUrl(u)));
+  if (web){ const w = el("button", "og-b", "WEBSITE"); w.type = "button"; w.onclick = () => openOutside(web); acts.append(w); }
   ep.append(back, art, pub, el("h1", "oge-title", it.title || ""), meta, sw, tr, acts);
   // Episode notes: paragraphs, line breaks, lists and links only
   const notes = (it.summary || "").trim();
