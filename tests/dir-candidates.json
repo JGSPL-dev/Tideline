@@ -1,0 +1,272 @@
+[
+[
+"BBC Food GN",
+"https://news.google.com/rss/search?q=site%3Abbc.co.uk%2Ffood&hl=en-GB&gl=GB&ceid=GB:en",
+"food"
+],
+[
+"ESPN",
+"https://www.espn.com/espn/rss/news",
+"x"
+],
+[
+"ESPN uk",
+"https://www.espn.co.uk/espn/rss/news",
+"x"
+],
+[
+"ESPN NFL",
+"https://www.espn.com/espn/rss/nfl/news",
+"x"
+],
+[
+"F1 a",
+"https://www.formula1.com/content/fom-website/en/latest/all.xml",
+"x"
+],
+[
+"F1 b",
+"https://www.formula1.com/en/latest/all.xml",
+"x"
+],
+[
+"F1 GN",
+"https://news.google.com/rss/search?q=site%3Aformula1.com&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Mixmag",
+"https://mixmag.net/rss.xml",
+"x"
+],
+[
+"Mixmag GN",
+"https://news.google.com/rss/search?q=site%3Amixmag.net&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Zen Habits",
+"https://zenhabits.net/index.xml",
+"x"
+],
+[
+"LRL a",
+"https://www.loverugbyleague.com/feed/",
+"x"
+],
+[
+"LRL b",
+"https://www.loverugbyleague.com/feed",
+"x"
+],
+[
+"LRL GN",
+"https://news.google.com/rss/search?q=site%3Aloverugbyleague.com&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Hyperallergic a",
+"https://hyperallergic.com/rss/",
+"x"
+],
+[
+"Hyperallergic b",
+"https://hyperallergic.com/feed",
+"x"
+],
+[
+"Hyperallergic GN",
+"https://news.google.com/rss/search?q=site%3Ahyperallergic.com&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"LWLies a",
+"https://lwlies.com/feed",
+"x"
+],
+[
+"LWLies b",
+"https://www.lwlies.com/feed/",
+"x"
+],
+[
+"LWLies GN",
+"https://news.google.com/rss/search?q=site%3Alwlies.com&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Indy F1 a",
+"https://www.independent.co.uk/sport/f1/rss",
+"x"
+],
+[
+"Indy F1 b",
+"https://www.independent.co.uk/f1/rss",
+"x"
+],
+[
+"New Scientist",
+"https://www.newscientist.com/feed/home/",
+"x"
+],
+[
+"New Scientist GN",
+"https://news.google.com/rss/search?q=site%3Anewscientist.com&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Prem Rugby topic",
+"https://news.google.com/rss/search?q=%22Premiership%20Rugby%22&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Prem Rugby site",
+"https://news.google.com/rss/search?q=site%3Apremiershiprugby.com&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"Romper rss",
+"https://www.romper.com/rss",
+"x"
+],
+[
+"Todays Parent feed",
+"https://www.todaysparent.com/feed/",
+"x"
+],
+[
+"ParentData feed",
+"https://parentdata.org/feed",
+"x"
+],
+[
+"ParentData sub",
+"https://parentdata.substack.com/feed",
+"x"
+],
+[
+"GW atom",
+"https://www.gardenersworld.com/feed/atom",
+"x"
+],
+[
+"GW feed",
+"https://www.gardenersworld.com/feed/",
+"x"
+],
+[
+"HuffUK all",
+"https://www.huffingtonpost.co.uk/feeds/index.xml",
+"x"
+],
+[
+"HuffUK parents",
+"https://www.huffingtonpost.co.uk/news/parents/feed/",
+"x"
+],
+[
+"HuffUK parents2",
+"https://www.huffingtonpost.co.uk/news/parenting/feed/",
+"x"
+],
+[
+"DM property GN",
+"https://news.google.com/rss/search?q=site%3Adailymail.co.uk%2Fproperty&hl=en-GB&gl=GB&ceid=GB:en",
+"x"
+],
+[
+"DM money",
+"https://www.dailymail.co.uk/money/index.rss",
+"x"
+],
+[
+"Bored Panda",
+"https://www.boredpanda.com/news-sitemap.xml",
+"x"
+],
+[
+"Bored Panda feed",
+"https://www.boredpanda.com/feed/",
+"x"
+],
+[
+"Hacker News",
+"https://news.ycombinator.com/rss",
+"x"
+],
+[
+"Pitchfork",
+"https://www.pitchfork.com/feed/rss",
+"x"
+],
+[
+"New Statesman",
+"https://www.newstatesman.com/feed",
+"x"
+],
+[
+"Gizmodo",
+"https://gizmodo.com/rss",
+"x"
+],
+[
+"Gizmodo feed",
+"https://gizmodo.com/feed",
+"x"
+],
+[
+"Times of Israel",
+"https://www.timesofisrael.com/feed/",
+"x"
+],
+[
+"LfaA",
+"https://heathercoxrichardson.substack.com/feed",
+"x"
+],
+[
+"Import AI",
+"https://importai.substack.com/feed",
+"x"
+],
+[
+"Import AI jc",
+"https://jack-clark.net/feed/",
+"x"
+],
+[
+"Quietus",
+"https://thequietus.com/feed",
+"x"
+],
+[
+"Quietus2",
+"https://thequietus.com/feed/",
+"x"
+],
+[
+"BoF",
+"https://www.businessoffashion.com/arc/outboundfeeds/sitemap/google-news/",
+"x"
+],
+[
+"BoF rss",
+"https://www.businessoffashion.com/arc/outboundfeeds/rss/",
+"x"
+],
+[
+"Guardian UK",
+"https://www.theguardian.com/uk/rss",
+"x"
+],
+[
+"Guardian World",
+"https://www.theguardian.com/world/rss",
+"x"
+],
+[
+"Guardian Football",
+"https://www.theguardian.com/football/rss",
+"x"
+]
+]

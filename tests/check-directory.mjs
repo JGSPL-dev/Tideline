@@ -6,7 +6,9 @@ import fs from "node:fs";
 const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const start = html.indexOf("const DIRECTORY = [");
 const end = html.indexOf("\n];", start);
-const DIRECTORY = Function('"use strict";return ' + html.slice(start + "const DIRECTORY = ".length, end + 3))();
+// Optional: a JSON file of [name, url, tags] to check instead (trying replacements); CONC = how many at once
+const DIRECTORY = process.argv[2] ? JSON.parse(fs.readFileSync(process.argv[2], "utf8")) : Function('"use strict";return ' + html.slice(start + "const DIRECTORY = ".length, end + 3))();
+const CONC = +process.env.CONC || 8, GAP = +process.env.GAP || 0;
 
 const UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";
 const DAY = 86400000, now = Date.now();
@@ -62,11 +64,11 @@ async function check([name, rawUrl, tags]){
   if (r.finalUrl && r.finalUrl.split("#")[0] !== url) res.notes.push("redirects to " + r.finalUrl);
   const p = parse(r.text, only);
   res.kind = p.kind; res.feedTitle = p.title; res.count = p.entries.length;
-  if (!/^(rss|atom|sitemap)$/.test(p.kind)){ res.problems.push("NOT A FEED (" + p.kind + ")"); return res; }
+  if (!/^(rss|atom|sitemap)$/.test(p.kind)){ res.problems.push("NOT A FEED (" + p.kind + ") starts: " + JSON.stringify(r.text.slice(0, 160))); return res; }
   if (only) res.notes.push(`filter ${only}: ${p.entries.length} of ${p.all}`);
   if (!p.entries.length){ res.problems.push(only ? `EMPTY AFTER FILTER ${only} (sitemap has ${p.all})` : "EMPTY"); return res; }
   const dated = p.entries.filter(e => e.date);
-  if (!dated.length){ res.problems.push("NO DATES"); return res; }
+  if (!dated.length){ const sample = (r.text.match(/<(item|entry)\b[\s\S]{0,600}/i) || [""])[0].replace(/\s+/g, " "); res.problems.push("NO DATES sample: " + JSON.stringify(sample.slice(0, 400))); return res; }
   const newest = Math.max(...dated.map(e => e.date));
   res.newest = new Date(newest).toISOString(); res.ageDays = Math.round((now - newest) / DAY);
   if (newest > now + DAY) res.problems.push("FUTURE DATES");
@@ -85,11 +87,12 @@ async function check([name, rawUrl, tags]){
 }
 
 const out = []; let i = 0;
-async function worker(){ while (i < DIRECTORY.length){ const e = DIRECTORY[i++]; out.push(await check(e)); } }
-await Promise.all(Array.from({length: 8}, worker));
+async function worker(){ while (i < DIRECTORY.length){ const e = DIRECTORY[i++]; out.push(await check(e)); if (GAP) await new Promise(r => setTimeout(r, GAP)); } }
+await Promise.all(Array.from({length: CONC}, worker));
 out.sort((a, b) => DIRECTORY.findIndex(e => e[1] === a.url) - DIRECTORY.findIndex(e => e[1] === b.url));
 fs.writeFileSync("directory-report.json", JSON.stringify(out, null, 1));
 const bad = out.filter(r => r.problems.length), noted = out.filter(r => !r.problems.length && r.notes.length);
 console.log(`CHECKED ${out.length} · PROBLEMS ${bad.length} · NOTES ${noted.length}`);
 bad.forEach(r => console.log(`PROBLEM | ${r.name} | ${r.url} | ${r.problems.join("; ")}${r.notes.length ? " | " + r.notes.join("; ") : ""}`));
 noted.forEach(r => console.log(`NOTE | ${r.name} | ${r.url} | ${r.notes.join("; ")}`));
+if (process.argv[2]) out.filter(r => !r.problems.length).forEach(r => console.log(`OK | ${r.name} | ${r.url} | ${r.count} items, newest ${r.ageDays} d, "${r.feedTitle}"`));
