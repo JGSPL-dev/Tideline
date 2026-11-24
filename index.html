@@ -7762,10 +7762,18 @@ function checkPod(){
   const still = Date.now() - (pod.lastMove || 0);
   // Stuck for over a minute means Android stopped it (headphones gone, the app frozen in the background):
   // leave it paused rather than bursting into sound when YourFeed is next opened
-  if (still > 60000){ pod.audio.pause(); savePos(); syncPod(); return; }
+  if (still > 60000){
+    pod.audio.pause(); savePos(); syncPod();
+    if (!document.hidden) toast(isOG() ? "PAUSED · THE EPISODE STOPPED LOADING" : "Paused: the episode stopped loading");
+    return;
+  }
   if (still > 20000) recoverPod("stalled");
 }
 setInterval(checkPod, 5000);
+// The stall clock starts again whenever playing starts or the spot changes: a pause you chose (or a seek)
+// isn't a stall. Without this, pressing play after a pause of over a minute paused again within 5 s
+// if the stream took a moment to come back.
+["play", "seeked"].forEach(ev => pod.audio.addEventListener(ev, () => { pod.lastT = pod.audio.currentTime; pod.lastMove = Date.now(); }));
 document.addEventListener("visibilitychange", () => { if (!document.hidden) checkPod(); });
 // Headphones unplugged or Bluetooth disconnected (Android tells the app): pause, like every podcast app
 window.yfNoisy = () => {
