@@ -4072,6 +4072,9 @@ function ogLogo(f, shape){
 }
 // Sharper logos for websites (app only: the phone can read the site's home page directly). Looks once a month
 // for the biggest square icon the site offers: apple-touch-icon, sized <link rel=icon>, or its web app manifest.
+// Where a reply came from, for resolving its relative links: the reply's address only if it's a real outside one
+function replyBase(r, fallback){ try{ const u = new URL(r.url); return /^https?:$/.test(u.protocol) && !isOwnAddress(u.href) ? u.href : fallback; }catch{ return fallback; } }
+function isOwnAddress(u){ try{ const h = new URL(u).hostname; return h === location.hostname || h === "localhost" || h === "127.0.0.1"; }catch{ return false; } }
 async function findSiteIcon(f){
   const nq = newsQuery(f.url);
   let base = ""; try{ base = new URL(nq && nq.site ? "https://" + nq.site.split("/")[0] : (f.site || f.url)).origin; }catch{ return; }
@@ -4084,8 +4087,10 @@ async function findSiteIcon(f){
     for (const m of html.matchAll(/<link\b[^>]*>/gi)){
       const tag = m[0], rel = (tag.match(/rel=["']?([^"'>]+)/i) || [])[1] || "", href = (tag.match(/href=["']([^"']+)["']/i) || [])[1];
       if (!href) continue;
-      const abs = (() => { try{ return new URL(href.replace(/&amp;/g, "&"), r.url || base).href; }catch{ return ""; } })();
-      if (!/^https:/.test(abs)) continue;
+      // In the app, a reply's own address can come back as the app's (https://localhost), so "/icon.svg" on
+      // analogue.co became YourFeed's own logo: resolve against the site, and never accept an address in the app
+      const abs = (() => { try{ return new URL(href.replace(/&amp;/g, "&"), replyBase(r, base)).href; }catch{ return ""; } })();
+      if (!/^https:/.test(abs) || isOwnAddress(abs)) continue;
       if (/apple-touch-icon/i.test(rel)) found.push({u: abs, s: +((tag.match(/sizes=["']?(\d+)/i) || [])[1]) || 180});
       else if (/(^|\s)icon(\s|$)/i.test(rel)){ const sz = +((tag.match(/sizes=["']?(\d+)/i) || [])[1]) || (/\.svg/i.test(abs) ? 512 : 0); if (sz) found.push({u: abs, s: sz}); }
       else if (/manifest/i.test(rel)){
@@ -5552,6 +5557,7 @@ function renderAttention(){
 function iconCandidates(f){
   if (f.logoMode === "letters") return [];
   if (f.logo) return [f.logo];
+  if (f.hiIcon && isOwnAddress(f.hiIcon)){ delete f.hiIcon; delete f.hiIconAt; }   // picked up our own logo (see findSiteIcon)
   const out = [];
   const nq = newsQuery(f.url);
   // Websites: always the site's own tab icon (favicon) first; a feed's logo is often a wide banner
