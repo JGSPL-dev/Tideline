@@ -912,6 +912,8 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .ogf-pick .sicon{width:30px!important;height:30px!important;border-radius:0;flex:none}
 .ogf-ftxt{display:flex;flex-direction:column;min-width:0;gap:3px}
 .ogf-fname{font:400 18px/1.1 var(--og-disp);text-transform:uppercase;overflow-wrap:anywhere}
+.ogf-kind{display:inline-block;margin-left:8px;padding:2px 5px;vertical-align:3px;background:#000;color:var(--og-paper);font:700 10px/1.2 var(--og-mono);text-transform:uppercase;letter-spacing:.04em}
+.ogf-feed.on .ogf-kind{background:var(--og-paper);color:#000}
 .ogf-fsub{font:700 10px var(--og-mono);text-transform:uppercase;opacity:.75}
 .ogf-fsub.bad{color:#C2160A;opacity:1}
 .ogf-edit{flex:none;min-width:56px;border:0;background:none;color:inherit;font:700 12px var(--og-mono);text-transform:uppercase;text-decoration:underline;cursor:pointer}
@@ -1039,6 +1041,49 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] dialog.drawer .editform{background:#111;border:3px solid #fff;border-radius:0;padding:14px}
 :root[data-look="offgrid"] dialog.drawer .editform .lbl,:root[data-look="offgrid"] dialog.drawer .fb-lbl{font:700 12px var(--og-mono);text-transform:uppercase;color:#fff}
 .og-rmrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;padding-top:12px;border-top:1px solid #5A5A5A}
+/* EDIT FEED screen: drawn like the FEEDS panel (Paper, black rules, white boxes, CANCEL / SAVE footer) */
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"],:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .dlg{background:var(--og-paper);color:#000;--ink:#000;--muted:#000;--line:#000;--surface:#fff;--bg:var(--og-paper)}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-mtitle{color:#000;font-size:64px;margin:12px 14px 4px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-menuback{display:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .inner{padding:0 14px calc(90px + env(safe-area-inset-bottom,0px))}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] #panelFeeds > :not(#flist),:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] #flist > :not(.group):not(.flist):not(li),:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ghead{display:none!important}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .flist li:not(.editing){display:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .flist li.editing{background:none;padding:0;border:0;min-height:0}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .editform{background:none;border:0;padding:0;gap:0}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .editform > .field,:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .editform > .check,:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-logorow{border-top:3px solid #000;padding:10px 0 14px;margin:0}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .editform .lbl{display:block;font:700 12px var(--og-mono);text-transform:uppercase;letter-spacing:.04em;color:#000;margin:0 0 8px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-logorow{flex-wrap:wrap}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-logorow .lbl{display:block;flex-basis:100%;margin:0}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-logorow .og-logo{border-color:#000}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] :is(.og-logorow,.og-logoopts,.og-logolink) .og-b{color:#000;border-color:#000;background:#fff}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-logoopts{display:flex;flex-wrap:wrap;gap:8px;padding:0 0 12px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-logoopts[hidden]{display:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] :is(input[type=text],input[type=url],input[type=search],select){width:100%;box-sizing:border-box;height:52px;border:3px solid #000;background:#fff;color:#000;font:700 16px var(--og-mono)}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .hint{color:#000;opacity:.75;font:400 12px/1.5 var(--og-mono)}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .field .hint{display:block;margin-top:6px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .er{display:block;margin-top:6px;font:700 12px var(--og-mono);color:#C2160A;text-transform:uppercase}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .check{gap:12px;align-items:flex-start;color:#000}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .check b{font:400 24px/1 var(--og-disp);text-transform:uppercase;font-weight:400}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .check input{appearance:none;-webkit-appearance:none;width:32px;height:32px;margin:0;border:3px solid #000;background:#fff;border-radius:0;flex:none;cursor:pointer;display:grid;place-content:center}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .check input:checked{background:#000}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .check input:checked::after{content:"";width:12px;height:7px;border:solid var(--og-paper);border-width:0 0 3px 3px;transform:rotate(-45deg) translate(1px,-1px)}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .check input:disabled{opacity:.5}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-health .iorow{display:flex;gap:8px;margin-top:10px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-health .btn{flex:1;height:48px;border:3px solid #000;background:#fff;color:#000}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-colour{display:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .msg:empty{display:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .msg{font:700 12px var(--og-mono);color:#000;border-top:3px solid #000;padding:10px 0;margin:0}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .msg.err{color:#C2160A}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-rmrow{border-top:3px solid #000;margin:0;padding:12px 0 14px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-rm{background:#fff;border-color:#C2160A;color:#C2160A;height:48px}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-rmq{color:#C2160A}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .og-rmrow .og-b{color:#000;border-color:#000;background:#fff}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-foot{position:fixed;left:0;right:var(--og-rail);bottom:0;z-index:2;display:flex;gap:8px;flex-wrap:nowrap;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--og-paper);border-top:3px solid #000;margin:0}
+:root[data-look="offgrid"][data-rail="left"] dialog.drawer[data-mode="edit"] .ef-foot{left:var(--og-rail);right:0}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-foot .btn{flex:1;height:56px;border:3px solid #000;border-radius:0;font:400 24px var(--og-disp);text-transform:uppercase;color:#000;background:none}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-foot .ef-save{background:var(--og-hot);flex:2}
+:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-foot .ef-cancel{order:-1}
+@media (min-width:900px){:root[data-look="offgrid"] dialog.drawer[data-mode="edit"] .ef-foot{position:sticky;left:auto;right:auto;margin:0 -14px}}
 .og-rm{height:44px;padding:0 14px;border:3px solid #FF5A4E;background:none;color:#FF5A4E;font:700 13px var(--og-mono);cursor:pointer;border-radius:0}
 .og-rmq{font:700 12px var(--og-mono);color:#FF5A4E;flex-basis:100%}
 .og-rmrow .og-b{color:#fff}
@@ -4285,6 +4330,7 @@ function openOgFilter(){
 }
 function closeOgFilter(){ const p = $("#ogFilter"); if (!p) return; p.remove(); $("#filterBtn").setAttribute("aria-expanded", "false"); $("#filterBtn").focus({preventScroll: true}); }
 function ogFilterSet(k, v){ view[k] = v; if (k === "source") state.topic = null; saveView(); state.shown = PAGE; snapLooked(); renderChips(); renderList(); renderFilterBar(); renderOgFilter(); scrollFeedTop(); }
+const OG_KIND_WORD = {Articles: "Read", Topics: "Topics", Videos: "Watch", Audio: "Listen", Conversations: "Talk"};
 function renderOgFilter(first){
   const p = $("#ogFilter"); if (!p) return;
   const keepScroll = p.scrollTop;
@@ -4363,7 +4409,10 @@ function renderOgFilter(first){
           else if (f.paused) sub = "Paused";
           else if (isTroubled(f)) sub = "Not working · edit for why";
           else { const n = todayN.get(f.id) || 0, last = newest.get(f.id); sub = [n ? `${n} new today` : "", last ? ago(last) : "Nothing yet"].filter(Boolean).join(" · "); }
-          const txt = el("span", "ogf-ftxt"); txt.append(el("span", "ogf-fname", f.title || "Feed"), el("span", "ogf-fsub" + (isTroubled(f) && !on ? " bad" : ""), sub));
+          // What kind of feed, in the same words as WHAT KIND (READ / TOPICS / WATCH / LISTEN / TALK)
+          const kind = el("span", "ogf-kind", OG_KIND_WORD[sourceType(f)] || "Read");
+          const nm = el("span", "ogf-fname"); nm.append(document.createTextNode(f.title || "Feed"), kind);
+          const txt = el("span", "ogf-ftxt"); txt.append(nm, el("span", "ogf-fsub" + (isTroubled(f) && !on ? " bad" : ""), sub));
           pick.append(srcIcon(f, 30), txt);
           pick.onclick = () => ogFilterSet("source", on ? "all" : "feed:" + f.id);
           const ed = el("button", "ogf-edit", "Edit"); ed.type = "button"; ed.setAttribute("aria-label", `Edit ${f.title || "feed"}`);
@@ -5622,13 +5671,15 @@ function folderField(cur){
   fF.append(sel, nf);
   return {node: fF, value: () => sel.value === "\u0000new" ? (makeFolder(nf.value) || cur) : sel.value};
 }
+// The Off-grid EDIT FEED screen (from a feed's EDIT): one feed, drawn like the FEEDS panel, CANCEL / SAVE footer
+const ogEditScreen = () => isOG() && dlg.open && dlg.dataset.mode === "edit";
 function editForm(f){
   const form = el("form", "editform"); form.autocomplete = "off";
   const nameF = el("label", "field"); nameF.append(el("span", "lbl", "Name"));
   const name = el("input"); name.id = "ef-name"; name.type = "text"; name.value = f.title || ""; name.placeholder = "Feed name";
   nameF.append(name);
   const folder = folderField(folderOf(f));
-  const urlF = el("label", "field"); urlF.append(el("span", "lbl", "Link"));
+  const urlF = el("label", "field"); urlF.append(el("span", "lbl", "Feed address"));
   const url = el("input"); url.id = "ef-url"; url.type = "text"; url.inputMode = "url"; url.value = f.url;
   const every = everyMin(f);
   urlF.append(url, el("span", "hint", `${platformOf(f)} · checked every ${every >= 60 ? (every % 60 ? (every / 60).toFixed(1) : every / 60) + " h" : every + " min"}${f.everyMin ? " (set by the feed)" : ""}${f.lastFetched ? " · last " + ago(f.lastFetched) : ""}. Changing the link reloads this feed's stories.`));
@@ -5642,7 +5693,7 @@ function editForm(f){
   chk.classList.add("diag-check");
   const det = el("button", "btn", "Details"); det.type = "button"; det.onclick = () => { closeMenu(); openReport(f.id); };
   const cr = el("div", "iorow"); cr.append(chk, det); diag.append(cr);
-  const colF = el("div", "field"); colF.append(el("span", "lbl", "Colour"));
+  const colF = el("div", "field ef-colour"); colF.append(el("span", "lbl", "Colour"));
   const sw = el("div", "swatches"); sw.setAttribute("role", "radiogroup"); sw.setAttribute("aria-label", "Colour");
   let color = f.color;
   COLORS.forEach(c => {
@@ -5653,12 +5704,12 @@ function editForm(f){
   });
   colF.append(sw);
   const msg = el("p", "msg");
-  const row = el("div", "row");
-  const saveB = el("button", "btn primary", "Save"); saveB.type = "submit";
-  const cancel = el("button", "btn", "Cancel"); cancel.type = "button";
-  cancel.onclick = () => { editingId = null; renderFeedList(); };
+  const row = el("div", "row ef-foot");
+  const saveB = el("button", "btn primary ef-save", "Save"); saveB.type = "submit";
+  const cancel = el("button", "btn ef-cancel", "Cancel"); cancel.type = "button";
+  cancel.onclick = () => { editingId = null; if (ogEditScreen()) menuBack(); else renderFeedList(); };
   row.append(saveB, cancel);
-  const privF = el("label", "check"); const privC = el("input"); privC.type = "checkbox"; privC.checked = isPrivateFeed(f);
+  const privF = el("label", "check ef-private"); const privC = el("input"); privC.type = "checkbox"; privC.checked = isPrivateFeed(f);
   const autoPriv = isPrivateUrl(f.url); privC.disabled = autoPriv;
   const privT = el("span"); privT.append(el("b", null, "Private feed"), el("br"), el("span", "hint", autoPriv
     ? "This link has a personal key in it, so it's always private: only this device fetches it, and it's left out of reports, sharing and exports."
@@ -5698,7 +5749,7 @@ function editForm(f){
     o("USE LETTERS", () => setLogo({logo: "", logoMode: "letters"}, "USING LETTERS"));
     ch.onclick = () => { opts.hidden = !opts.hidden; };
     lg.append(el("span", "lbl", "Logo"), cur, ch, file);
-    const pz = el("label", "check"); const pc = el("input"); pc.type = "checkbox"; pc.checked = !!f.paused;
+    const pz = el("label", "check ef-pause"); const pc = el("input"); pc.type = "checkbox"; pc.checked = !!f.paused;
     pc.onchange = () => { f.paused = pc.checked; save(); toast(pc.checked ? "PAUSED" : "UNPAUSED"); };
     pz.append(pc, el("span", null, ""));
     pz.lastChild.append(el("b", null, "Pause"), el("br"), el("span", "hint", "A paused source keeps its stories and isn't checked."));
@@ -5709,7 +5760,7 @@ function editForm(f){
     rmb.onclick = () => {
       rmw.textContent = "";
       const q = el("span", "og-rmq", "REMOVE AND ITS STORIES?");
-      const yes = el("button", "og-rm", "YES"); yes.type = "button"; yes.onclick = () => { editingId = null; removeFeed(f); toast("REMOVED"); };
+      const yes = el("button", "og-rm", "YES"); yes.type = "button"; yes.onclick = () => { const back = ogEditScreen(); editingId = null; removeFeed(f); toast("REMOVED"); if (back) menuBack(); };
       const no = el("button", "og-b", "NO"); no.type = "button"; no.onclick = () => { rmw.replaceChildren(rmb); rmb.focus(); };
       rmw.append(q, yes, no); no.focus();
     };
@@ -5738,6 +5789,7 @@ function editForm(f){
       save(); renderFeedList(); renderChips(); renderStatus(); renderList();
       if (viewerEl && state.activeId){ const it = itemById(state.activeId); if (it) viewerEl.querySelector(".vbar .meta")?.replaceWith(metaRow(it)); }
       setMsg(`Saved ${f.title}.`);
+      if (ogEditScreen()){ menuBack(); toast("SAVED"); }
     }catch(err){
       msg.className = "msg err"; msg.textContent = err.message.replace(/\.$/, "") + ".";
       saveB.disabled = false;
@@ -5778,7 +5830,7 @@ function showTab(which){
   if (feeds){ renderFeedList(); }
   else { renderDesign(); $("#keepBrowser").checked = state.keepInBrowser; $("#videoInApp").checked = state.videoInApp; $("#hideShorts").checked = state.hideShorts; $("#showTrending").checked = store.get("yf.trending", true); $("#podQueue").checked = state.podQueue; $("#proxyInput").value = state.service || SERVICE_DEFAULT; }
 }
-const MENU_TITLES = {add: "Add a feed", edit: "Edit feeds", settings: "Settings"};
+const MENU_TITLES = {add: "Add a feed", edit: "Edit feed", settings: "Settings"};
 function openMenu(tab){
   // Three screens: add a feed, edit feeds (from the FEEDS panel), settings (the gear)
   const mode = tab === "settings" ? "settings" : tab === "edit" ? "edit" : "add";
