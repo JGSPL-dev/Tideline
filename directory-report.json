@@ -1,0 +1,5410 @@
+[
+ {
+  "name": "BBC News",
+  "url": "https://feeds.bbci.co.uk/news/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport",
+  "url": "https://feeds.bbci.co.uk/sport/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Football",
+  "url": "https://feeds.bbci.co.uk/sport/football/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Technology",
+  "url": "https://feeds.bbci.co.uk/news/technology/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Science",
+  "url": "https://feeds.bbci.co.uk/news/science_and_environment/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – UK",
+  "url": "https://www.theguardian.com/uk/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – World",
+  "url": "https://www.theguardian.com/world/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Football",
+  "url": "https://www.theguardian.com/football/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Technology",
+  "url": "https://www.theguardian.com/uk/technology/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News",
+  "url": "https://feeds.skynews.com/feeds/rss/home.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent",
+  "url": "https://www.independent.co.uk/news/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Al Jazeera",
+  "url": "https://www.aljazeera.com/xml/rss/all.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NPR News",
+  "url": "https://feeds.npr.org/1001/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The New York Times",
+  "url": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Verge",
+  "url": "https://www.theverge.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Ars Technica",
+  "url": "https://feeds.arstechnica.com/arstechnica/index",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "TechCrunch",
+  "url": "https://techcrunch.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Engadget",
+  "url": "https://www.engadget.com/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Wired",
+  "url": "https://www.wired.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hacker News",
+  "url": "https://news.ycombinator.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "9to5Mac",
+  "url": "https://9to5mac.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Android Authority",
+  "url": "https://www.androidauthority.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "IGN",
+  "url": "https://feeds.feedburner.com/ign/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Eurogamer",
+  "url": "https://www.eurogamer.net/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Polygon",
+  "url": "https://www.polygon.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Kotaku",
+  "url": "https://kotaku.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "PC Gamer",
+  "url": "https://www.pcgamer.com/rss/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Rock Paper Shotgun",
+  "url": "https://www.rockpapershotgun.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Video Games Chronicle",
+  "url": "https://www.videogameschronicle.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nintendo Life",
+  "url": "https://www.nintendolife.com/feeds/latest",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Time Extension",
+  "url": "https://www.timeextension.com/feeds/latest",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Push Square",
+  "url": "https://www.pushsquare.com/feeds/latest",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Pure Xbox",
+  "url": "https://www.purexbox.com/feeds/latest",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – Football",
+  "url": "https://www.skysports.com/rss/12040",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ESPN",
+  "url": "https://www.espn.com/espn/rss/news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "New Scientist",
+  "url": "https://www.newscientist.com/feed/home/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ScienceDaily",
+  "url": "https://www.sciencedaily.com/rss/all.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nature",
+  "url": "https://www.nature.com/nature.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Business",
+  "url": "https://feeds.bbci.co.uk/news/business/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Politics",
+  "url": "https://feeds.bbci.co.uk/news/politics/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Entertainment",
+  "url": "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Formula 1",
+  "url": "https://feeds.bbci.co.uk/sport/formula1/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Cricket",
+  "url": "https://feeds.bbci.co.uk/sport/cricket/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Rugby Union",
+  "url": "https://feeds.bbci.co.uk/sport/rugby-union/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Tennis",
+  "url": "https://feeds.bbci.co.uk/sport/tennis/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Sport",
+  "url": "https://www.theguardian.com/uk/sport/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Financial Times",
+  "url": "https://www.ft.com/rss/home",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Telegraph",
+  "url": "https://www.telegraph.co.uk/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail",
+  "url": "https://www.dailymail.co.uk/articles.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Sun",
+  "url": "https://www.thesun.co.uk/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mirror",
+  "url": "https://www.mirror.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Metro",
+  "url": "https://metro.co.uk/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Evening Standard",
+  "url": "https://www.standard.co.uk/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Economist",
+  "url": "https://www.economist.com/latest/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Washington Post – World",
+  "url": "https://feeds.washingtonpost.com/rss/world",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Politico",
+  "url": "https://rss.politico.com/politics-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Axios",
+  "url": "https://api.axios.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CNN",
+  "url": "https://www.cnn.com/sitemap/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GamesRadar+",
+  "url": "https://www.gamesradar.com/rss/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GameSpot",
+  "url": "https://www.gamespot.com/feeds/mashup/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gematsu",
+  "url": "https://www.gematsu.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Destructoid",
+  "url": "https://www.destructoid.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Siliconera",
+  "url": "https://www.siliconera.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nintendo Everything",
+  "url": "https://nintendoeverything.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "My Nintendo News",
+  "url": "https://mynintendonews.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nintendo Wire",
+  "url": "https://nintendowire.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GoNintendo",
+  "url": "https://gonintendo.com/feeds/all.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Arseblog",
+  "url": "https://arseblog.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Football365",
+  "url": "https://www.football365.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Food",
+  "url": "https://www.theguardian.com/food/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bon Appétit",
+  "url": "https://www.bonappetit.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Eater",
+  "url": "https://www.eater.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Smitten Kitchen",
+  "url": "https://smittenkitchen.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Budget Bytes",
+  "url": "https://www.budgetbytes.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Minimalist Baker",
+  "url": "https://minimalistbaker.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Epicurious",
+  "url": "https://www.epicurious.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Music",
+  "url": "https://www.theguardian.com/music/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NME",
+  "url": "https://www.nme.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Stereogum",
+  "url": "https://www.stereogum.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Consequence",
+  "url": "https://consequence.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Pitchfork",
+  "url": "https://www.pitchfork.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Film",
+  "url": "https://www.theguardian.com/film/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – TV and radio",
+  "url": "https://www.theguardian.com/tv-and-radio/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Variety",
+  "url": "https://variety.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Deadline",
+  "url": "https://deadline.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Hollywood Reporter",
+  "url": "https://www.hollywoodreporter.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "IndieWire",
+  "url": "https://www.indiewire.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Collider",
+  "url": "https://collider.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Screen Rant",
+  "url": "https://screenrant.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Car and Driver",
+  "url": "https://www.caranddriver.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Electrek",
+  "url": "https://electrek.co/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Jalopnik",
+  "url": "https://jalopnik.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Motoring",
+  "url": "https://www.theguardian.com/technology/motoring/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Road & Track",
+  "url": "https://www.roadandtrack.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Comedy",
+  "url": "https://www.theguardian.com/stage/comedy/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NewsThump",
+  "url": "https://newsthump.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Onion",
+  "url": "https://theonion.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Health",
+  "url": "https://feeds.bbci.co.uk/news/health/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Fitness",
+  "url": "https://www.theguardian.com/lifeandstyle/fitness/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Wellness",
+  "url": "https://www.theguardian.com/wellness/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Runner's World",
+  "url": "https://www.runnersworld.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Men's Health",
+  "url": "https://www.menshealth.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Women's Health",
+  "url": "https://www.womenshealthmag.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Travel",
+  "url": "https://www.theguardian.com/travel/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Condé Nast Traveler",
+  "url": "https://www.cntraveler.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Points Guy",
+  "url": "https://thepointsguy.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nomadic Matt",
+  "url": "https://www.nomadicmatt.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Life and style",
+  "url": "https://www.theguardian.com/lifeandstyle/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Esquire",
+  "url": "https://www.esquire.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Good Housekeeping",
+  "url": "https://www.goodhousekeeping.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Fashion",
+  "url": "https://www.theguardian.com/fashion/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Vogue",
+  "url": "https://www.vogue.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GQ",
+  "url": "https://www.gq.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Allure",
+  "url": "https://www.allure.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Harper's Bazaar",
+  "url": "https://www.harpersbazaar.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Elle",
+  "url": "https://www.elle.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Gardens",
+  "url": "https://www.theguardian.com/lifeandstyle/gardens/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Homes",
+  "url": "https://www.theguardian.com/lifeandstyle/homes/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Architectural Digest",
+  "url": "https://www.architecturaldigest.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "House Beautiful",
+  "url": "https://www.housebeautiful.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Dezeen",
+  "url": "https://www.dezeen.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Family",
+  "url": "https://www.theguardian.com/lifeandstyle/family/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Parents and parenting",
+  "url": "https://www.theguardian.com/lifeandstyle/parents-and-parenting/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Money",
+  "url": "https://www.theguardian.com/money/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MoneySavingExpert",
+  "url": "https://news.google.com/rss/search?q=site%3Amoneysavingexpert.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CNBC – Top news",
+  "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MarketWatch – Top stories",
+  "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Yahoo Finance",
+  "url": "https://www.finance.yahoo.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Business",
+  "url": "https://www.theguardian.com/business/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fortune",
+  "url": "https://fortune.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fast Company",
+  "url": "https://www.fastcompany.com/latest/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Science",
+  "url": "https://www.theguardian.com/science/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Live Science",
+  "url": "https://www.livescience.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Space.com",
+  "url": "https://www.space.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NASA",
+  "url": "https://www.nasa.gov/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Quanta Magazine",
+  "url": "https://www.quantamagazine.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Tom's Hardware",
+  "url": "https://www.tomshardware.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "9to5Google",
+  "url": "https://9to5google.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MacRumors",
+  "url": "https://feeds.macrumors.com/MacRumors-All",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Premier League",
+  "url": "https://www.theguardian.com/football/premierleague/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Cricket",
+  "url": "https://www.theguardian.com/sport/cricket/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ESPNcricinfo",
+  "url": "https://www.espncricinfo.com/rss/content/story/feeds/0.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Rugby union",
+  "url": "https://www.theguardian.com/sport/rugby-union/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Rugby League",
+  "url": "https://feeds.bbci.co.uk/sport/rugby-league/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Tennis",
+  "url": "https://www.theguardian.com/sport/tennis/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Formula One",
+  "url": "https://www.theguardian.com/sport/formulaone/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Golf",
+  "url": "https://feeds.bbci.co.uk/sport/golf/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Golf",
+  "url": "https://www.theguardian.com/sport/golf/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Boxing",
+  "url": "https://feeds.bbci.co.uk/sport/boxing/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Boxing",
+  "url": "https://www.theguardian.com/sport/boxing/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MMA Fighting",
+  "url": "https://www.mmafighting.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cageside Seats",
+  "url": "https://www.cagesideseats.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Politics",
+  "url": "https://www.theguardian.com/politics/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Opinion",
+  "url": "https://www.theguardian.com/commentisfree/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – World",
+  "url": "https://feeds.bbci.co.uk/news/world/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – UK",
+  "url": "https://feeds.bbci.co.uk/news/uk/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – US news",
+  "url": "https://www.theguardian.com/us-news/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Environment",
+  "url": "https://www.theguardian.com/environment/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Culture",
+  "url": "https://www.theguardian.com/culture/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Books",
+  "url": "https://www.theguardian.com/books/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Games",
+  "url": "https://www.theguardian.com/games/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Media",
+  "url": "https://www.theguardian.com/media/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Global development",
+  "url": "https://www.theguardian.com/global-development/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – World",
+  "url": "https://feeds.skynews.com/feeds/rss/world.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – Politics",
+  "url": "https://feeds.skynews.com/feeds/rss/politics.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – Technology",
+  "url": "https://feeds.skynews.com/feeds/rss/technology.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – UK",
+  "url": "https://www.independent.co.uk/news/uk/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "HuffPost UK",
+  "url": "https://www.huffingtonpost.co.uk/feeds/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Conversation UK",
+  "url": "https://theconversation.com/uk/articles.atom",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Vox",
+  "url": "https://www.vox.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Atlantic",
+  "url": "https://www.theatlantic.com/feed/all/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The New Yorker",
+  "url": "https://www.newyorker.com/feed/everything",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ABC News (US)",
+  "url": "https://feeds.abcnews.com/abcnews/topstories",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CBS News",
+  "url": "https://www.cbsnews.com/latest/rss/main",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NBC News",
+  "url": "https://feeds.nbcnews.com/nbcnews/public/news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fox News",
+  "url": "https://moxie.foxnews.com/google-publisher/latest.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Hill",
+  "url": "https://thehill.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ProPublica",
+  "url": "https://www.propublica.org/feeds/propublica/main",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Deutsche Welle",
+  "url": "https://rss.dw.com/rdf/rss-en-all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "France 24",
+  "url": "https://www.france24.com/en/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ABC News (Australia)",
+  "url": "https://www.abc.net.au/news/feed/51120/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "RTÉ News",
+  "url": "https://www.rte.ie/feeds/rss/?index=/news/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CBC News",
+  "url": "https://www.cbc.ca/webfeed/rss/rss-topstories",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Times of India",
+  "url": "https://timesofindia.indiatimes.com/rssfeedstopstories.cms",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "South China Morning Post",
+  "url": "https://www.scmp.com/rss/91/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Spectator",
+  "url": "https://www.spectator.co.uk/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "New Statesman",
+  "url": "https://www.newstatesman.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The i Paper",
+  "url": "https://inews.co.uk/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Register",
+  "url": "https://www.theregister.com/headlines.atom",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gizmodo",
+  "url": "https://gizmodo.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Mashable",
+  "url": "https://mashable.com/feeds/rss/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ZDNET",
+  "url": "https://www.zdnet.com/news/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CNET",
+  "url": "https://www.cnet.com/rss/news/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MIT Technology Review",
+  "url": "https://www.technologyreview.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "AppleInsider",
+  "url": "https://appleinsider.com/rss/news/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Six Colors",
+  "url": "https://sixcolors.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daring Fireball",
+  "url": "https://daringfireball.net/feeds/main",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "XDA",
+  "url": "https://www.xda-developers.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "How-To Geek",
+  "url": "https://www.howtogeek.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Slashdot",
+  "url": "https://rss.slashdot.org/Slashdot/slashdotMain",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Stratechery",
+  "url": "https://stratechery.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Krebs on Security",
+  "url": "https://krebsonsecurity.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BleepingComputer",
+  "url": "https://news.google.com/rss/search?q=site%3Ableepingcomputer.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "TechRadar",
+  "url": "https://www.techradar.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Digital Trends",
+  "url": "https://www.digitaltrends.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Next Web",
+  "url": "https://thenextweb.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The GitHub Blog",
+  "url": "https://github.blog/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Lobsters",
+  "url": "https://lobste.rs/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Game Informer",
+  "url": "https://www.gameinformer.com/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "TheGamer",
+  "url": "https://www.thegamer.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Game Rant",
+  "url": "https://gamerant.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GamesIndustry.biz",
+  "url": "https://www.gamesindustry.biz/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Xbox Wire",
+  "url": "https://news.xbox.com/en-us/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "PlayStation Blog",
+  "url": "https://blog.playstation.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Athletics",
+  "url": "https://feeds.bbci.co.uk/sport/athletics/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Cycling",
+  "url": "https://feeds.bbci.co.uk/sport/cycling/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Snooker",
+  "url": "https://feeds.bbci.co.uk/sport/snooker/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Darts",
+  "url": "https://feeds.bbci.co.uk/sport/darts/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ESPN – NFL",
+  "url": "https://www.espn.com/espn/rss/nfl/news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ESPN – NBA",
+  "url": "https://www.espn.com/espn/rss/nba/news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – US sports",
+  "url": "https://www.theguardian.com/sport/us-sport/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Cycling",
+  "url": "https://www.theguardian.com/sport/cycling/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "talkSPORT",
+  "url": "https://talksport.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Pro Football Talk",
+  "url": "https://profootballtalk.nbcsports.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Formula 1",
+  "url": "https://www.formula1.com/en/latest/all.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "RaceFans",
+  "url": "https://www.racefans.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Golf Monthly",
+  "url": "https://www.golfmonthly.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Rolling Stone",
+  "url": "https://www.rollingstone.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Billboard",
+  "url": "https://www.billboard.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "/Film",
+  "url": "https://www.slashfilm.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Den of Geek",
+  "url": "https://www.denofgeek.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Vulture",
+  "url": "https://www.vulture.com/_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Kottke",
+  "url": "https://feeds.kottke.org/main",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Open Culture",
+  "url": "https://www.openculture.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Atlas Obscura",
+  "url": "https://www.atlasobscura.com/feeds/latest",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Literary Hub",
+  "url": "https://lithub.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Creative Bloq",
+  "url": "https://www.creativebloq.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Scientific American",
+  "url": "http://rss.sciam.com/ScientificAmerican-Global",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Phys.org",
+  "url": "https://phys.org/rss-feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Grist",
+  "url": "https://grist.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Carbon Brief",
+  "url": "https://www.carbonbrief.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Seeking Alpha – Market news",
+  "url": "https://seekingalpha.com/market_currents.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Business Insider",
+  "url": "https://feeds.businessinsider.com/custom/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Harvard Business Review",
+  "url": "https://news.google.com/rss/search?q=site%3Ahbr.org&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "RecipeTin Eats",
+  "url": "https://www.recipetineats.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Motor1",
+  "url": "https://www.motor1.com/rss/news/all/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Carscoops",
+  "url": "https://www.carscoops.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Head for Points",
+  "url": "https://www.headforpoints.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hypebeast",
+  "url": "https://hypebeast.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Highsnobiety",
+  "url": "https://www.highsnobiety.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Poke",
+  "url": "https://www.thepoke.co.uk/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Euronews",
+  "url": "https://www.euronews.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Politico Europe",
+  "url": "https://www.politico.eu/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – UK news",
+  "url": "https://www.theguardian.com/uk-news/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Europe",
+  "url": "https://www.theguardian.com/world/europe-news/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Australia news",
+  "url": "https://www.theguardian.com/australia-news/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Middle East",
+  "url": "https://www.theguardian.com/world/middleeast/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Africa",
+  "url": "https://www.theguardian.com/world/africa/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Asia",
+  "url": "https://www.theguardian.com/world/asia/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Americas",
+  "url": "https://www.theguardian.com/world/americas/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – US politics",
+  "url": "https://www.theguardian.com/us-news/us-politics/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Economics",
+  "url": "https://www.theguardian.com/business/economics/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Education",
+  "url": "https://www.theguardian.com/education/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Society",
+  "url": "https://www.theguardian.com/society/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Law",
+  "url": "https://www.theguardian.com/law/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Art and design",
+  "url": "https://www.theguardian.com/artanddesign/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Stage",
+  "url": "https://www.theguardian.com/stage/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Championship",
+  "url": "https://www.theguardian.com/football/championship/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Champions League",
+  "url": "https://www.theguardian.com/football/championsleague/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Women's football",
+  "url": "https://www.theguardian.com/football/womensfootball/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – NFL",
+  "url": "https://www.theguardian.com/sport/nfl/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Horse racing",
+  "url": "https://www.theguardian.com/sport/horse-racing/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Athletics",
+  "url": "https://www.theguardian.com/sport/athletics/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Food and drink",
+  "url": "https://www.theguardian.com/lifeandstyle/food-and-drink/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Property",
+  "url": "https://www.theguardian.com/money/property/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Women",
+  "url": "https://www.theguardian.com/lifeandstyle/women/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Education",
+  "url": "https://feeds.bbci.co.uk/news/education/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – England",
+  "url": "https://feeds.bbci.co.uk/news/england/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Scotland",
+  "url": "https://feeds.bbci.co.uk/news/scotland/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Wales",
+  "url": "https://feeds.bbci.co.uk/news/wales/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Northern Ireland",
+  "url": "https://feeds.bbci.co.uk/news/northern_ireland/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Europe",
+  "url": "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – US & Canada",
+  "url": "https://feeds.bbci.co.uk/news/world/us_and_canada/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Asia",
+  "url": "https://feeds.bbci.co.uk/news/world/asia/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Africa",
+  "url": "https://feeds.bbci.co.uk/news/world/africa/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC News – Middle East",
+  "url": "https://feeds.bbci.co.uk/news/world/middle_east/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Premier League",
+  "url": "https://feeds.bbci.co.uk/sport/football/premier-league/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Champions League",
+  "url": "https://feeds.bbci.co.uk/sport/football/champions-league/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Scottish football",
+  "url": "https://feeds.bbci.co.uk/sport/football/scottish/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Women's football",
+  "url": "https://feeds.bbci.co.uk/sport/football/womens/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Sport – Horse racing",
+  "url": "https://feeds.bbci.co.uk/sport/horse-racing/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – UK",
+  "url": "https://feeds.skynews.com/feeds/rss/uk.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – Business",
+  "url": "https://feeds.skynews.com/feeds/rss/business.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – Entertainment",
+  "url": "https://feeds.skynews.com/feeds/rss/entertainment.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – US",
+  "url": "https://feeds.skynews.com/feeds/rss/us.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky News – Strange news",
+  "url": "https://feeds.skynews.com/feeds/rss/strange.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Popular Mechanics",
+  "url": "https://www.popularmechanics.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cosmopolitan",
+  "url": "https://www.cosmopolitan.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Country Living",
+  "url": "https://www.countryliving.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Delish",
+  "url": "https://www.delish.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bicycling",
+  "url": "https://www.bicycling.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Prevention",
+  "url": "https://www.prevention.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Oprah Daily",
+  "url": "https://www.oprahdaily.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Town & Country",
+  "url": "https://www.townandcountrymag.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Veranda",
+  "url": "https://www.veranda.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Vanity Fair",
+  "url": "https://www.vanityfair.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Glamour",
+  "url": "https://www.glamour.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Teen Vogue",
+  "url": "https://www.teenvogue.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "SB Nation",
+  "url": "https://www.sbnation.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Curbed",
+  "url": "https://www.curbed.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Cut",
+  "url": "https://www.thecut.com/_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Grub Street",
+  "url": "https://www.grubstreet.com/_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Tom's Guide",
+  "url": "https://www.tomsguide.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "What Hi-Fi?",
+  "url": "https://www.whathifi.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "T3",
+  "url": "https://www.t3.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Louder",
+  "url": "https://www.loudersound.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MusicRadar",
+  "url": "https://www.musicradar.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cyclingnews",
+  "url": "https://www.cyclingnews.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cycling Weekly",
+  "url": "https://www.cyclingweekly.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "FourFourTwo",
+  "url": "https://www.fourfourtwo.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Homes & Gardens",
+  "url": "https://www.homesandgardens.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Ideal Home",
+  "url": "https://www.idealhome.co.uk/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Woman & Home",
+  "url": "https://www.womanandhome.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GoodtoKnow",
+  "url": "https://www.goodtoknow.co.uk/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Livingetc",
+  "url": "https://www.livingetc.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Windows Central",
+  "url": "https://www.windowscentral.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Android Central",
+  "url": "https://www.androidcentral.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "What to Watch",
+  "url": "https://www.whattowatch.com/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Marie Claire UK",
+  "url": "https://www.marieclaire.co.uk/feeds/all",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Wccftech",
+  "url": "https://wccftech.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Android Police",
+  "url": "https://www.androidpolice.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MakeUseOf",
+  "url": "https://www.makeuseof.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CBR",
+  "url": "https://www.cbr.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MovieWeb",
+  "url": "https://movieweb.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "TVLine",
+  "url": "https://tvline.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Uproxx",
+  "url": "https://uproxx.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Spin",
+  "url": "https://www.spin.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sally's Baking Addiction",
+  "url": "https://sallysbakingaddiction.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cookie and Kate",
+  "url": "https://cookieandkate.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Love and Lemons",
+  "url": "https://www.loveandlemons.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Pinch of Yum",
+  "url": "https://pinchofyum.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Skift",
+  "url": "https://skift.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "One Mile at a Time",
+  "url": "https://onemileatatime.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Simple Flying",
+  "url": "https://simpleflying.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Monevator",
+  "url": "https://monevator.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "This is Money",
+  "url": "https://www.thisismoney.co.uk/money/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CoinDesk",
+  "url": "https://www.coindesk.com/arc/outboundfeeds/rss/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ScienceAlert",
+  "url": "https://www.sciencealert.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Universe Today",
+  "url": "https://www.universetoday.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "EarthSky",
+  "url": "https://earthsky.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "STAT",
+  "url": "https://www.statnews.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Manchester Evening News",
+  "url": "https://www.manchestereveningnews.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Liverpool Echo",
+  "url": "https://www.liverpoolecho.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Birmingham Live",
+  "url": "https://www.birminghammail.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bristol Live",
+  "url": "https://www.bristolpost.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "WalesOnline",
+  "url": "https://www.walesonline.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Record",
+  "url": "https://www.dailyrecord.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Chronicle Live",
+  "url": "https://www.chroniclelive.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "YorkshireLive",
+  "url": "https://www.examinerlive.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nottingham Post",
+  "url": "https://www.nottinghampost.com/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Leicester Mercury",
+  "url": "https://www.leicestermercury.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Belfast Live",
+  "url": "https://www.belfastlive.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MyLondon",
+  "url": "https://www.mylondon.news/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Edinburgh Live",
+  "url": "https://www.edinburghlive.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Glasgow Live",
+  "url": "https://www.glasgowlive.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hull Live",
+  "url": "https://www.hulldailymail.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Stoke-on-Trent Live",
+  "url": "https://www.stokesentinel.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Plymouth Live",
+  "url": "https://www.plymouthherald.co.uk/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cornwall Live",
+  "url": "https://www.cornwalllive.com/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Kent Live",
+  "url": "https://www.kentlive.news/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Football.London",
+  "url": "https://www.football.london/?service=rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Scotsman",
+  "url": "https://www.scotsman.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Yorkshire Post",
+  "url": "https://www.yorkshirepost.co.uk/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "News Letter",
+  "url": "https://www.newsletter.co.uk/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "TheJournal.ie",
+  "url": "https://www.thejournal.ie/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Los Angeles Times",
+  "url": "https://www.latimes.com/world-nation/rss2.0.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Le Monde (English)",
+  "url": "https://www.lemonde.fr/en/rss/une.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Japan Times",
+  "url": "https://www.japantimes.co.jp/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Straits Times – World",
+  "url": "https://www.straitstimes.com/news/world/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Hindu",
+  "url": "https://www.thehindu.com/news/national/feeder/default.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Times of Israel",
+  "url": "https://www.timesofisrael.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Kyiv Independent",
+  "url": "https://kyivindependent.com/news-archive/rss/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Sydney Morning Herald",
+  "url": "https://www.smh.com.au/rss/feed.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Rest of World",
+  "url": "https://restofworld.org/feed/latest",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Semafor",
+  "url": "https://www.semafor.com/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Global Voices",
+  "url": "https://globalvoices.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Planet Rugby",
+  "url": "https://www.planetrugby.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "PlanetF1",
+  "url": "https://www.planetf1.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "National Club Golfer",
+  "url": "https://www.nationalclubgolfer.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Tennishead",
+  "url": "https://tennishead.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Boxing News",
+  "url": "https://www.boxingnewsonline.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MMA Junkie",
+  "url": "https://news.google.com/rss/search?q=site%3Ammajunkie.usatoday.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Popular Information",
+  "url": "https://popular.info/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Slow Boring",
+  "url": "https://www.slowboring.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Free Press",
+  "url": "https://www.thefp.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Platformer",
+  "url": "https://www.platformer.news/rss/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Noahpinion",
+  "url": "https://www.noahpinion.blog/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Astral Codex Ten",
+  "url": "https://www.astralcodexten.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Letters from an American",
+  "url": "https://heathercoxrichardson.substack.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Pragmatic Engineer",
+  "url": "https://newsletter.pragmaticengineer.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Lenny's Newsletter",
+  "url": "https://www.lennysnewsletter.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Exponential View",
+  "url": "https://www.exponentialview.co/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "One Useful Thing",
+  "url": "https://www.oneusefulthing.org/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Import AI",
+  "url": "https://importai.substack.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Simon Willison",
+  "url": "https://simonwillison.net/atom/everything/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Pluralistic",
+  "url": "https://pluralistic.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Waxy",
+  "url": "https://waxy.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hackaday",
+  "url": "https://hackaday.com/blog/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Pocket-lint",
+  "url": "https://www.pocket-lint.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Trusted Reviews",
+  "url": "https://www.trustedreviews.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "404 Media",
+  "url": "https://www.404media.co/rss/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Techmeme",
+  "url": "https://www.techmeme.com/feed.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GamingBolt",
+  "url": "https://gamingbolt.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "DualShockers",
+  "url": "https://www.dualshockers.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Shacknews",
+  "url": "https://www.shacknews.com/feed/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nautilus",
+  "url": "https://nautil.us/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Aeon",
+  "url": "https://aeon.co/feed.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Big Think",
+  "url": "https://bigthink.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Marginalian",
+  "url": "https://www.themarginalian.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Science-Based Medicine",
+  "url": "https://sciencebasedmedicine.org/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Quartz",
+  "url": "https://qz.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NerdWallet",
+  "url": "https://www.nerdwallet.com/blog/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "City A.M.",
+  "url": "https://www.cityam.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Crunchbase News",
+  "url": "https://news.crunchbase.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Half Baked Harvest",
+  "url": "https://www.halfbakedharvest.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gimme Some Oven",
+  "url": "https://www.gimmesomeoven.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Woks of Life",
+  "url": "https://thewoksoflife.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Just One Cookbook",
+  "url": "https://www.justonecookbook.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "David Lebovitz",
+  "url": "https://www.davidlebovitz.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Truth About Cars",
+  "url": "https://www.thetruthaboutcars.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CarBuzz",
+  "url": "https://carbuzz.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "HotCars",
+  "url": "https://www.hotcars.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "electrive",
+  "url": "https://www.electrive.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gardenista",
+  "url": "https://www.gardenista.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Remodelista",
+  "url": "https://www.remodelista.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Apartment Therapy",
+  "url": "https://www.apartmenttherapy.com/main.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Matador Network",
+  "url": "https://matadornetwork.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Reductress",
+  "url": "https://reductress.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Babylon Bee",
+  "url": "https://babylonbee.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ClickHole",
+  "url": "https://clickhole.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Clash",
+  "url": "https://www.clashmusic.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BrooklynVegan",
+  "url": "https://www.brooklynvegan.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Mixmag",
+  "url": "https://mixmag.net/rss.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Quietus",
+  "url": "https://thequietus.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Little White Lies",
+  "url": "https://lwlies.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "RogerEbert.com",
+  "url": "https://www.rogerebert.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Digital Spy",
+  "url": "https://www.digitalspy.com/rss/all.xml/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Decider",
+  "url": "https://decider.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Art of Manliness",
+  "url": "https://www.artofmanliness.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Zen Habits",
+  "url": "https://zenhabits.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cup of Jo",
+  "url": "https://cupofjo.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "SpaceNews",
+  "url": "https://spacenews.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NASASpaceflight",
+  "url": "https://www.nasaspaceflight.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Wisden",
+  "url": "https://news.google.com/rss/search?q=site%3Awisden.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cricbuzz",
+  "url": "https://news.google.com/rss/search?q=site%3Acricbuzz.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – Cricket",
+  "url": "https://news.google.com/rss/search?q=site%3Askysports.com/cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Cricketer",
+  "url": "https://news.google.com/rss/search?q=site%3Athecricketer.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ICC",
+  "url": "https://news.google.com/rss/search?q=site%3Aicc-cricket.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "England & Wales Cricket Board",
+  "url": "https://news.google.com/rss/search?q=site%3Aecb.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "cricket.com.au",
+  "url": "https://www.cricket.com.au/sitemap/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "CricTracker",
+  "url": "https://www.crictracker.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Telegraph – Cricket",
+  "url": "https://news.google.com/rss/search?q=site%3Atelegraph.co.uk/cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Cricket",
+  "url": "https://www.independent.co.uk/sport/cricket/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Cricket",
+  "url": "https://www.dailymail.co.uk/sport/cricket/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cricket news",
+  "url": "https://news.google.com/rss/search?q=cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "IPL news",
+  "url": "https://news.google.com/rss/search?q=IPL%20cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Women's cricket",
+  "url": "https://news.google.com/rss/search?q=women%27s%20cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "County cricket",
+  "url": "https://news.google.com/rss/search?q=county%20championship%20cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Test cricket",
+  "url": "https://news.google.com/rss/search?q=test%20cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Ashes",
+  "url": "https://news.google.com/rss/search?q=Ashes%20cricket&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Tennis",
+  "url": "https://www.independent.co.uk/sport/tennis/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Tennis",
+  "url": "https://www.dailymail.co.uk/sport/tennis/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – Tennis",
+  "url": "https://news.google.com/rss/search?q=site%3Askysports.com/tennis&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ATP Tour",
+  "url": "https://news.google.com/rss/search?q=site%3Aatptour.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "WTA",
+  "url": "https://news.google.com/rss/search?q=site%3Awtatennis.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Tennis.com",
+  "url": "https://news.google.com/rss/search?q=site%3Atennis.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Tennis Majors",
+  "url": "https://www.tennismajors.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Wimbledon",
+  "url": "https://news.google.com/rss/search?q=site%3Awimbledon.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "LTA",
+  "url": "https://news.google.com/rss/search?q=site%3Alta.org.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Telegraph – Tennis",
+  "url": "https://news.google.com/rss/search?q=site%3Atelegraph.co.uk/tennis&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Ubitennis",
+  "url": "https://www.ubitennis.net/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Tennis news",
+  "url": "https://news.google.com/rss/search?q=tennis&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Australian Open",
+  "url": "https://news.google.com/rss/search?q=Australian%20Open%20tennis&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Roland Garros",
+  "url": "https://news.google.com/rss/search?q=Roland%20Garros&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "US Open tennis",
+  "url": "https://news.google.com/rss/search?q=US%20Open%20tennis&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Davis Cup",
+  "url": "https://news.google.com/rss/search?q=Davis%20Cup&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "British tennis",
+  "url": "https://news.google.com/rss/search?q=British%20tennis&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Rugby union",
+  "url": "https://www.independent.co.uk/sport/rugby/rugby-union/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Rugby union",
+  "url": "https://www.dailymail.co.uk/sport/rugbyunion/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – Rugby union",
+  "url": "https://news.google.com/rss/search?q=site%3Askysports.com/rugby-union&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "RugbyPass",
+  "url": "https://news.google.com/rss/search?q=site%3Arugbypass.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Rugby World",
+  "url": "https://news.google.com/rss/search?q=site%3Arugbyworld.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Rugby Paper",
+  "url": "https://news.google.com/rss/search?q=site%3Atherugbypaper.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Ruck",
+  "url": "https://www.ruck.co.uk/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Rugby365",
+  "url": "https://www.rugby365.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Telegraph – Rugby union",
+  "url": "https://news.google.com/rss/search?q=site%3Atelegraph.co.uk/rugby-union&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Love Rugby League",
+  "url": "https://www.loverugbyleague.com/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Total Rugby League",
+  "url": "https://news.google.com/rss/search?q=site%3Atotalrl.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Super League",
+  "url": "https://news.google.com/rss/search?q=site%3Asuperleague.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "World Rugby",
+  "url": "https://www.world.rugby/en/news/sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Premiership Rugby",
+  "url": "https://news.google.com/rss/search?q=site%3Apremiershiprugby.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Six Nations",
+  "url": "https://news.google.com/rss/search?q=site%3Asixnationsrugby.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Rugby league",
+  "url": "https://www.theguardian.com/sport/rugbyleague/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Golf Digest",
+  "url": "https://news.google.com/rss/search?q=site%3Agolfdigest.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Golf.com",
+  "url": "https://www.golf.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Golfweek",
+  "url": "https://news.google.com/rss/search?q=site%3Agolfweek.usatoday.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Today's Golfer",
+  "url": "https://news.google.com/rss/search?q=site%3Atodays-golfer.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GolfMagic",
+  "url": "https://www.golfmagic.com/googlenews.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "PGA Tour",
+  "url": "https://news.google.com/rss/search?q=site%3Apgatour.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "DP World Tour",
+  "url": "https://news.google.com/rss/search?q=site%3Aeuropeantour.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "LIV Golf",
+  "url": "https://news.google.com/rss/search?q=site%3Alivgolf.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Open",
+  "url": "https://news.google.com/rss/search?q=site%3Atheopen.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Golf",
+  "url": "https://www.dailymail.co.uk/sport/golf/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Golf",
+  "url": "https://www.independent.co.uk/sport/golf/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – Golf",
+  "url": "https://news.google.com/rss/search?q=site%3Askysports.com/golf&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Telegraph – Golf",
+  "url": "https://news.google.com/rss/search?q=site%3Atelegraph.co.uk/golf&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Golf Channel",
+  "url": "https://www.golfchannel.com/news-sitemap-content.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Golf news",
+  "url": "https://news.google.com/rss/search?q=golf&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Ryder Cup",
+  "url": "https://news.google.com/rss/search?q=Ryder%20Cup&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Autosport",
+  "url": "https://www.autosport.com/sitemaps/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Motorsport.com",
+  "url": "https://www.motorsport.com/sitemaps/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Race",
+  "url": "https://news.google.com/rss/search?q=site%3Athe-race.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Crash.net",
+  "url": "https://www.crash.net/googlenews.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "GPFans",
+  "url": "https://news.google.com/rss/search?q=site%3Agpfans.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – F1",
+  "url": "https://news.google.com/rss/search?q=site%3Askysports.com/f1&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MotoGP",
+  "url": "https://news.google.com/rss/search?q=site%3Amotogp.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "IndyCar",
+  "url": "https://news.google.com/rss/search?q=site%3Aindycar.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NASCAR",
+  "url": "https://news.google.com/rss/search?q=site%3Anascar.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "WRC",
+  "url": "https://news.google.com/rss/search?q=site%3Awrc.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Formula E",
+  "url": "https://news.google.com/rss/search?q=site%3Afiaformulae.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – F1",
+  "url": "https://www.dailymail.co.uk/sport/formulaone/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – F1",
+  "url": "https://www.independent.co.uk/f1/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BTCC",
+  "url": "https://news.google.com/rss/search?q=site%3Abtcc.net&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Motor Sport Magazine",
+  "url": "https://news.google.com/rss/search?q=site%3Amotorsportmagazine.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bad Left Hook",
+  "url": "https://www.badlefthook.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MMA Mania",
+  "url": "https://www.mmamania.com/rss/index.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bloody Elbow",
+  "url": "https://news.google.com/rss/search?q=site%3Abloodyelbow.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sherdog",
+  "url": "https://www.sherdog.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "UFC",
+  "url": "https://www.ufc.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Ring",
+  "url": "https://news.google.com/rss/search?q=site%3Aringmagazine.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BoxingScene",
+  "url": "https://www.boxingscene.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sky Sports – Boxing",
+  "url": "https://news.google.com/rss/search?q=site%3Askysports.com/boxing&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Boxing",
+  "url": "https://www.dailymail.co.uk/sport/boxing/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Boxing",
+  "url": "https://www.independent.co.uk/sport/boxing/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Wrestling Inc",
+  "url": "https://www.wrestlinginc.com/?getfeed=google",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Ringside News",
+  "url": "https://news.google.com/rss/search?q=site%3Aringsidenews.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fightful",
+  "url": "https://news.google.com/rss/search?q=site%3Afightful.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "WWE",
+  "url": "https://news.google.com/rss/search?q=site%3Awwe.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Daily Mash",
+  "url": "https://news.google.com/rss/search?q=site%3Athedailymash.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "McSweeney's",
+  "url": "https://news.google.com/rss/search?q=site%3Amcsweeneys.net&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Hard Times",
+  "url": "https://news.google.com/rss/search?q=site%3Athehardtimes.net&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Waterford Whispers News",
+  "url": "https://news.google.com/rss/search?q=site%3Awaterfordwhispersnews.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Private Eye",
+  "url": "https://news.google.com/rss/search?q=site%3Aprivate-eye.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Chortle",
+  "url": "https://news.google.com/rss/search?q=site%3Achortle.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Beaverton",
+  "url": "https://news.google.com/rss/search?q=site%3Athebeaverton.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cracked",
+  "url": "https://news.google.com/rss/search?q=site%3Acracked.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Laughing Squid",
+  "url": "https://laughingsquid.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bored Panda",
+  "url": "https://www.boredpanda.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Shovel",
+  "url": "https://news.google.com/rss/search?q=site%3Atheshovel.com.au&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Points in Case",
+  "url": "https://news.google.com/rss/search?q=site%3Apointsincase.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Stand-up comedy news",
+  "url": "https://news.google.com/rss/search?q=stand-up%20comedy&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Mumsnet",
+  "url": "https://www.mumsnet.com/sitemap/news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Netmums",
+  "url": "https://www.netmums.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Mother&Baby",
+  "url": "https://news.google.com/rss/search?q=site%3Amotherandbaby.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Romper",
+  "url": "https://news.google.com/rss/search?q=site%3Aromper.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fatherly",
+  "url": "https://news.google.com/rss/search?q=site%3Afatherly.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Scary Mommy",
+  "url": "https://www.scarymommy.com/sitemaps/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Parents",
+  "url": "https://www.parents.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "What to Expect",
+  "url": "https://news.google.com/rss/search?q=site%3Awhattoexpect.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BabyCentre UK",
+  "url": "https://news.google.com/rss/search?q=site%3Ababycentre.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Today's Parent",
+  "url": "https://news.google.com/rss/search?q=site%3Atodaysparent.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ParentData",
+  "url": "https://news.google.com/rss/search?q=site%3Aparentdata.org&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Motherly",
+  "url": "https://news.google.com/rss/search?q=site%3Amother.ly&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Bump",
+  "url": "https://news.google.com/rss/search?q=site%3Athebump.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Common Sense Media",
+  "url": "https://news.google.com/rss/search?q=site%3Acommonsensemedia.org&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Raising Children Network",
+  "url": "https://news.google.com/rss/search?q=site%3Araisingchildren.net.au&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "WWD",
+  "url": "https://wwd.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Footwear News",
+  "url": "https://footwearnews.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Who What Wear",
+  "url": "https://www.whowhatwear.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Refinery29",
+  "url": "https://news.google.com/rss/search?q=site%3Arefinery29.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fashionista",
+  "url": "https://news.google.com/rss/search?q=site%3Afashionista.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Business of Fashion",
+  "url": "https://www.businessoffashion.com/arc/outboundfeeds/sitemap/google-news/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Byrdie",
+  "url": "https://www.byrdie.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "British Vogue",
+  "url": "https://www.vogue.co.uk/feed/sitemap/sitemap-google-news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Forbes",
+  "url": "https://news.google.com/rss/search?q=site%3Aforbes.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Inc.",
+  "url": "https://www.inc.com/sitemap/sitemap_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Entrepreneur",
+  "url": "https://www.entrepreneur.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Morning Brew",
+  "url": "https://news.google.com/rss/search?q=site%3Amorningbrew.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Sifted",
+  "url": "https://news.google.com/rss/search?q=site%3Asifted.eu&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Retail Gazette",
+  "url": "https://www.retailgazette.co.uk/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Investors' Chronicle",
+  "url": "https://news.google.com/rss/search?q=site%3Ainvestorschronicle.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Kiplinger",
+  "url": "https://www.kiplinger.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Investopedia",
+  "url": "https://www.investopedia.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MoneyWeek",
+  "url": "https://moneyweek.com/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Which? Money",
+  "url": "https://news.google.com/rss/search?q=site%3Awhich.co.uk/money&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Penny Hoarder",
+  "url": "https://news.google.com/rss/search?q=site%3Athepennyhoarder.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bitcoin Magazine",
+  "url": "https://news.google.com/rss/search?q=site%3Abitcoinmagazine.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Autocar",
+  "url": "https://www.autocar.co.uk/googlenews.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Top Gear",
+  "url": "https://www.topgear.com/googlenews.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Auto Express",
+  "url": "https://www.autoexpress.co.uk/sitemap_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "What Car?",
+  "url": "https://news.google.com/rss/search?q=site%3Awhatcar.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "evo",
+  "url": "https://www.evo.co.uk/sitemap_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Carwow",
+  "url": "https://www.carwow.co.uk/sitemap/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Autoblog",
+  "url": "https://news.google.com/rss/search?q=site%3Aautoblog.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hagerty",
+  "url": "https://news.google.com/rss/search?q=site%3Ahagerty.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "MotorTrend",
+  "url": "https://www.motortrend.com/sitemap_google_news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Lifehacker",
+  "url": "https://lifehacker.com/sitemap-google-news-0.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Everygirl",
+  "url": "https://news.google.com/rss/search?q=site%3Atheeverygirl.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Man of Many",
+  "url": "https://manofmany.com/feed",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hodinkee",
+  "url": "https://news.google.com/rss/search?q=site%3Ahodinkee.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Uncrate",
+  "url": "https://news.google.com/rss/search?q=site%3Auncrate.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gear Patrol",
+  "url": "https://news.google.com/rss/search?q=site%3Agearpatrol.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Cool Hunting",
+  "url": "https://news.google.com/rss/search?q=site%3Acoolhunting.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Real Simple",
+  "url": "https://www.realsimple.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bustle",
+  "url": "https://www.bustle.com/sitemaps/news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Healthline",
+  "url": "https://news.google.com/rss/search?q=site%3Ahealthline.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Medical News Today",
+  "url": "https://news.google.com/rss/search?q=site%3Amedicalnewstoday.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "NHS",
+  "url": "https://news.google.com/rss/search?q=site%3Anhs.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Verywell Health",
+  "url": "https://www.verywellhealth.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Outside",
+  "url": "https://news.google.com/rss/search?q=site%3Aoutsideonline.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Mayo Clinic",
+  "url": "https://news.google.com/rss/search?q=site%3Amayoclinic.org&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Lonely Planet",
+  "url": "https://www.lonelyplanet.com/sitemaps/google-news/sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Travel + Leisure",
+  "url": "https://www.travelandleisure.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Time Out London",
+  "url": "https://news.google.com/rss/search?q=site%3Atimeout.com/london&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Afar",
+  "url": "https://news.google.com/rss/search?q=site%3Aafar.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Secret London",
+  "url": "https://news.google.com/rss/search?q=site%3Asecretldn.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Travel",
+  "url": "https://www.independent.co.uk/travel/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Telegraph – Travel",
+  "url": "https://news.google.com/rss/search?q=site%3Atelegraph.co.uk/travel&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Travel",
+  "url": "https://www.dailymail.co.uk/travel/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fodor's",
+  "url": "https://news.google.com/rss/search?q=site%3Afodors.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Rick Steves",
+  "url": "https://news.google.com/rss/search?q=site%3Aricksteves.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Paris Review",
+  "url": "https://www.theparisreview.org/blog/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "London Review of Books",
+  "url": "https://news.google.com/rss/search?q=site%3Alrb.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Book Riot",
+  "url": "https://bookriot.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Electric Literature",
+  "url": "https://electricliterature.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Art Newspaper",
+  "url": "https://news.google.com/rss/search?q=site%3Atheartnewspaper.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "ARTnews",
+  "url": "https://www.artnews.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Hyperallergic",
+  "url": "https://hyperallergic.com/feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Frieze",
+  "url": "https://news.google.com/rss/search?q=site%3Afrieze.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "WhatsOnStage",
+  "url": "https://www.whatsonstage.com/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gardeners' World",
+  "url": "https://news.google.com/rss/search?q=site%3Agardenersworld.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Spruce",
+  "url": "https://www.thespruce.com/google-news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Houzz",
+  "url": "https://news.google.com/rss/search?q=site%3Ahouzz.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Resident Advisor",
+  "url": "https://news.google.com/rss/search?q=site%3Ara.co&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Classic FM",
+  "url": "https://news.google.com/rss/search?q=site%3Aclassicfm.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gramophone",
+  "url": "https://news.google.com/rss/search?q=site%3Agramophone.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Kerrang!",
+  "url": "https://news.google.com/rss/search?q=site%3Akerrang.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Uncut",
+  "url": "https://www.uncut.co.uk/news-sitemap.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Goal",
+  "url": "https://news.google.com/rss/search?q=site%3Agoal.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Football",
+  "url": "https://www.dailymail.co.uk/sport/football/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Football",
+  "url": "https://www.independent.co.uk/sport/football/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "When Saturday Comes",
+  "url": "https://news.google.com/rss/search?q=site%3Awsc.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "HuffPost UK – Parents",
+  "url": "https://news.google.com/rss/search?q=site%3Ahuffingtonpost.co.uk/parents&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Parenting news",
+  "url": "https://news.google.com/rss/search?q=parenting&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Moneyfacts",
+  "url": "https://news.google.com/rss/search?q=site%3Amoneyfacts.co.uk&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Personal finance news",
+  "url": "https://news.google.com/rss/search?q=personal%20finance%20UK&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Medical Xpress",
+  "url": "https://medicalxpress.com/rss-feed/",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Health",
+  "url": "https://www.dailymail.co.uk/health/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Guardian – Health",
+  "url": "https://www.theguardian.com/society/health/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Health news",
+  "url": "https://news.google.com/rss/search?q=health%20NHS&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Fitness news",
+  "url": "https://news.google.com/rss/search?q=fitness%20workout&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Books",
+  "url": "https://www.independent.co.uk/arts-entertainment/books/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Property",
+  "url": "https://www.dailymail.co.uk/property/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Homebuilding & Renovating",
+  "url": "https://www.homebuilding.co.uk/sitemap-news.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Gardening news",
+  "url": "https://news.google.com/rss/search?q=gardening&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Independent – Business",
+  "url": "https://www.independent.co.uk/news/business/rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Daily Mail – Premier League",
+  "url": "https://www.dailymail.co.uk/sport/premierleague/index.rss",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Associated Press",
+  "url": "https://news.google.com/rss/search?q=site%3Aapnews.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Reuters",
+  "url": "https://news.google.com/rss/search?q=site%3Areuters.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Bloomberg",
+  "url": "https://www.bloomberg.com/sitemaps/news/latest.xml",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Athletic",
+  "url": "https://www.nytimes.com/sitemaps/new/news.xml.gz#only=%2Fathletic%2F",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Times",
+  "url": "https://www.thetimes.com/sitemaps/news",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "Nintendo",
+  "url": "https://news.google.com/rss/search?q=site%3Anintendo.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Food",
+  "url": "https://www.bbc.co.uk/sitemaps/https-sitemap-uk-news-1.xml#only=%2Ffood%2F",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "The Irish Times",
+  "url": "https://news.google.com/rss/search?q=site%3Airishtimes.com&hl=en-GB&gl=GB&ceid=GB:en",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ },
+ {
+  "name": "BBC Good Food",
+  "url": "https://www.bbcgoodfood.com/feed/atom",
+  "problems": [
+   "UNREACHABLE fetch failed"
+  ],
+  "notes": []
+ }
+]

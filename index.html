@@ -5136,7 +5136,8 @@ const TROUBLE_AFTER = 24 * 3600000;
 const isTroubled = f => !!f.error && !(isPrivateFeed(f) && !IS_APP) && !(redditGone() && isRedditFeed(f)) && (Date.now() - (f.failingSince || f.lastTried || 0) > TROUBLE_AFTER || (isPermanent(f) && (f.fails || 0) >= 2));
 // Self-healing: when a website's feed has moved, look for it again from the site's home page (once a day)
 async function healFeed(f){
-  if (!isPermanent(f) || isPrivateFeed(f) || Date.now() - (f.healTried || 0) < 86400000) return null;
+  // A filtered sitemap (#only=/food/) must never be "healed" into the whole site's feed
+  if (!isPermanent(f) || isPrivateFeed(f) || /#only=/.test(f.url) || Date.now() - (f.healTried || 0) < 86400000) return null;
   f.healTried = Date.now();
   try{
     const res = await resolveInput(new URL(f.url).origin);
@@ -5958,7 +5959,8 @@ async function addFeed(raw, direct, kind){
     // From search: the feed address is already known, so load it straight away.
     // Only if that fails, look for the feed again from the site's home page.
     if (state.feeds.some(f => f.url === raw)) throw new Error("You already follow that feed");
-    try{ p = await loadFeed(raw, feed); feed.url = raw; }
+    // The address goes on the feed first: a "#only=/path/" filter on a sitemap is read from it while parsing
+    try{ feed.url = raw; p = await loadFeed(raw, feed); }
     catch(e){
       let res; try{ res = await resolveInput(new URL(raw).origin); }catch{ throw e; }
       feed.url = res.url;
