@@ -64,6 +64,7 @@ async function check([name, rawUrl, tags]){
   if (r.finalUrl && r.finalUrl.split("#")[0] !== url) res.notes.push("redirects to " + r.finalUrl);
   const p = parse(r.text, only);
   res.kind = p.kind; res.feedTitle = p.title; res.count = p.entries.length;
+  if (process.env.SHOW_LINKS && p.kind === "html") console.log("LINKS | " + url + " | " + (r.finalUrl || "") + "\n" + [...r.text.matchAll(/<link\b[^>]*>/gi)].map(m => "  " + m[0]).filter(t => /icon|manifest/i.test(t)).join("\n"));
   if (!/^(rss|atom|sitemap)$/.test(p.kind)){ res.problems.push("NOT A FEED (" + p.kind + ") starts: " + JSON.stringify(r.text.slice(0, 160))); return res; }
   if (only) res.notes.push(`filter ${only}: ${p.entries.length} of ${p.all}`);
   if (!p.entries.length){ res.problems.push(only ? `EMPTY AFTER FILTER ${only} (sitemap has ${p.all})` : "EMPTY"); return res; }

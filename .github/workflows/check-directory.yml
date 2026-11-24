@@ -21,6 +21,7 @@ jobs:
         env:
           CONC: ${{ inputs.list && '1' || '8' }}
           GAP: ${{ inputs.list && '1500' || '0' }}
+          SHOW_LINKS: ${{ inputs.list && '1' || '' }}
       - uses: actions/upload-artifact@v4
         with:
           name: directory-report
