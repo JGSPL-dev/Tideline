@@ -2544,6 +2544,10 @@ function parseFeed(xml, feed){
   items = items.filter(i => i.link || i.title);
   // Google News topics: English only (its English edition still mixes in other languages now and then)
   if (feed && /news\.google\.com/.test(feed.url || "") && !/site%3A|site:/i.test(feed.url || "")) items = items.filter(i => looksEnglish(i.title));
+  // Posts with no date (Formula 1's feed) get the time they were first seen, in feed order (newest first), so
+  // "How far back" doesn't hide them; a story's date never moves later once seen (mergeHistory keeps the earliest).
+  // Dates in the future (a site with its clock or time zone wrong) are brought back to now.
+  { const seenAt = Date.now(); items.forEach((it, n) => { if (!it.date) it.date = seenAt - n * 1000; else if (it.date > seenAt + 600000) it.date = seenAt; }); }
   items = items.sort((a, b) => b.date - a.date).slice(0, 40);
   return {title: htmlToText(title), items, everyMin: feedHintMinutes(root), icon: safeUrl((icon || "").trim()) || "", site: safeUrl((site || "").trim()) || ""};
 }
@@ -5214,7 +5218,10 @@ async function refreshAllInner(force){
   let incoming = [];
   fresh.forEach(v => { if (v) incoming = incoming.concat(v); });
   const before = new Set(state.items.map(i => i.id));
-  state.items = mergeHistory(state.items.filter(i => ids.has(i.feedId)), incoming);
+  // A feed whose address was corrected (CATALOGUE_FIXES) drops what the old, wrong address brought in
+  const purge = new Set(due.filter(f => f.purgeOld && fresh.get(f.id)).map(f => f.id));
+  due.forEach(f => { if (purge.has(f.id)) delete f.purgeOld; });
+  state.items = mergeHistory(state.items.filter(i => ids.has(i.feedId) && !purge.has(i.feedId)), incoming);
   const added = state.items.filter(i => !before.has(i.id) && sourceMatch(i.feedId)).length;
   artDB.keepOnly(new Set(state.items.map(i => i.id)));
   state.lastUpdated = Date.now();
@@ -6022,6 +6029,22 @@ const isAddress = t => /^https?:\/\//i.test(t) || /^@[\w.-]{2,}$/.test(t) || /^U
   (!/\s/.test(t) && /^[\w-]+(\.[\w-]+)+(\/\S*)?$/.test(t));
 
 /* ---------- search ---------- */
+// Catalogue addresses corrected by the 24 Nov 2026 check (tests/check-directory.mjs): old → new (startTidy moves followers)
+const CATALOGUE_FIXES = {
+  "https://www.bbc.co.uk/sitemaps/https-sitemap-uk-news-1.xml#only=%2Ffood%2F": {to: "https://news.google.com/rss/search?q=site%3Abbc.co.uk%2Ffood&hl=en-GB&gl=GB&ceid=GB:en", purge: true},
+  "https://www.formula1.com/en/latest/all.xml": {to: "https://news.google.com/rss/search?q=site%3Aformula1.com&hl=en-GB&gl=GB&ceid=GB:en"},
+  "https://mixmag.net/rss.xml": {to: "https://news.google.com/rss/search?q=site%3Amixmag.net&hl=en-GB&gl=GB&ceid=GB:en"},
+  "https://lwlies.com/feed/": {to: "https://news.google.com/rss/search?q=site%3Alwlies.com&hl=en-GB&gl=GB&ceid=GB:en"},
+  "https://www.loverugbyleague.com/rss": {to: "https://news.google.com/rss/search?q=site%3Aloverugbyleague.com&hl=en-GB&gl=GB&ceid=GB:en"},
+  "https://news.google.com/rss/search?q=site%3Apremiershiprugby.com&hl=en-GB&gl=GB&ceid=GB:en": {to: "https://news.google.com/rss/search?q=%22Premiership%20Rugby%22&hl=en-GB&gl=GB&ceid=GB:en"},
+  "https://www.boredpanda.com/news-sitemap.xml": {to: "https://www.boredpanda.com/feed/", purge: true},
+  "https://news.google.com/rss/search?q=site%3Aromper.com&hl=en-GB&gl=GB&ceid=GB:en": {to: "https://www.romper.com/rss"},
+  "https://news.google.com/rss/search?q=site%3Aparentdata.org&hl=en-GB&gl=GB&ceid=GB:en": {to: "https://parentdata.org/feed/"},
+  "https://hyperallergic.com/feed/": {to: "https://hyperallergic.com/latest/rss/"},
+  "https://news.google.com/rss/search?q=site%3Agardenersworld.com&hl=en-GB&gl=GB&ceid=GB:en": {to: "https://www.gardenersworld.com/feed/"},
+  "https://importai.substack.com/feed": {to: "https://jack-clark.net/feed/"},
+  "https://thequietus.com/feed": {to: "https://thequietus.com/feed/"},
+};
 // Hand-picked feeds that are searched instantly, before any web results arrive
 const DIRECTORY = [
   ["BBC News", "https://feeds.bbci.co.uk/news/rss.xml", "news uk world"],
@@ -6248,7 +6271,7 @@ const DIRECTORY = [
   ["The Guardian – Cycling", "https://www.theguardian.com/sport/cycling/rss", "cycling sport"],
   ["talkSPORT", "https://talksport.com/news-sitemap.xml", "sport football"],
   ["Pro Football Talk", "https://profootballtalk.nbcsports.com/feed/", "nfl american football sport"],
-  ["Formula 1", "https://www.formula1.com/en/latest/all.xml", "f1 formula one motorsport racing"],
+  ["Formula 1", "https://news.google.com/rss/search?q=site%3Aformula1.com&hl=en-GB&gl=GB&ceid=GB:en", "f1 formula one motorsport racing"],
   ["RaceFans", "https://www.racefans.net/feed/", "f1 formula one motorsport racing"],
   ["Golf Monthly", "https://www.golfmonthly.com/feeds/all", "golf sport"],
   ["Rolling Stone", "https://www.rollingstone.com/feed/", "music culture"],
@@ -6427,7 +6450,7 @@ const DIRECTORY = [
   ["Lenny's Newsletter", "https://www.lennysnewsletter.com/feed", "newsletter product business"],
   ["Exponential View", "https://www.exponentialview.co/feed", "newsletter tech ai"],
   ["One Useful Thing", "https://www.oneusefulthing.org/feed", "newsletter ai"],
-  ["Import AI", "https://importai.substack.com/feed", "newsletter ai tech"],
+  ["Import AI", "https://jack-clark.net/feed/", "newsletter ai tech"],
   ["Simon Willison", "https://simonwillison.net/atom/everything/", "tech ai blog"],
   ["Pluralistic", "https://pluralistic.net/feed/", "tech blog"],
   ["Waxy", "https://waxy.org/feed/", "tech internet culture blog"],
@@ -6466,9 +6489,9 @@ const DIRECTORY = [
   ["ClickHole", "https://clickhole.com/feed/", "comedy satire funny"],
   ["Clash", "https://www.clashmusic.com/feed/", "music"],
   ["BrooklynVegan", "https://www.brooklynvegan.com/feed/", "music"],
-  ["Mixmag", "https://mixmag.net/rss.xml", "music dance electronic"],
-  ["The Quietus", "https://thequietus.com/feed", "music"],
-  ["Little White Lies", "https://lwlies.com/feed/", "film movies"],
+  ["Mixmag", "https://news.google.com/rss/search?q=site%3Amixmag.net&hl=en-GB&gl=GB&ceid=GB:en", "music dance electronic"],
+  ["The Quietus", "https://thequietus.com/feed/", "music"],
+  ["Little White Lies", "https://news.google.com/rss/search?q=site%3Alwlies.com&hl=en-GB&gl=GB&ceid=GB:en", "film movies"],
   ["RogerEbert.com", "https://www.rogerebert.com/feed", "film movies reviews"],
   ["Digital Spy", "https://www.digitalspy.com/rss/all.xml/", "tv film soaps entertainment"],
   ["Decider", "https://decider.com/feed/", "tv film streaming"],
@@ -6520,11 +6543,11 @@ const DIRECTORY = [
   ["Ruck", "https://www.ruck.co.uk/feed/", "rugby union"],
   ["Rugby365", "https://www.rugby365.com/news-sitemap.xml", "rugby union"],
   ["The Telegraph – Rugby union", "https://news.google.com/rss/search?q=site%3Atelegraph.co.uk/rugby-union&hl=en-GB&gl=GB&ceid=GB:en", "rugby union"],
-  ["Love Rugby League", "https://www.loverugbyleague.com/rss", "rugby league"],
+  ["Love Rugby League", "https://news.google.com/rss/search?q=site%3Aloverugbyleague.com&hl=en-GB&gl=GB&ceid=GB:en", "rugby league"],
   ["Total Rugby League", "https://news.google.com/rss/search?q=site%3Atotalrl.com&hl=en-GB&gl=GB&ceid=GB:en", "rugby league"],
   ["Super League", "https://news.google.com/rss/search?q=site%3Asuperleague.co.uk&hl=en-GB&gl=GB&ceid=GB:en", "rugby league"],
   ["World Rugby", "https://www.world.rugby/en/news/sitemap.xml", "rugby union international"],
-  ["Premiership Rugby", "https://news.google.com/rss/search?q=site%3Apremiershiprugby.com&hl=en-GB&gl=GB&ceid=GB:en", "rugby union premiership"],
+  ["Premiership Rugby", "https://news.google.com/rss/search?q=%22Premiership%20Rugby%22&hl=en-GB&gl=GB&ceid=GB:en", "rugby union premiership"],
   ["Six Nations", "https://news.google.com/rss/search?q=site%3Asixnationsrugby.com&hl=en-GB&gl=GB&ceid=GB:en", "rugby six nations"],
   ["The Guardian – Rugby league", "https://www.theguardian.com/sport/rugbyleague/rss", "rugby league sport"],
   ["Golf Digest", "https://news.google.com/rss/search?q=site%3Agolfdigest.com&hl=en-GB&gl=GB&ceid=GB:en", "golf"],
@@ -6581,21 +6604,20 @@ const DIRECTORY = [
   ["The Beaverton", "https://news.google.com/rss/search?q=site%3Athebeaverton.com&hl=en-GB&gl=GB&ceid=GB:en", "comedy satire canada"],
   ["Cracked", "https://news.google.com/rss/search?q=site%3Acracked.com&hl=en-GB&gl=GB&ceid=GB:en", "comedy humour"],
   ["Laughing Squid", "https://laughingsquid.com/feed/", "comedy funny internet"],
-  ["Bored Panda", "https://www.boredpanda.com/news-sitemap.xml", "comedy funny"],
+  ["Bored Panda", "https://www.boredpanda.com/feed/", "comedy funny"],
   ["The Shovel", "https://news.google.com/rss/search?q=site%3Atheshovel.com.au&hl=en-GB&gl=GB&ceid=GB:en", "comedy satire australia"],
   ["Points in Case", "https://news.google.com/rss/search?q=site%3Apointsincase.com&hl=en-GB&gl=GB&ceid=GB:en", "comedy humour"],
   ["Stand-up comedy news", "https://news.google.com/rss/search?q=stand-up%20comedy&hl=en-GB&gl=GB&ceid=GB:en", "comedy standup topic"],
   ["Mumsnet", "https://www.mumsnet.com/sitemap/news", "parenting family"],
   ["Netmums", "https://www.netmums.com/sitemap-news.xml", "parenting family"],
   ["Mother&Baby", "https://news.google.com/rss/search?q=site%3Amotherandbaby.com&hl=en-GB&gl=GB&ceid=GB:en", "parenting baby"],
-  ["Romper", "https://news.google.com/rss/search?q=site%3Aromper.com&hl=en-GB&gl=GB&ceid=GB:en", "parenting family"],
+  ["Romper", "https://www.romper.com/rss", "parenting family"],
   ["Fatherly", "https://news.google.com/rss/search?q=site%3Afatherly.com&hl=en-GB&gl=GB&ceid=GB:en", "parenting dads"],
   ["Scary Mommy", "https://www.scarymommy.com/sitemaps/news.xml", "parenting family"],
   ["Parents", "https://www.parents.com/google-news-sitemap.xml", "parenting family"],
   ["What to Expect", "https://news.google.com/rss/search?q=site%3Awhattoexpect.com&hl=en-GB&gl=GB&ceid=GB:en", "parenting pregnancy baby"],
   ["BabyCentre UK", "https://news.google.com/rss/search?q=site%3Ababycentre.co.uk&hl=en-GB&gl=GB&ceid=GB:en", "parenting pregnancy baby"],
-  ["Today's Parent", "https://news.google.com/rss/search?q=site%3Atodaysparent.com&hl=en-GB&gl=GB&ceid=GB:en", "parenting family"],
-  ["ParentData", "https://news.google.com/rss/search?q=site%3Aparentdata.org&hl=en-GB&gl=GB&ceid=GB:en", "parenting data"],
+  ["ParentData", "https://parentdata.org/feed/", "parenting data"],
   ["Motherly", "https://news.google.com/rss/search?q=site%3Amother.ly&hl=en-GB&gl=GB&ceid=GB:en", "parenting family"],
   ["The Bump", "https://news.google.com/rss/search?q=site%3Athebump.com&hl=en-GB&gl=GB&ceid=GB:en", "parenting pregnancy"],
   ["Common Sense Media", "https://news.google.com/rss/search?q=site%3Acommonsensemedia.org&hl=en-GB&gl=GB&ceid=GB:en", "parenting kids screens"],
@@ -6661,10 +6683,10 @@ const DIRECTORY = [
   ["Electric Literature", "https://electricliterature.com/feed/", "books fiction"],
   ["The Art Newspaper", "https://news.google.com/rss/search?q=site%3Atheartnewspaper.com&hl=en-GB&gl=GB&ceid=GB:en", "art galleries museums"],
   ["ARTnews", "https://www.artnews.com/feed/", "art galleries"],
-  ["Hyperallergic", "https://hyperallergic.com/feed/", "art culture"],
+  ["Hyperallergic", "https://hyperallergic.com/latest/rss/", "art culture"],
   ["Frieze", "https://news.google.com/rss/search?q=site%3Afrieze.com&hl=en-GB&gl=GB&ceid=GB:en", "art contemporary"],
   ["WhatsOnStage", "https://www.whatsonstage.com/news-sitemap.xml", "theatre stage musicals"],
-  ["Gardeners' World", "https://news.google.com/rss/search?q=site%3Agardenersworld.com&hl=en-GB&gl=GB&ceid=GB:en", "garden gardening plants"],
+  ["Gardeners' World", "https://www.gardenersworld.com/feed/", "garden gardening plants"],
   ["The Spruce", "https://www.thespruce.com/google-news-sitemap.xml", "home garden diy"],
   ["Houzz", "https://news.google.com/rss/search?q=site%3Ahouzz.co.uk&hl=en-GB&gl=GB&ceid=GB:en", "home interiors renovation"],
   ["Resident Advisor", "https://news.google.com/rss/search?q=site%3Ara.co&hl=en-GB&gl=GB&ceid=GB:en", "music dance electronic"],
@@ -6676,7 +6698,6 @@ const DIRECTORY = [
   ["Daily Mail – Football", "https://www.dailymail.co.uk/sport/football/index.rss", "football soccer"],
   ["The Independent – Football", "https://www.independent.co.uk/sport/football/rss", "football soccer"],
   ["When Saturday Comes", "https://news.google.com/rss/search?q=site%3Awsc.co.uk&hl=en-GB&gl=GB&ceid=GB:en", "football soccer"],
-  ["HuffPost UK – Parents", "https://news.google.com/rss/search?q=site%3Ahuffingtonpost.co.uk/parents&hl=en-GB&gl=GB&ceid=GB:en", "parenting family"],
   ["Parenting news", "https://news.google.com/rss/search?q=parenting&hl=en-GB&gl=GB&ceid=GB:en", "parenting family topic"],
   ["Moneyfacts", "https://news.google.com/rss/search?q=site%3Amoneyfacts.co.uk&hl=en-GB&gl=GB&ceid=GB:en", "finance savings mortgages"],
   ["Personal finance news", "https://news.google.com/rss/search?q=personal%20finance%20UK&hl=en-GB&gl=GB&ceid=GB:en", "finance money topic"],
@@ -6686,7 +6707,6 @@ const DIRECTORY = [
   ["Health news", "https://news.google.com/rss/search?q=health%20NHS&hl=en-GB&gl=GB&ceid=GB:en", "health topic"],
   ["Fitness news", "https://news.google.com/rss/search?q=fitness%20workout&hl=en-GB&gl=GB&ceid=GB:en", "fitness health topic"],
   ["The Independent – Books", "https://www.independent.co.uk/arts-entertainment/books/rss", "books literature"],
-  ["Daily Mail – Property", "https://www.dailymail.co.uk/property/index.rss", "home property"],
   ["Homebuilding & Renovating", "https://www.homebuilding.co.uk/sitemap-news.xml", "home renovation diy"],
   ["Gardening news", "https://news.google.com/rss/search?q=gardening&hl=en-GB&gl=GB&ceid=GB:en", "gardening garden topic"],
   ["The Independent – Business", "https://www.independent.co.uk/news/business/rss", "business economy"],
@@ -6697,7 +6717,7 @@ const DIRECTORY = [
   ["The Athletic", "https://www.nytimes.com/sitemaps/new/news.xml.gz#only=%2Fathletic%2F", "sport football"],
   ["The Times", "https://www.thetimes.com/sitemaps/news", "news uk"],
   ["Nintendo", "https://news.google.com/rss/search?q=site%3Anintendo.com&hl=en-GB&gl=GB&ceid=GB:en", "games nintendo switch"],
-  ["BBC Food", "https://www.bbc.co.uk/sitemaps/https-sitemap-uk-news-1.xml#only=%2Ffood%2F", "food recipes cooking bbc"],
+  ["BBC Food", "https://news.google.com/rss/search?q=site%3Abbc.co.uk%2Ffood&hl=en-GB&gl=GB&ceid=GB:en", "food recipes cooking bbc"],
   ["The Irish Times", "https://news.google.com/rss/search?q=site%3Airishtimes.com&hl=en-GB&gl=GB&ceid=GB:en", "news ireland"],
   ["BBC Good Food", "https://www.bbcgoodfood.com/feed/atom", "food recipes cooking baking bbc"]
 ];
@@ -8572,6 +8592,12 @@ function startTidy(){
   state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
   // A source added through Google News whose site now has a direct route in our list (e.g. its news sitemap): switch it over
   let changedRoutes = false;
+  // Catalogue addresses found broken or wrong (24 Nov 2026 check): move people who follow them to the fixed address.
+  // purge: the old address brought the wrong stories (BBC Food showed all of BBC News), so they go at the next check.
+  state.feeds.forEach(f => {
+    const fix = CATALOGUE_FIXES[f.url]; if (!fix || state.feeds.some(g => g.url === fix.to)) return;
+    f.url = fix.to; f.http = {}; f.nextCheck = 0; f.error = null; f.sitemap = false; if (fix.purge) f.purgeOld = true; changedRoutes = true;
+  });
   state.feeds.forEach(f => {
     const nq = /news\.google\.com/.test(f.url || "") ? newsQuery(f.url) : null; if (!nq || !nq.site) return;
     const d = DIRECTORY.find(([n, u]) => n === f.title && !/news\.google\.com/.test(u));
