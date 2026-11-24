@@ -2637,17 +2637,51 @@ async function findNewsSitemap(origin){
   }
   return null;
 }
+// Links on a page that may be feeds, or a page listing feeds: announced ones (rel=alternate) first, then links
+// called RSS / Feed or with rss, atom, feed(s) or .xml in the address. Same site only; "all" feeds before the rest.
+function feedLinksIn(html, base){
+  const d = new DOMParser().parseFromString(html, "text/html"), host = h => h.replace(/^www\./, "");
+  const bh = host(new URL(base).hostname), alt = [], named = [];
+  const add = (list, h) => { try{ const f = new URL(h, base); f.hash = "";
+    if (!/^https?:$/.test(f.protocol) || host(f.hostname) !== bh || f.href === base || alt.includes(f.href) || named.includes(f.href)) return;
+    list.push(f.href); }catch{} };
+  d.querySelectorAll('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]').forEach(l => add(alt, l.getAttribute("href")));
+  d.querySelectorAll("a[href]").forEach(a => {
+    const h = a.getAttribute("href") || "", t = (a.textContent || "").trim();
+    if (/(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.xml$/i.test(h) || /^(rss|rss feeds?|feeds?|subscribe( via rss)?)$/i.test(t)) add(named, h);
+  });
+  named.sort((x, y) => /\/all\b/i.test(y) - /\/all\b/i.test(x));
+  return [...alt, ...named].slice(0, 6);
+}
+// Sites that put "RSS" in their menu, leading to a page of feeds, instead of announcing one (analogue.co):
+// open the linked pages, and the links on those, until one is a feed
+async function followFeedLinks(cands){
+  const tried = new Set();
+  for (const c of cands.slice(0, 4)){
+    if (tried.has(c)) continue; tried.add(c);
+    let t; try{ t = await pageDirect(c, 8000); }catch{ continue; }
+    if (looksLikeFeed(t)) return {url: c, text: t};
+    for (const c2 of feedLinksIn(t, c).slice(0, 4)){
+      if (tried.has(c2)) continue; tried.add(c2);
+      try{ const t2 = await pageDirect(c2, 8000); if (looksLikeFeed(t2)) return {url: c2, text: t2}; }catch{}
+    }
+  }
+  return null;
+}
 async function discoverFeed(u){
   const GUESSES = ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"];
   if (IS_APP){
+    let hub = [];
     try{
       const t = await pageDirect(u.href, 12000);
       if (looksLikeFeed(t)) return {url: u.href, text: t};
       const d = new DOMParser().parseFromString(t, "text/html");
       const l = d.querySelector('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]');
       if (l && l.getAttribute("href")) return {url: new URL(l.getAttribute("href"), u.href).href};
+      hub = feedLinksIn(t, u.href);
     }catch{}
     try{ return await Promise.any(GUESSES.map(g => { const f = new URL(g, u.origin).href; return feedDirect(f, 10000).then(t => ({url: f, text: t})); })); }catch{}
+    try{ const f = await followFeedLinks(hub.length ? hub : ["/feed", "/feeds", "/rss"].map(g => new URL(g, u.origin).href)); if (f) return f; }catch{}
     // No feed at all: the site's news sitemap
     try{ const sm = await findNewsSitemap(u.origin); if (sm) return sm; }catch{}
   } else {

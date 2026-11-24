@@ -361,7 +361,7 @@ function videosFrom(t){
 async function handle(req, url, origin, env, ctx){
   const p = url.pathname.replace(/\/+$/, "") || "/";
   // Says which settings are present (never their values), so set-up can be checked from a browser
-  if (p === "/health") return json(origin, {ok: true, version: "2026-11-23", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
+  if (p === "/health") return json(origin, {ok: true, version: "2026-11-24", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
     pushSigning: !!(env && env.WEBSUB_SECRET), ownerKey: !!(env && env.ADMIN_KEY), rateLimiter: !!(env && env.LIMITER), communityMin: Number(env && env.COMMUNITY_MIN) || COMMUNITY_MIN});
 
   if (p === "/youtube/latest"){
@@ -530,6 +530,23 @@ function communityDomain(raw){
   if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(d) || d.length > 100 || /^\d+(\.\d+){3}$/.test(d) || COMMUNITY_SKIP.test(d)) return null;
   return d;
 }
+// Links on a page that may be feeds or lead to them: rel=alternate first, then links called RSS / Feed or with
+// rss, atom, feed(s) or .xml in the address. Same site only; "all" feeds first.
+function feedLinksIn(html, base){
+  const host = h => h.replace(/^www\./, ""), bh = host(new URL(base).hostname), alt = [], named = [];
+  const add = (list, h) => { try{ const f = new URL(h.replace(/&amp;/g, "&"), base); f.hash = "";
+    if (!/^https?:$/.test(f.protocol) || host(f.hostname) !== bh || f.href === base || alt.includes(f.href) || named.includes(f.href) || !publicUrl(f.href)) return;
+    list.push(f.href); }catch{} };
+  for (const m of html.matchAll(/<link\b[^>]*>/gi)){
+    if (/rel=["']?[^"'>]*alternate/i.test(m[0]) && /type=["']?application\/(rss|atom)\+xml/i.test(m[0])){ const h = (m[0].match(/href=["']([^"']+)["']/i) || [])[1]; if (h) add(alt, h); }
+  }
+  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]{0,300}?)<\/a>/gi)){
+    const t = m[2].replace(/<[^>]+>/g, "").trim();
+    if (/(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.xml$/i.test(m[1]) || /^(rss|rss feeds?|feeds?|subscribe( via rss)?)$/i.test(t)) add(named, m[1]);
+  }
+  named.sort((x, y) => /\/all\b/i.test(y) - /\/all\b/i.test(x));
+  return [...alt, ...named].slice(0, 6);
+}
 async function findFeeds(target, env){
   {
     // Remembered by site and page (not the query string, so made-up variations can't each cost a KV write)
@@ -552,6 +569,23 @@ async function findFeeds(target, env){
     if (!feeds.length){
       for (const g of ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"]){
         try{ const t = await fetchCapped(new URL(g, target.origin).href); if (t.ok && looksLikeFeed(t.text)){ feeds.push(t.url); break; } }catch{}
+      }
+    }
+    // Sites that put "RSS" in their menu, leading to a page of feeds, instead of announcing one (analogue.co)
+    if (!feeds.length){
+      const tried = new Set();
+      const hub = r.ok ? feedLinksIn(r.text, r.url) : [];
+      for (const c of (hub.length ? hub : ["/feed", "/feeds", "/rss"].map(g => new URL(g, target.origin).href)).slice(0, 4)){
+        if (tried.has(c)) continue; tried.add(c);
+        try{
+          const t = await fetchCapped(c, {ua: UA_BROWSER}); if (!t.ok) continue;
+          if (looksLikeFeed(t.text)){ feeds.push(t.url); break; }
+          for (const c2 of feedLinksIn(t.text, t.url).slice(0, 4)){
+            if (tried.has(c2)) continue; tried.add(c2);
+            try{ const t2 = await fetchCapped(c2); if (t2.ok && looksLikeFeed(t2.text)) feeds.push(t2.url); }catch{}
+          }
+          if (feeds.length) break;
+        }catch{}
       }
     }
     if (!feeds.length) return {error: r.ok ? "No feed found on that site" : "The site answered with error " + r.status, status: 404};
