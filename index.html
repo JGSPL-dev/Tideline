@@ -2240,7 +2240,7 @@ async function loadFeed(url, feed){
 }
 // Why a route's answer isn't a feed
 function notFeedReason(t){
-  if (/Just a moment|cf-chl|challenge-platform|Attention Required|captcha|Access denied|Request blocked/i.test(t)) return "Blocked by the site's bot protection";
+  if (BLOCKED_PAGE.test(t) || /Access denied/i.test(t)) return "Blocked by the site's bot protection";
   if (/<html|<!doctype html/i.test(t.slice(0, 2000))) return "Sent a web page, not a feed";
   return "Didn't send a feed";
 }
@@ -2638,26 +2638,41 @@ async function findNewsSitemap(origin){
   return null;
 }
 // Links on a page that may be feeds, or a page listing feeds: announced ones (rel=alternate) first, then links
-// called RSS / Feed or with rss, atom, feed(s) or .xml in the address. Same site only; "all" feeds before the rest.
+// called RSS / Feed or with rss, atom, feed(s) or .xml in the address, then such addresses inside the page's
+// scripts (sites that draw their menu with JavaScript). Same site, its subdomains (feeds.example.com) or a
+// known feed host (FeedBurner, podcast hosts); "all" feeds before the rest.
+const FEED_HOSTS = /(^|\.)(feedburner\.com|feedburner\.google\.com|feedblitz\.com|megaphone\.fm|simplecast\.com|libsyn\.com|art19\.com|buzzsprout\.com|transistor\.fm|acast\.com|captivate\.fm|omny\.fm|podbean\.com|anchor\.fm|spreaker\.com|blubrry\.com|substack\.com|medium\.com)$/i;
+const FEED_PATH = /(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.(xml|rss|atom)$/i;
+function siteKey(h){ const p = h.toLowerCase().split("."); return p.slice(/^(co|com|org|net|gov|ac|edu|ltd|plc|me|sch|nhs)$/.test(p[p.length - 2]) && p.length > 2 ? -3 : -2).join("."); }
 function feedLinksIn(html, base){
-  const d = new DOMParser().parseFromString(html, "text/html"), host = h => h.replace(/^www\./, "");
-  const bh = host(new URL(base).hostname), alt = [], named = [];
+  const d = new DOMParser().parseFromString(html, "text/html"), bk = siteKey(new URL(base).hostname);
+  const alt = [], named = [], inScript = [];
   const add = (list, h) => { try{ const f = new URL(h, base); f.hash = "";
-    if (!/^https?:$/.test(f.protocol) || host(f.hostname) !== bh || f.href === base || alt.includes(f.href) || named.includes(f.href)) return;
+    if (!/^https?:$/.test(f.protocol) || f.href === base || /sitemap|oembed|wp-json|\.(js|css|png|jpe?g|svg|webp)$/i.test(f.pathname)) return;
+    if (siteKey(f.hostname) !== bk && !FEED_HOSTS.test(f.hostname)) return;
+    if (alt.includes(f.href) || named.includes(f.href) || inScript.includes(f.href)) return;
     list.push(f.href); }catch{} };
   d.querySelectorAll('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]').forEach(l => add(alt, l.getAttribute("href")));
   d.querySelectorAll("a[href]").forEach(a => {
-    const h = a.getAttribute("href") || "", t = (a.textContent || "").trim();
-    if (/(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.xml$/i.test(h) || /^(rss|rss feeds?|feeds?|subscribe( via rss)?)$/i.test(t)) add(named, h);
+    const h = a.getAttribute("href") || "", t = (a.textContent || a.getAttribute("aria-label") || a.title || (a.querySelector("img[alt]") || {}).alt || "").trim();
+    let path = h; try{ const f = new URL(h, base); path = f.pathname + f.search; if (FEED_HOSTS.test(f.hostname)) path = "/feed"; }catch{}
+    if (FEED_PATH.test(path) || /^(rss|rss feeds?|feeds?|subscribe( via rss)?|atom)$/i.test(t)) add(named, h);
   });
-  named.sort((x, y) => /\/all\b/i.test(y) - /\/all\b/i.test(x));
-  return [...alt, ...named].slice(0, 6);
+  // Addresses written into the page's scripts and data (escaped slashes undone)
+  for (const m of html.replace(/\\\//g, "/").matchAll(/["'](https?:\/\/[^"'\s<>\\]{4,200}|\/[^"'\s<>\\]{1,200})["']/g)){
+    if (inScript.length >= 6) break;
+    try{ const f = new URL(m[1], base); if (FEED_PATH.test(f.pathname) || FEED_HOSTS.test(f.hostname)) add(inScript, m[1]); }catch{}
+  }
+  const all = x => /\/all\b/i.test(x);
+  named.sort((x, y) => all(y) - all(x)); inScript.sort((x, y) => all(y) - all(x));
+  return [...alt, ...named, ...inScript].slice(0, 8);
 }
+const BLOCKED_PAGE = /Just a moment|cf-chl|challenge-platform|Attention Required|captcha|Vercel Security Checkpoint|Request blocked/i;
 // Sites that put "RSS" in their menu, leading to a page of feeds, instead of announcing one (analogue.co):
 // open the linked pages, and the links on those, until one is a feed
 async function followFeedLinks(cands){
   const tried = new Set();
-  for (const c of cands.slice(0, 4)){
+  for (const c of cands.slice(0, 5)){
     if (tried.has(c)) continue; tried.add(c);
     let t; try{ t = await pageDirect(c, 8000); }catch{ continue; }
     if (looksLikeFeed(t)) return {url: c, text: t};
@@ -2669,17 +2684,19 @@ async function followFeedLinks(cands){
   return null;
 }
 async function discoverFeed(u){
+  let blocked = false;
   const GUESSES = ["/feed", "/rss", "/rss.xml", "/feed.xml", "/atom.xml", "/index.xml", "/feeds/posts/default"];
   if (IS_APP){
     let hub = [];
     try{
       const t = await pageDirect(u.href, 12000);
       if (looksLikeFeed(t)) return {url: u.href, text: t};
+      if (BLOCKED_PAGE.test(t.slice(0, 20000))) blocked = true;
       const d = new DOMParser().parseFromString(t, "text/html");
       const l = d.querySelector('link[rel~="alternate"][type*="rss"], link[rel~="alternate"][type*="atom"]');
       if (l && l.getAttribute("href")) return {url: new URL(l.getAttribute("href"), u.href).href};
       hub = feedLinksIn(t, u.href);
-    }catch{}
+    }catch(e){ if (/error (403|429|503)|bot protection/i.test(e.message || "")) blocked = true; }
     try{ return await Promise.any(GUESSES.map(g => { const f = new URL(g, u.origin).href; return feedDirect(f, 10000).then(t => ({url: f, text: t})); })); }catch{}
     try{ const f = await followFeedLinks(hub.length ? hub : ["/feed", "/feeds", "/rss"].map(g => new URL(g, u.origin).href)); if (f) return f; }catch{}
     // No feed at all: the site's news sitemap
@@ -2692,9 +2709,12 @@ async function discoverFeed(u){
     try{
       const j = JSON.parse(await viaService("/discover", {url: u.href}, 20000));
       if (j.feeds && j.feeds[0]) return {url: j.feeds[0]};
-    }catch(e){ if (!/No feed found/.test(e.message)) throw e; }
+    }catch(e){
+      if (/error (403|429|503)|bot protection/i.test(e.message || "")) blocked = true;
+      else if (!/No feed found/.test(e.message) && !blocked) throw e;
+    }
   }
-  return null;
+  return blocked ? {blocked: true} : null;
 }
 async function resolveInput(raw){
   let s = raw.trim();
@@ -2728,6 +2748,7 @@ async function resolveInput(raw){
     return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + id};
   }
   const found = await discoverFeed(u);
+  if (found && found.blocked) throw new Error(`${host} turns away apps (bot protection), so its feed can't be found from here. If the site has an RSS link, open it in your browser and paste that address instead`);
   if (found) return found;
   throw new Error(IS_APP || serviceBase()
     ? "Couldn't find a feed on that site. Look for an RSS link on the page and paste that instead"

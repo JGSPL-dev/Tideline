@@ -531,21 +531,35 @@ function communityDomain(raw){
   return d;
 }
 // Links on a page that may be feeds or lead to them: rel=alternate first, then links called RSS / Feed or with
-// rss, atom, feed(s) or .xml in the address. Same site only; "all" feeds first.
+// rss, atom, feed(s) or .xml in the address, then such addresses inside the page's scripts. Same site, its
+// subdomains or a known feed host; "all" feeds first.
+const FEED_HOSTS = /(^|\.)(feedburner\.com|feedburner\.google\.com|feedblitz\.com|megaphone\.fm|simplecast\.com|libsyn\.com|art19\.com|buzzsprout\.com|transistor\.fm|acast\.com|captivate\.fm|omny\.fm|podbean\.com|anchor\.fm|spreaker\.com|blubrry\.com|substack\.com|medium\.com)$/i;
+const FEED_PATH = /(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.(xml|rss|atom)$/i;
+function siteKey(h){ const p = h.toLowerCase().split("."); return p.slice(/^(co|com|org|net|gov|ac|edu|ltd|plc|me|sch|nhs)$/.test(p[p.length - 2]) && p.length > 2 ? -3 : -2).join("."); }
 function feedLinksIn(html, base){
-  const host = h => h.replace(/^www\./, ""), bh = host(new URL(base).hostname), alt = [], named = [];
+  const bk = siteKey(new URL(base).hostname), alt = [], named = [], inScript = [];
   const add = (list, h) => { try{ const f = new URL(h.replace(/&amp;/g, "&"), base); f.hash = "";
-    if (!/^https?:$/.test(f.protocol) || host(f.hostname) !== bh || f.href === base || alt.includes(f.href) || named.includes(f.href) || !publicUrl(f.href)) return;
+    if (!/^https?:$/.test(f.protocol) || f.href === base || /sitemap|oembed|wp-json|\.(js|css|png|jpe?g|svg|webp)$/i.test(f.pathname) || !publicUrl(f.href)) return;
+    if (siteKey(f.hostname) !== bk && !FEED_HOSTS.test(f.hostname)) return;
+    if (alt.includes(f.href) || named.includes(f.href) || inScript.includes(f.href)) return;
     list.push(f.href); }catch{} };
   for (const m of html.matchAll(/<link\b[^>]*>/gi)){
     if (/rel=["']?[^"'>]*alternate/i.test(m[0]) && /type=["']?application\/(rss|atom)\+xml/i.test(m[0])){ const h = (m[0].match(/href=["']([^"']+)["']/i) || [])[1]; if (h) add(alt, h); }
   }
-  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]{0,300}?)<\/a>/gi)){
-    const t = m[2].replace(/<[^>]+>/g, "").trim();
-    if (/(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.xml$/i.test(m[1]) || /^(rss|rss feeds?|feeds?|subscribe( via rss)?)$/i.test(t)) add(named, m[1]);
+  for (const m of html.matchAll(/<a\b([^>]*)>([\s\S]{0,400}?)<\/a>/gi)){
+    const h = (m[1].match(/href=["']([^"']+)["']/i) || [])[1]; if (!h) continue;
+    const label = (m[1].match(/(?:aria-label|title)=["']([^"']+)["']/i) || [])[1] || (m[2].match(/alt=["']([^"']+)["']/i) || [])[1] || "";
+    const t = (m[2].replace(/<[^>]+>/g, "").trim() || label).trim();
+    let path = h; try{ const f = new URL(h.replace(/&amp;/g, "&"), base); path = f.pathname + f.search; if (FEED_HOSTS.test(f.hostname)) path = "/feed"; }catch{}
+    if (FEED_PATH.test(path) || /^(rss|rss feeds?|feeds?|subscribe( via rss)?|atom)$/i.test(t)) add(named, h);
   }
-  named.sort((x, y) => /\/all\b/i.test(y) - /\/all\b/i.test(x));
-  return [...alt, ...named].slice(0, 6);
+  for (const m of html.replace(/\\\//g, "/").matchAll(/["'](https?:\/\/[^"'\s<>\\]{4,200}|\/[^"'\s<>\\]{1,200})["']/g)){
+    if (inScript.length >= 6) break;
+    try{ const f = new URL(m[1], base); if (FEED_PATH.test(f.pathname) || FEED_HOSTS.test(f.hostname)) add(inScript, m[1]); }catch{}
+  }
+  const all = x => /\/all\b/i.test(x);
+  named.sort((x, y) => all(y) - all(x)); inScript.sort((x, y) => all(y) - all(x));
+  return [...alt, ...named, ...inScript].slice(0, 8);
 }
 async function findFeeds(target, env){
   {
@@ -575,7 +589,7 @@ async function findFeeds(target, env){
     if (!feeds.length){
       const tried = new Set();
       const hub = r.ok ? feedLinksIn(r.text, r.url) : [];
-      for (const c of (hub.length ? hub : ["/feed", "/feeds", "/rss"].map(g => new URL(g, target.origin).href)).slice(0, 4)){
+      for (const c of (hub.length ? hub : ["/feed", "/feeds", "/rss"].map(g => new URL(g, target.origin).href)).slice(0, 5)){
         if (tried.has(c)) continue; tried.add(c);
         try{
           const t = await fetchCapped(c, {ua: UA_BROWSER}); if (!t.ok) continue;
