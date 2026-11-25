@@ -28,7 +28,7 @@ const ALLOWED_ORIGINS = [
   "https://localhost",            // the Android app
   "capacitor://localhost"         // the iPhone app, later
 ];
-const JSON_HOSTS = ["itunes.apple.com", "public.api.bsky.app", "mastodon.social"];
+const JSON_HOSTS = ["itunes.apple.com", "public.api.bsky.app", "api.bsky.app", "mastodon.social"];
 const MAX_BYTES = 5 * 1024 * 1024;          // 5 MB per upstream answer
 const TIMEOUT_MS = 12000;
 const RATE = {perMinute: 120};              // per visitor IP, per worker instance (best effort; add a Cloudflare rate-limit rule too)
@@ -361,7 +361,7 @@ function videosFrom(t){
 async function handle(req, url, origin, env, ctx){
   const p = url.pathname.replace(/\/+$/, "") || "/";
   // Says which settings are present (never their values), so set-up can be checked from a browser
-  if (p === "/health") return json(origin, {ok: true, version: "2026-11-24", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
+  if (p === "/health") return json(origin, {ok: true, version: "2026-11-25", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
     pushSigning: !!(env && env.WEBSUB_SECRET), ownerKey: !!(env && env.ADMIN_KEY), rateLimiter: !!(env && env.LIMITER), communityMin: Number(env && env.COMMUNITY_MIN) || COMMUNITY_MIN});
 
   if (p === "/youtube/latest"){

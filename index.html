@@ -1253,6 +1253,20 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 @media (max-width:700px){:root[data-look="offgrid"] .tp-opts{grid-auto-columns:calc((100% - 8px) / 2)}}
 :root[data-look="offgrid"] .tp-scroll.capped{border-bottom:3px solid #000;scrollbar-color:#000 transparent}
 :root[data-look="offgrid"] .tp-more{font:700 11px var(--og-mono);text-transform:uppercase;color:#000}
+/* The video playing on a topic page stays at the top while you scroll: it needs a solid background (it was
+   see-through, so the tiles and stories scrolled behind its caption) and sits below the black top strip */
+:root[data-look="offgrid"] .tp-player{background:var(--og-paper);top:calc(48px + env(safe-area-inset-top,0px));padding:0 0 10px;border-bottom:3px solid #000;margin:0 0 12px}
+:root[data-look="offgrid"] .tp-player iframe{border-radius:0}
+:root[data-look="offgrid"] .tp-cap{gap:6px;padding:8px 0 0;color:#000}
+:root[data-look="offgrid"] .tp-cap b{font:400 20px/1.1 var(--og-disp);text-transform:uppercase;overflow-wrap:anywhere}
+:root[data-look="offgrid"] .tp-cap span{font:700 11px var(--og-mono);text-transform:uppercase;color:#000}
+:root[data-look="offgrid"] .tp-stop{align-self:flex-start;height:40px;padding:0 12px;margin-top:4px}
+/* Live conversation: folded until asked for */
+.tp-livebtn{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;margin:12px 0 0;padding:0 12px;border:3px solid #000;border-radius:0;background:#000;color:var(--og-paper,#FFE600);font:700 13px var(--og-mono,monospace);text-transform:uppercase;cursor:pointer;text-align:left}
+.tp-livebtn[aria-expanded="true"]{background:none;color:#000}
+:root[data-look="offgrid"] dialog.drawer .sfilters,:root[data-look="offgrid"] dialog.drawer .svcbar{flex-wrap:wrap;overflow:visible;margin:4px 0 0;padding:0;gap:8px}
+:root[data-look="offgrid"] dialog.drawer .sfilters .chip{min-height:40px;padding:0 10px;font-size:12px;flex:0 1 auto}
+.tp-livehint{margin:6px 0 0;font:400 11px/1.5 var(--og-mono,monospace);color:#000;opacity:.75}
 :root[data-look="offgrid"] .tpage .tp-foot{margin:4px 12px 8px;display:flex;flex-direction:column;align-items:stretch;gap:8px}
 :root[data-look="offgrid"] .tpage .tp-foot .btn{height:56px;border-radius:0;border:3px solid #000;background:#000;color:var(--og-paper);font:400 24px var(--og-disp);text-transform:uppercase;box-shadow:none;justify-content:center}
 :root[data-look="offgrid"] .tpage .tp-foot .btn:disabled{background:none;color:#000;opacity:1}
@@ -2337,7 +2351,7 @@ function isGNItem(i){ return /news\.google\.com/.test(i.link || ""); }
 function storyKey(i){
   if (i.videoId || i.audioUrl) return "";
   let t = i.title || "";
-  if (isGNItem(i)) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");
+  if (isGNItem(i) && !isGNSiteFeed(feedById(i.feedId))) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");   // site feeds: already gone
   t = t.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
   return t.length >= 20 ? t : "";
 }
@@ -2457,6 +2471,9 @@ function cleanTags(list){
   }
   return out;
 }
+// Google News "site:" feeds, and the " - Publisher" ending its headlines carry
+const isGNSiteFeed = f => !!(f && /news\.google\.com/.test(f.url || "") && /site%3A|site:/i.test(f.url || ""));
+const gnTail = t => { const c = String(t || "").replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, ""); return c.length >= 12 ? c : t; };
 function withTags(it, list){ const t = cleanTags(list); if (t.length) it.tags = t; return it; }
 function makeItem(feed, o){
   let link = safeUrl(o.link) || "";
@@ -2607,6 +2624,9 @@ function parseFeed(xml, feed){
   } else if (rn === "sitemapindex") throw new Error("That's a list of sitemaps, not the news sitemap itself");
   else throw new Error("That address isn't an RSS or Atom feed");
   items = items.filter(i => i.link || i.title);
+  // A site followed through Google News: its headlines end " - AP News"; the publisher is already on the card,
+  // so the tail goes (topic feeds keep it, since there it's the only sign of who wrote the story)
+  if (isGNSiteFeed(feed)) items.forEach(i => { i.title = gnTail(i.title); });
   // A tag on most of a feed's stories is its section ("Football", "UK news"), not a subject: drop it
   if (items.length >= 4){
     const n = new Map(); items.forEach(i => (i.tags || []).forEach(g => n.set(g, (n.get(g) || 0) + 1)));
@@ -2898,6 +2918,8 @@ const itemsReady = (async () => {
   const legacy = store.get("tl.items", null);
   if (!Array.isArray(list) || (!list.length && legacy && legacy.length)) list = legacy || [];
   state.items = mergeHistory(list, []);
+  // Stories saved before Google News site headlines lost their " - Publisher" ending (25 Nov 2026)
+  { const gs = new Set(state.feeds.filter(isGNSiteFeed).map(f => f.id)); state.items.forEach(i => { if (gs.has(i.feedId)) i.title = gnTail(i.title); }); }
   itemsLoaded = true;
   if (legacy){ try{ await itemsDB.put("items", state.items); localStorage.removeItem("tl.items"); }catch{} }
 })();
@@ -3080,7 +3102,7 @@ const TREND_STOP = new Set((
 const trendNorm = w => w.toLowerCase().replace(/[’']s$/, "").replace(/[’'.]/g, "");
 function trendTokens(it){
   let t = String(it.title || "");
-  if (isGNItem(it)) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");          // " - Publisher" on Google News
+  if (isGNItem(it) && !isGNSiteFeed(feedById(it.feedId))) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");   // " - Publisher" on Google News topics (site feeds lose it when read)
   t = t.replace(/^(watch|live|listen|video|breaking|exclusive|podcast|opinion|analysis|review)\s*[:|–-]\s*/i, "");
   // Punctuation between words ends a name: "Friday Night Football: Arsenal top" has no "Football Arsenal".
   // The "&&" marker stays in the word list (never a word itself) so side-by-side pairs can't cross it.
@@ -3373,8 +3395,18 @@ function topicPage(tp){
   const talkH = el("h3", "tp-h", `Conversation (${talk.length})`); right.append(talkH);
   if (talk.length){ const sc = scroller(talk, "talk"); right.append(sc); if (talk.length > 5) right.append(moreBar(sc, Math.min(60, talk.length) - 5, "posts")); }
   // What people are saying right now on Mastodon and Bluesky about this topic, without following anything
+  // Folded until asked for: nothing is sent to Mastodon or Bluesky unless "View live conversation" is tapped
   const live = el("div", "tp-live"); right.append(live);
-  liveTalk(state.topic, live, talkH, talk.length, moreBar);
+  const lbtn = el("button", "tp-livebtn"); lbtn.type = "button"; lbtn.setAttribute("aria-expanded", "false");
+  const lbody = el("div", "tp-livebody"); lbody.hidden = true;
+  let loaded = false;
+  const lword = open => { lbtn.replaceChildren(el("span", null, open ? "Hide live conversation" : "View live conversation"), el("span", null, open ? "↑" : "↓")); };
+  lword(false);
+  lbtn.onclick = () => {
+    const open = lbody.hidden; lbody.hidden = !open; lbtn.setAttribute("aria-expanded", String(open)); lword(open);
+    if (open && !loaded){ loaded = true; liveTalk(state.topic, lbody, talkH, talk.length, moreBar); }
+  };
+  live.append(lbtn, el("p", "tp-livehint", "Public posts from the last week on Mastodon and Bluesky. Opening this asks them about “" + state.topic.label + "”."), lbody);
   // Follow the hashtag: Mastodon has a public feed for every tag
   const tag = state.topic.label.replace(/[^\p{L}\p{N}]+/gu, "");
   if (tag.length >= 3){
@@ -3427,11 +3459,14 @@ async function fetchLive(tp){
   if (tag.length >= 3) asks.push(getJSON(`https://mastodon.social/api/v1/timelines/tag/${encodeURIComponent(tag)}?limit=40`).then(list => (Array.isArray(list) ? list : []).filter(p => (p.language || "").slice(0, 2) === APP_LANG && !p.sensitive && !p.spoiler_text).map(p => ({
     id: "m:" + p.id, who: (p.account && (p.account.display_name.replace(/:[\w+-]+:/g, "").trim() || p.account.username || p.account.acct) || "").slice(0, 40), handle: "@" + (p.account && p.account.acct || ""), where: "Mastodon",
     at: Date.parse(p.created_at) || 0, text: liveText(p.content), url: p.url || p.uri }))).catch(() => []));
-  asks.push(getJSON(`https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent('"' + tp.label + '"')}&lang=${APP_LANG}&sort=latest&limit=40`).then(j => ((j && j.posts) || []).filter(p => { const l = p.record && p.record.langs; return !l || !l.length || l.some(x => String(x).slice(0, 2) === APP_LANG); }).map(p => ({
+  // Bluesky's public.api host refuses searches without an account (403 since late 2026); api.bsky.app answers
+  asks.push(getJSON(`https://api.bsky.app/xrpc/app.bsky.feed.searchPosts?q=${encodeURIComponent('"' + tp.label + '"')}&lang=${APP_LANG}&sort=latest&limit=40`).then(j => ((j && j.posts) || []).filter(p => { const l = p.record && p.record.langs; return !l || !l.length || l.some(x => String(x).slice(0, 2) === APP_LANG); }).map(p => ({
     id: "b:" + p.uri, who: (p.author && (p.author.displayName || p.author.handle) || "").slice(0, 40), handle: "@" + (p.author && p.author.handle || ""), where: "Bluesky",
     at: Date.parse(p.record && p.record.createdAt || p.indexedAt) || 0, text: String(p.record && p.record.text || "").replace(/\s+/g, " ").trim(),
     url: p.author && p.uri ? `https://bsky.app/profile/${p.author.handle}/post/${p.uri.split("/").pop()}` : "" }))).catch(() => []));
-  const all = (await Promise.all(asks)).flat().filter(p => p.text && p.url && /^https:/.test(p.url) && postIsEnglish(p.text));
+  // "Live" means the last week: a quiet hashtag's newest posts can be months old
+  const weekAgo = Date.now() - 7 * 86400000;
+  const all = (await Promise.all(asks)).flat().filter(p => p.text && p.url && /^https:/.test(p.url) && p.at >= weekAgo && postIsEnglish(p.text));
   // Must actually mention the topic, and no near-copies
   const words = tp.label.toLowerCase().split(/\s+/), seen = new Set();
   const posts = all.filter(p => { const t = p.text.toLowerCase(), k = t.slice(0, 80); if (seen.has(k)) return false; seen.add(k); return words.every(w => t.includes(w)) || t.includes("#" + tag.toLowerCase()); })
@@ -3447,7 +3482,7 @@ async function liveTalk(topic, box, head, followed, moreBar){
   if (!state.topic || state.topic.key !== key || !box.isConnected) return;   // moved on to another topic
   box.textContent = "";
   head.textContent = `Conversation (${followed + posts.length})`;
-  if (!posts.length){ if (!followed) box.append(el("p", "tp-none", "No public posts about it right now.")); return; }
+  if (!posts.length){ box.append(el("p", "tp-none", "No public posts about it in the last week.")); return; }
   box.append(el("h4", "tp-sub", `Live on Mastodon and Bluesky (${posts.length})`));
   const list = el("div", "tp-scroll"); list.tabIndex = 0; list.setAttribute("role", "region"); list.setAttribute("aria-label", "Public posts about " + topic.label);
   posts.forEach(p => {
