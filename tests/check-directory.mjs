@@ -87,13 +87,39 @@ async function check([name, rawUrl, tags]){
   return res;
 }
 
+// Discovery mode: an entry whose address is "discover:example.com" is looked up the way the app would: the home
+// page's announced feeds, then RSS-named links on it, then the usual feed addresses. The first that works wins.
+const GUESS = ["/feed/", "/rss", "/feed", "/rss.xml", "/feeds/all", "/feed.xml", "/rss/", "/index.xml", "/atom.xml", "/feeds/posts/default", "/news/rss.xml", "/rss/all.xml", "/feed/rss"];
+async function discover([name, addr, tags]){
+  const host = addr.slice("discover:".length).replace(/\/+$/, "");
+  const tried = new Set(), cands = [];
+  for (const home of [`https://${host}/`, `https://www.${host}/`]){
+    try{
+      const r = await get(home); if (r.status >= 400) continue;
+      const base = r.finalUrl || home;
+      for (const m of r.text.matchAll(/<link\b[^>]*>/gi)) if (/alternate/i.test(m[0]) && /application\/(rss|atom)\+xml/i.test(m[0])){ const h = (m[0].match(/href=["']([^"']+)["']/i) || [])[1]; if (h) try{ cands.push(new URL(h.replace(/&amp;/g, "&"), base).href); }catch{} }
+      for (const m of r.text.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]{0,200}?)<\/a>/gi)){ const t = m[2].replace(/<[^>]+>/g, "").trim(); if (/(^|[\/._-])(rss|atom|feeds?)([\/._?-]|$)|\.xml$/i.test(m[1]) && !/sitemap|comments/i.test(m[1]) || /^rss( feed)?$/i.test(t)) try{ cands.push(new URL(m[1].replace(/&amp;/g, "&"), base).href); }catch{} }
+      for (const g of GUESS) cands.push(new URL(g, base).href);
+      break;
+    }catch{}
+  }
+  if (!cands.length) GUESS.forEach(g => cands.push(`https://${host}${g}`));
+  let last = null;
+  for (const c of cands){
+    if (tried.has(c) || tried.size >= 12) continue; tried.add(c);
+    const res = await check([name, c, tags]);
+    if (!res.problems.length && res.count >= 5 && res.ageDays <= 30 && /^(rss|atom)$/.test(res.kind)) return res;
+    if (!last || (!res.problems.length && last.problems.length)) last = res;
+  }
+  return Object.assign(last || {name, url: addr, notes: []}, {problems: (last && last.problems.length ? last.problems : [last ? `no good feed (best: ${last.count || 0} items, ${last.ageDays ?? "?"} days old)` : "nothing found"])});
+}
 const out = []; let i = 0;
-async function worker(){ while (i < DIRECTORY.length){ const e = DIRECTORY[i++]; out.push(await check(e)); if (GAP) await new Promise(r => setTimeout(r, GAP)); } }
+async function worker(){ while (i < DIRECTORY.length){ const e = DIRECTORY[i++]; out.push(String(e[1]).startsWith("discover:") ? await discover(e) : await check(e)); if (GAP) await new Promise(r => setTimeout(r, GAP)); } }
 await Promise.all(Array.from({length: CONC}, worker));
-out.sort((a, b) => DIRECTORY.findIndex(e => e[1] === a.url) - DIRECTORY.findIndex(e => e[1] === b.url));
+if (!process.argv[2]) out.sort((a, b) => DIRECTORY.findIndex(e => e[1] === a.url) - DIRECTORY.findIndex(e => e[1] === b.url));
 fs.writeFileSync("directory-report.json", JSON.stringify(out, null, 1));
 const bad = out.filter(r => r.problems.length), noted = out.filter(r => !r.problems.length && r.notes.length);
 console.log(`CHECKED ${out.length} · PROBLEMS ${bad.length} · NOTES ${noted.length}`);
 bad.forEach(r => console.log(`PROBLEM | ${r.name} | ${r.url} | ${r.problems.join("; ")}${r.notes.length ? " | " + r.notes.join("; ") : ""}`));
 noted.forEach(r => console.log(`NOTE | ${r.name} | ${r.url} | ${r.notes.join("; ")}`));
-if (process.argv[2]) out.filter(r => !r.problems.length).forEach(r => console.log(`OK | ${r.name} | ${r.url} | ${r.count} items, newest ${r.ageDays} d, "${r.feedTitle}"`));
+if (process.argv[2]) out.filter(r => !r.problems.length).forEach(r => console.log(`OK | ${r.name} | ${r.url} | ${r.count} items, newest ${r.ageDays} d, "${r.feedTitle}" | ${r.kind}${r.notes.length ? " | " + r.notes.join("; ") : ""}`));
