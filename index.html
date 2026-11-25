@@ -1956,7 +1956,8 @@ function redactUrl(raw){
 }
 async function viaService(path, params, ms = 14000){
   // Private feed addresses are never sent to the service, whatever asks
-  if (Object.values(params || {}).some(v => typeof v === "string" && (isPrivateUrl(v) || state.feeds.some(f => f.private && f.url === v)))) throw new Error(IS_APP ? "skip" : "Private feeds work in the YourFeed app");
+  // (except a feed the person allowed on the website: privateViaService, which says so with private=1)
+  if (!(params && params.private === "1") && Object.values(params || {}).some(v => typeof v === "string" && (isPrivateUrl(v) || state.feeds.some(f => f.private && f.url === v)))) throw new Error(IS_APP ? "skip" : "Private feeds work in the YourFeed app");
   const base = serviceBase();
   if (!base) throw new Error(IS_APP ? "Not available from your phone" : "The website needs the YourFeed service for this");
   const q = path + "?" + new URLSearchParams(params);
@@ -2014,6 +2015,8 @@ async function feedDirect(url, ms = 12000, feed){
   return t;
 }
 const feedViaService = (url, ms) => viaService("/feed", {url}, ms);
+// Website only, a private feed the person allowed (f.webOk): read through our service for this one request
+const privateViaService = (url, ms) => viaService("/feed", {url, private: "1"}, ms);
 // A feed's text by whichever trusted route works
 async function fetchFeedText(url, ms = 12000){
   if (IS_APP){
@@ -2335,7 +2338,14 @@ async function loadOneFeed(url, feed, logOut){
     throw e;
   });
   const priv = isPrivateFeed(feed) || isPrivateUrl(url);
-  if (priv && !IS_APP){ const r = [{k: "direct", ok: false, err: "Private feeds work in the YourFeed app"}]; if (logOut) logOut.routes = r; else feed.routes = r; throw new Error("Private feeds work in the YourFeed app"); }
+  if (priv && !IS_APP && !(feed && feed.webOk)){ const r = [{k: "direct", ok: false, err: "Private feeds work in the YourFeed app"}]; if (logOut) logOut.routes = r; else feed.routes = r; throw new Error("Private feeds work in the YourFeed app"); }
+  // Website, private feed the person allowed: the service is the only way (the browser can't read it directly)
+  if (priv && !IS_APP){
+    const res = await Promise.allSettled([take("service", privateViaService(url, 16000))]);
+    const r = [{k: "service", ...(log.service || {slow: true})}]; if (logOut) logOut.routes = r; else feed.routes = r;
+    if (res[0].status === "fulfilled") return res[0].value;
+    throw res[0].reason;
+  }
   const direct = take("direct", feedDirect(url, 12000, feed));
   const hasService = !!serviceBase() && !priv;
   const gate = () => IS_APP ? direct.then(r => { if (r.items.length || r.unchanged) throw new Error("skip"); }, () => {}) : Promise.resolve();
@@ -5517,7 +5527,7 @@ function checkNow(f){ refreshOne(f); }
 function feedSub(f){
   const sub = el("span", "sub");
   if (isPrivateFeed(f)) sub.append(lockEl(), document.createTextNode(" "));
-  if (isPrivateFeed(f) && !IS_APP){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
+  if (isPrivateFeed(f) && !IS_APP && !f.webOk){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
   if (isRedditFeed(f)){ sub.append(el("span", "er", "Reddit no longer offers feeds")); return sub; }
   if (f.paused){ sub.append(el("span", null, "Paused · not being checked")); return sub; }
   if (isTroubled(f)){ sub.append(el("span", "er", isOG() ? "NOT WORKING · TAP EDIT FOR WHY" : "Needs a look")); return sub; }
@@ -5902,7 +5912,15 @@ function editForm(f){
     ? "This link has a personal key in it, so it's always private: only this device fetches it, and it's left out of reports, sharing and exports."
     : "For paid or members-only feeds with a personal link. Only this device fetches it, and it's left out of reports, sharing and exports."));
   privF.append(privC, privT);
-  form.append(nameF, folder.node, urlF, privF, diag, colF, msg, row);
+  // Website only: a private feed can be read through our service if the person allows it
+  let webC = null, webF = null;
+  if (!IS_APP){
+    webF = el("label", "check ef-private"); webC = el("input"); webC.type = "checkbox"; webC.checked = !!f.webOk;
+    const webT = el("span"); webT.append(el("b", null, "Read on this website"), el("br"), el("span", "hint", "Private feeds work in the YourFeed app. To read this one here, its link passes through YourFeed's service each time it's checked: used only to fetch the feed, never stored, cached or logged."));
+    webF.append(webC, webT);
+    const showWeb = () => { webF.hidden = !(privC.checked || autoPriv); }; privC.addEventListener("change", showWeb); showWeb();
+  }
+  form.append(nameF, folder.node, urlF, privF, ...(webF ? [webF] : []), diag, colF, msg, row);
   if (isOG()){
     // LOGO row (applies at once) and PAUSE
     const lg = el("div", "og-logorow");
@@ -5983,6 +6001,7 @@ function editForm(f){
       f.title = name.value.trim() || f.title || new URL(f.url).hostname.replace(/^www\./, "");
       f.color = color;
       if (!isPrivateUrl(f.url)){ if (privC.checked) f.private = true; else delete f.private; }
+      if (webC){ const was = !!f.webOk; if (webC.checked && isPrivateFeed(f)) f.webOk = true; else delete f.webOk; if (!was && f.webOk) f.error = null; }
       const fv = folder.value(); f.folder = fv && fv !== UNSORTED ? (makeFolder(fv) || "") : ""; f.folderSet = true;
       editingId = null;
       save(); renderFeedList(); renderChips(); renderStatus(); renderList();
@@ -6214,6 +6233,8 @@ async function addFeed(raw, direct, kind){
   if (kind === "peertube") feed.kind = "video";
   if (kind === "flipboard") feed.kind = "web";
   if (isPrivateUrl(String(raw).trim())) feed.private = true;
+  // Website: allowed through our service (privOffer)
+  if (feed.private && !IS_APP && webPrivAllow && webPrivAllow === String(raw).trim()) feed.webOk = true;
   let p;
   if (direct){
     // From search: the feed address is already known, so load it straight away.
@@ -6227,7 +6248,7 @@ async function addFeed(raw, direct, kind){
       p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
     }
   } else if (feed.private){
-    // A private feed link is used exactly as pasted, straight from the phone: no lookups anywhere else
+    // A private feed link is used exactly as pasted, straight from the phone (website: through our service, allowed): no lookups anywhere else
     feed.url = String(raw).trim();
     p = await loadFeed(feed.url, feed);
   } else {
@@ -7724,17 +7745,31 @@ $("#addForm").addEventListener("submit", async e => {
   setMsg("");
   if (!isAddress(raw)){ startSearch(raw); return; }
   search.q = ""; renderTopResults();
-  btn.disabled = true; setMsg(isPrivateUrl(raw) ? "Private feed: loading it straight from this device…" : "Looking for the feed…");
+  // Website: a private link needs the person's say-so before it goes through our service
+  if (!IS_APP && isPrivateUrl(raw) && webPrivAllow !== raw){ privOffer(raw); return; }
+  btn.disabled = true; setMsg(isPrivateUrl(raw) ? (IS_APP ? "Private feed: loading it straight from this device…" : "Private feed: loading it through YourFeed's service…") : "Looking for the feed…");
   try{
     const {feed, count} = await addFeed(raw);
     input.value = ""; btn.textContent = "Add";
-    setMsg(`Added ${feed.title} with ${storyCount(count)}.` + (feed.private ? " It's private: only this device fetches it, and its link is left out of reports and exports." : ""));
+    webPrivAllow = "";
+    setMsg(`Added ${feed.title} with ${storyCount(count)}.` + (feed.private ? (feed.webOk ? " It's private: on the website it's read through YourFeed's service (never stored), and its link is left out of reports and exports." : " It's private: only this device fetches it, and its link is left out of reports and exports.") : ""));
   }catch(err){
     if (err && err.gnEmpty){ gnEmptyOffer(err.gnEmpty); return; }
     const m = String(err && err.message || "");
     setMsg(/failed to fetch|networkerror|load failed|couldn't connect/i.test(m) ? "Couldn't reach that address. Check the link, or try again when you're online." : m.replace(/\.$/, "") + ".", true);
   }finally{ btn.disabled = false; }
 });
+// Website: private (paid) feeds. The app reads them straight from the phone; the website can't (the browser isn't
+// allowed to read other sites' feeds), so the link would have to pass through our service. Ask first, per feed.
+let webPrivAllow = "";   // the one private link the person just allowed on the website (not saved)
+function privOffer(raw){
+  setMsg("Private feeds work in the YourFeed app, where your link never leaves your device.", false);
+  const box = $("#addFolder"); box.hidden = false; box.textContent = "";
+  box.append(el("p", "hint", "To read it on this website instead, your private link has to pass through YourFeed's service each time it's checked. It's used only to fetch the feed: never stored, cached or logged, and never shared."));
+  const go = el("button", "btn primary", "Allow and add"); go.type = "button";
+  go.onclick = () => { webPrivAllow = raw; box.hidden = true; box.textContent = ""; $("#addForm").requestSubmit ? $("#addForm").requestSubmit() : $("#addBtn").click(); };
+  box.append(go);
+}
 // A Google News topic whose feed is empty: follow a Google News search for its name instead, which the person can
 // narrow ("Analogue" Pocket OR 3D) so it stays on the right subject
 function gnEmptyOffer({name, url}){

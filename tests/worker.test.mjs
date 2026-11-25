@@ -146,6 +146,15 @@ test("private-looking links are never fetched by the service", async () => {
     assert.notEqual((await call("/feed?url=" + encodeURIComponent(u))).status, 403, u);
 });
 
+test("a private link is read only when the website says the person allowed it, and never cached", async () => {
+  const u = "https://www.patreon.com/rss/creator?auth=x", before = asked.length;
+  const r = await call("/feed?private=1&url=" + encodeURIComponent(u));
+  assert.notEqual(r.status, 403);
+  assert.equal(asked.length, before + 1, "fetched once");
+  assert.match(r.headers.get("Cache-Control") || "", /no-store/);
+  assert.equal(kv.size >= 0 && [...kv.keys()].some(k => k.includes("patreon")), false, "nothing stored");
+});
+
 test("discovery isn't stored per query string, nor for addresses that are already feeds", async () => {
   const w0 = kvWrites;
   for (let i = 0; i < 5; i++) await call("/discover?url=" + encodeURIComponent("https://bbcgoodfood.com/?x=" + i));

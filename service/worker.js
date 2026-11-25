@@ -361,7 +361,7 @@ function videosFrom(t){
 async function handle(req, url, origin, env, ctx){
   const p = url.pathname.replace(/\/+$/, "") || "/";
   // Says which settings are present (never their values), so set-up can be checked from a browser
-  if (p === "/health") return json(origin, {ok: true, version: "2026-11-25", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
+  if (p === "/health") return json(origin, {ok: true, version: "2026-11-25b", youtubeApi: !!(env && env.YT_API_KEY), sharedStore: !!(env && env.YF_CACHE),
     pushSigning: !!(env && env.WEBSUB_SECRET), ownerKey: !!(env && env.ADMIN_KEY), rateLimiter: !!(env && env.LIMITER), communityMin: Number(env && env.COMMUNITY_MIN) || COMMUNITY_MIN});
 
   if (p === "/youtube/latest"){
@@ -434,7 +434,9 @@ async function handle(req, url, origin, env, ctx){
   if (p === "/feed"){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target) return fail(origin, 400, "Not a public web address");
-    if (looksPrivate(target)) return fail(origin, 403, "That looks like a private feed link, so it's only read from your own device");
+    // Private (paid) feed links are read here only when the person allowed it on the website (private=1): the link is
+    // used for this one request and never stored, cached (every reply is no-store) or logged
+    if (looksPrivate(target) && url.searchParams.get("private") !== "1") return fail(origin, 403, "Private feeds work in the YourFeed app. On the website, allow it when you add the feed");
     const isReddit = /(^|\.)reddit\.com$/.test(target.hostname);
     // Feeds that list every episode ever can be far over the cap: keep the first part, newest episodes first
     const r = await fetchCapped(target.href, {ua: isReddit ? UA_FEEDS : UA_BROWSER, partial: true});
@@ -455,7 +457,7 @@ async function handle(req, url, origin, env, ctx){
   if (p === "/discover"){
     const target = publicUrl(url.searchParams.get("url") || "");
     if (!target) return fail(origin, 400, "Not a public web address");
-    if (looksPrivate(target)) return fail(origin, 403, "That looks like a private link, so it's only read from your own device");
+    if (looksPrivate(target)) return fail(origin, 403, "Private feeds work in the YourFeed app");
     const res = await findFeeds(target, env);
     return res.error ? fail(origin, res.status, res.error) : json(origin, res);
   }
