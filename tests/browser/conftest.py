@@ -31,7 +31,7 @@ class App:
         ls.update(storage or {})
         js = ("window.Capacitor={isNativePlatform:()=>true,Plugins:{}};" if native else "")
         # Seed storage only on the first load of this page (a reload keeps what the app saved)
-        js += "if(!sessionStorage.getItem('seeded')){sessionStorage.setItem('seeded','1');" + "".join(f"localStorage.setItem({json.dumps(k)},{json.dumps(v)});" for k, v in ls.items()) + "}"
+        js += "try{if(window.top===window&&!sessionStorage.getItem('seeded')){sessionStorage.setItem('seeded','1');" + "".join(f"localStorage.setItem({json.dumps(k)},{json.dumps(v)});" for k, v in ls.items()) + "}}catch(e){}"
         self.page.add_init_script(js)
         if clock: self.page.clock.install()
         self.page.route("**/*", self._route)
