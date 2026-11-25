@@ -1,58 +1,67 @@
 # YourFeed: review brief
 
-For an independent reviewer. Read this first, then `CLAUDE.md` (detailed project notes, kept current), then the code.
+For an independent reviewer. Read this first, then `CLAUDE.md` (detailed project notes, kept current), then the code. Updated 25 Nov 2026.
 
 ## What it is
-"Everything you follow, in one feed." A reader for websites (RSS/Atom/news sitemaps), YouTube, Reddit, podcasts, Google News topics, Bluesky, Mastodon, Lemmy and PeerTube, built by Apps For Us. No account, no tracking: sources, saved posts and settings stay on the device.
+"Everything you follow, in one feed." A reader for websites (RSS/Atom/news sitemaps), YouTube, Reddit, podcasts, Google News topics, Bluesky, Mastodon, Lemmy and PeerTube, built by Apps For Us. No account, no tracking: sources, saved posts and settings stay on the device. Trending topics are worked out on the device from the headlines of the sources you follow.
 
-- **Website:** https://yourfeed.appsforus.co.uk (GitHub Pages, repo `JGSPL-dev/Tideline`, public).
-- **Android app:** the same `index.html` wrapped with Capacitor 7 (`app/`), built by GitHub Actions (manual trigger only). Current test build: 0.2.41.
-- **Service:** a Cloudflare Worker, `service/worker.js` (deployed as `yourfeed-service`, https://service.appsforus.co.uk), with a KV namespace `YF_CACHE` and a secret `YT_API_KEY`.
-- Stage: private testing by one person (the owner), no public users yet. Not yet on the Play Store.
+- **Website:** https://yourfeed.appsforus.co.uk (GitHub Pages, repo `JGSPL-dev/Tideline`).
+- **Android app:** the same `index.html` wrapped with Capacitor 7 (`app/`), targeting Android 16 (API 36), built by GitHub Actions (manual trigger). Each build gives a signed APK (testers) and an AAB (Google Play). Current test build: 0.2.93.
+- **iPhone app:** planned for launch (same code, Capacitor iOS); not built yet.
+- **Service:** a Cloudflare Worker, `service/worker.js` (https://service.appsforus.co.uk, version 2026-11-25b), with a KV namespace `YF_CACHE` and secrets `YT_API_KEY`, `WEBSUB_SECRET`, `ADMIN_KEY`.
+- **Stage:** private testing (a handful of Android testers and one iPhone tester on the website). Preparing for Google Play.
 
 ## Files
 | Path | What |
 |---|---|
-| `index.html` (~6,200 lines) | The whole app: HTML, CSS and JS in one file. Same file runs as the website and inside the Android app. |
-| `service/worker.js` (~520 lines) | The YourFeed service (Cloudflare Worker). |
+| `index.html` (~7,700 lines) | The app: HTML, CSS (~118 KB) and JS (~430 KB) in one file. The same file runs as the website and inside the app. A small first script handles start-up and crash recovery; the main script is one wrapping function. |
+| `catalogue.js` | The search catalogue: 871 hand-picked feeds (`window.YF_CATALOGUE`), loaded before the main script. |
+| `service/worker.js` (~700 lines) | The YourFeed service (Cloudflare Worker). |
 | `app/native/MainActivity.java` | Android activity: full-screen video, drag to close, keyboard insets, system bar colours. Copied in by the build. |
-| `app/plugins/media-session/` | Forked Capacitor media-session plugin (podcast background play, headphone skip). |
-| `app/package.json`, `app/capacitor.config.json` | Capacitor set-up. |
-| `.github/workflows/android.yml` | Android build (signed release APK, published to the `test-build` release). |
+| `app/plugins/media-session/` | Forked Capacitor media-session plugin (background podcast play, lock-screen and headphone controls). |
+| `.github/workflows/android.yml` | Android build: signed APK + AAB, target SDK 36 checked by `aapt2`, published to the `test-build` release. |
+| `.github/workflows/checks.yml` | Every push: code check, start-up test, service tests, browser tests. |
+| `tests/` | `smoke.mjs` (start-up from saved data of every era), `worker.test.mjs` (service, 17 tests), `browser/` (pytest + Playwright, 8 tests), `check-directory.mjs` (live check of the catalogue, run by its own workflow). |
+| `tools/lint.mjs` | Code check: ESLint core correctness rules on the main script (line numbers kept) and the service. |
 | `CLAUDE.md` | Living project notes: every feature, its function names and storage keys. The best map of the code. |
 
 ## Ground rules the code must keep (agreed with the owner)
-1. **Only two kinds of network route:** the publisher itself (direct from the device), or our own service. No third-party relays, readers or feed services. (Google News is used only as a route to sites with no feed, and for topic feeds.)
-2. **The service never relays web pages:** validated feeds, an allowlist of JSON APIs, or extracted facts only. CORS limited to our origins, per-IP rate limit, 5 MB cap, public-address check, sandbox CSP on replies.
-3. **Private (paid) feed links** (Patreon, Supercast, Substack) never leave the device: no service route, not in reports, shares or exports (unless chosen).
-4. **No secrets in the repo or app.** The YouTube API key lives only as a Worker secret; the signing keystore only in Actions secrets.
+1. **Only two kinds of network route:** the publisher itself (direct from the device), or our own service. No third-party relays, readers or feed services. (Google News is used as a route to sites with no feed, and for topic feeds.)
+2. **The service never relays web pages:** validated feeds, an allowlist of JSON APIs, or extracted facts only. CORS limited to our origins, per-IP rate limit, 5 MB cap, public-address check, sandbox CSP and `no-store` on replies.
+3. **Private (paid) feed links** (Patreon, Supercast, Substack and links with keys in them): the app reads them only from the phone. The website can't (browsers can't read other sites' feeds), so it asks the person first, per feed; only then is the link sent to the service, marked `private=1`, used for that one request and never stored, cached or logged. Private links are never in reports, shares or exports (unless chosen), and every other service route refuses them.
+4. **No secrets in the repo or app.** API keys are Worker secrets only; the signing keystore lives only in Actions secrets.
 5. **Don't promise "no ads"** anywhere (ads may be part of the business model).
-6. **Minimal data for the community list:** only a website's domain is sent, and only for pasted websites that worked; the service tells different people apart by a short one-way hash of IP + month, discarded once a site is approved.
+6. **Minimal data for the community list:** only a website's domain is sent, only for pasted websites that worked, and only with consent; the service tells people apart by a short one-way hash of IP + month, discarded once a site is approved.
+
+## Conventions
+- An empty `catch{}` means the failure is expected and harmless and the code carries on (storage full, an address that doesn't parse, an optional phone feature, one of several routes failing while the next is tried). Stated at the top of the main script and the service; all 88 were reviewed on 25 Nov 2026.
+- Article HTML from publishers is cleaned by our own allowlist cleaner (`basicSanitize`, `cleanArticle`); no outside library.
+- One layout in two tones, Colourful and Basic (`data-tone`). The old Classic layout was removed on 25 Nov 2026; CSS selectors still start with `:root[data-look="offgrid"]` because the attribute is always set.
 
 ## Recently changed (most worth a look)
 Newest first; all in `index.html` unless noted.
-- **Crash guard** (`crashCheck`, `yf.inflight`, `f.crashPaused`) and limits on very large or compressed feeds, added after build 0.2.40 closed itself a few seconds after opening. Root cause not proven; suspected an oversized news sitemap.
-- **Community list**: app `shareSite`, `loadCommunity`; service `/community/add`, `/community/list`, `COMMUNITY_MIN` (3 for testing).
-- **News sitemaps as feeds**: `isNewsSitemap`, `parseFeed` `urlset` branch, `findNewsSitemap`, `#only=/path/` section filter; 56 directory sites switched from Google News; worker `looksLikeFeed` accepts them. Existing sources migrate automatically.
-- **Search restructure**: pills match feed types (`PILLS`, `pillOf`, `listFor`); Topics is a sixth type (`typeOf`); service bar under Conversations (`serviceBar`); publishers grouped only when searched by name (`groupPublishers`); results interleaved by publisher.
-- **Social search clean-up** (`sortSocial`, `directFor`): bridge and bot mirrors become the publisher; Flipboard kept as articles; Lemmy, PeerTube and WordPress filed by type.
-- **Reddit search** also uses Reddit's RSS search (`searchRedditRss`).
-- **Directory** (`DIRECTORY`, ~670 entries) built partly from known URL patterns without live checks; an on-device checker (Settings → Service → Check search list / Find news sitemaps) was run once and fixes applied.
-- **Duplicates** (`storyKey`, `linkKey`, `dupeIds`, date pinning in `mergeHistory`), **seen tracking** (`lookObs`, `markLooked`, Hide seen), **English-only topics** (`looksEnglish`).
+- **Clean-up (25 Nov):** Classic layout removed (~1,500 lines of code and styles, no visible change: before/after screenshots compared); unreachable and unused code removed with a parser; catalogue moved to `catalogue.js`; code check and browser tests run on every push.
+- **Topic pages** match the topic's whole name; a surname alone counts only for people (`FIRST_NAMES`). Trending uses a 48-hour window against the previous five days (`t.spike`), publisher tags (`withTags`) and name rules (`trendTopics`).
+- **Videos survive refreshes** (`videoInList`, `state.listStale`).
+- **Website private feeds by consent** (`privOffer`, `privateViaService`, `f.webOk`; service `/feed` `private=1`).
+- **Google News limits:** cooling after refusals (`gnRefused`, `gnCooling`), at most 20 per round, never "healed" to another address.
+- **Feed discovery** follows subdomains, known feed hosts, icon links and links in page scripts (`feedLinksIn`, `followFeedLinks`), mirrored in the service's `/discover`.
+- **Crash guard** (`crashCheck`, `yf.inflight`, `f.crashPaused`) and limits on very large or compressed feeds.
+- **Community list**: app `shareSite`, `loadCommunity`; service `/community/add`, `/community/list`, `COMMUNITY_MIN` (3 for testing; raise at launch).
 
 ## Questions we'd like answered
-1. **Security and privacy:** does anything break the ground rules above? In particular: any path where a private feed URL could reach the service; the service's SSRF protections (`publicUrl`, redirects, the sitemap and discovery paths, `/community/add` fetching a domain); XSS from feed content (titles, summaries, HTML descriptions, sitemap titles, social bios); CORS and rate limits.
-2. **Community list design:** is the IP + month hash an acceptable level of data minimisation? Can one person game the threshold (e.g. mobile data vs Wi-Fi, VPNs)? KV write costs at scale (free plan: 1,000 writes/day)?
-3. **Robustness:** the 0.2.40 crash. Is the crash guard sound? Other ways a single source could hang or crash the app (huge feeds, regex on large text, DOMParser on big XML, unbounded loops)?
-4. **Correctness hot spots:** `mergeHistory` (dedupe, id reuse, date pinning), `dupeIds` memoisation, `typeOf`/`platformOf`/`sourceType` consistency, `categorise`/`tagCategory`, `groupPublishers`, start-up migrations (order matters: one start-up error briefly broke the website on 10 Nov).
-5. **Performance:** the single 6,200-line file, re-rendering on every change, `typeOf` doing `feedById` + regex per item, IntersectionObservers per card. Anything that will hurt with 300+ sources?
-6. **Store readiness:** what's missing for a Play Store release (privacy policy page is outstanding; Content Security Policy for the page; pinned CI dependencies)?
-7. **Terms:** use of Google News RSS, Reddit RSS/JSON, YouTube Data API (quota, display rules, no background play), reading news sitemaps.
+1. **Security and privacy:** does anything break the ground rules above? In particular: the website's private-feed consent path (could a private link reach the service any other way?); the service's SSRF protections (`publicUrl`, redirects, sitemap and discovery paths, `/community/add`); XSS from feed content (titles, summaries, HTML descriptions, sitemap titles, social bios) and `basicSanitize`; CORS and rate limits.
+2. **Community list design:** is the IP + month hash an acceptable level of data minimisation? Can one person game the threshold? KV write costs at scale (free plan: 1,000 writes/day)?
+3. **Robustness:** is the crash guard sound? Other ways a single source could hang or crash the app (huge feeds, regex on large text, DOMParser on big XML, unbounded loops)?
+4. **Correctness hot spots:** `mergeHistory` (dedupe, id reuse, date pinning), `trendTopics`, `typeOf`/`platformOf`/`sourceType` consistency, start-up migrations (`MIGRATIONS`, order matters).
+5. **Structure and performance:** the single large file (we plan to split it into modules joined by a build step), re-rendering on every change, IntersectionObservers per card. Anything that will hurt with 300+ sources?
+6. **Store readiness:** Google Play (privacy policy page outstanding, Data safety form, background playback declaration) and Apple guideline 4.2 for the iPhone app.
+7. **Terms:** use of Google News RSS, Reddit RSS/JSON, YouTube Data API (quota, display rules), reading news sitemaps.
 
 ## How to test
-- No outside network in a typical sandbox: test with Playwright against mocked routes (publisher URLs with CORS headers, or a mocked service). The app runs from `index.html` opened directly; set `window.Capacitor` to simulate the app.
-- The worker can be unit-tested in Node by importing it with a stubbed `fetch`, `caches.default` and a fake KV.
-- Android builds: `gh workflow run android.yml --ref main` (manual only), APK in the `test-build` release.
+- `node tools/lint.mjs` (needs ESLint 9), `node tests/smoke.mjs`, `node --test tests/worker.test.mjs`, `python -m pytest tests/browser` (needs `pip install -r tests/browser/requirements.txt` and `python -m playwright install chromium`). All run offline with mocks; the same run on every push.
+- The browser tests serve the app from a test address and answer every request with mocks; set `native=True` to simulate the app (`window.Capacitor`).
+- Android builds: `gh workflow run android.yml --ref main` (manual only); APK and AAB in the `test-build` release.
 
 ## Out of scope / known open items
-Privacy policy page; Content Security Policy; pinning CI dependencies by hash; X (Twitter) not supported (API cost); language beyond UK English; the Trending topic page and live discussion ideas.
+Splitting `index.html` into modules; privacy policy page; Content Security Policy for the page; pinning CI dependencies by hash; X (Twitter) not supported (API cost); Reddit search (the search code was disconnected earlier and has been removed; following subreddits works); languages beyond UK English.
