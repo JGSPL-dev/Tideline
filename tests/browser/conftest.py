@@ -7,7 +7,12 @@ from playwright.sync_api import sync_playwright
 sys.path.insert(0, os.path.dirname(__file__))
 import fixtures as fx
 
-INDEX = "file://" + os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "index.html"))
+ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+# The app is served from a made-up address (answered from the repo below), so the page has normal web storage
+ORIGIN = "https://app.yourfeed.test"
+INDEX = ORIGIN + "/index.html"
+TYPES = {".html": "text/html", ".css": "text/css", ".js": "text/javascript", ".svg": "image/svg+xml", ".png": "image/png",
+         ".woff2": "font/woff2", ".json": "application/json", ".webmanifest": "application/manifest+json"}
 CORS = {"access-control-allow-origin": "*"}
 
 @pytest.fixture(scope="session")
@@ -25,8 +30,8 @@ class App:
         ls = {"yf.onboarded": "true", "yf.thumbAsked": "1", "tl.feeds": json.dumps(feeds if feeds is not None else fx.INIT)}
         ls.update(storage or {})
         js = ("window.Capacitor={isNativePlatform:()=>true,Plugins:{}};" if native else "")
-        # file:// has no sessionStorage, so seed storage only on the first load of this page
-        js += "if(!window.name){window.name='seeded';" + "".join(f"localStorage.setItem({json.dumps(k)},{json.dumps(v)});" for k, v in ls.items()) + "}"
+        # Seed storage only on the first load of this page (a reload keeps what the app saved)
+        js += "if(!sessionStorage.getItem('seeded')){sessionStorage.setItem('seeded','1');" + "".join(f"localStorage.setItem({json.dumps(k)},{json.dumps(v)});" for k, v in ls.items()) + "}"
         self.page.add_init_script(js)
         if clock: self.page.clock.install()
         self.page.route("**/*", self._route)
@@ -35,7 +40,11 @@ class App:
 
     def _route(self, r):
         u = r.request.url
-        if u.startswith("file:"): return r.continue_()
+        if u.startswith(ORIGIN + "/"):
+            path = os.path.normpath(os.path.join(ROOT, u[len(ORIGIN) + 1:].split("?")[0]))
+            if path.startswith(ROOT) and os.path.isfile(path):
+                return r.fulfill(path=path, headers={"content-type": TYPES.get(os.path.splitext(path)[1], "application/octet-stream")})
+            return r.fulfill(status=404, body="")
         if u in fx.FEEDS: return r.fulfill(body=fx.FEEDS[u], headers={**CORS, "content-type": "application/rss+xml"})
         if "reddit.com/r/Gunners" in u and ".rss" in u: return r.fulfill(body=fx.REDDIT, headers=CORS)
         if "img.example.com" in u or "ytimg" in u or "redd" in u: return r.fulfill(body=fx.IMGB, headers={**CORS, "content-type": "image/png"})
