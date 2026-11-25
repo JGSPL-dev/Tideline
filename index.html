@@ -2811,6 +2811,14 @@ async function discoverFeed(u){
   }
   return blocked ? {blocked: true} : null;
 }
+function gnFeedFor(u){
+  const m = u.pathname.match(/^\/(?:rss\/)?(topics|publications|stories)\/([\w-]{10,})/);
+  const isSearch = /^\/(?:rss\/)?search\/?$/.test(u.pathname) && u.searchParams.get("q");
+  if (!m && !isSearch) return null;
+  const [gl, lang] = (u.searchParams.get("ceid") || "GB:en").split(":");
+  const ed = `hl=${encodeURIComponent((lang || "en") + "-" + (gl || "GB"))}&gl=${encodeURIComponent(gl || "GB")}&ceid=${encodeURIComponent((gl || "GB") + ":" + (lang || "en"))}`;
+  return m ? `https://news.google.com/rss/${m[1]}/${m[2]}?${ed}` : `https://news.google.com/rss/search?q=${encodeURIComponent(u.searchParams.get("q"))}&${ed}`;
+}
 async function resolveInput(raw){
   let s = raw.trim();
   if (/^UC[\w-]{22}$/.test(s)) return {url: "https://www.youtube.com/feeds/videos.xml?channel_id=" + s};
@@ -2820,6 +2828,11 @@ async function resolveInput(raw){
   let u;
   try{ u = new URL(s); }catch{ throw new Error("That doesn't look like a web address"); }
   const host = u.hostname.replace(/^(www|m|music)\./, "");
+  // Google News pages → their own feed: a topic (news.google.com/topics/ID, e.g. "Analogue" the games company),
+  // a publication, a story's full coverage or a search. Edition from ceid ("GB:en"), else the UK English one.
+  if (u.hostname === "news.google.com"){
+    const g = gnFeedFor(u); if (g) return {url: g};
+  }
   // Reddit links: subreddit or user → their own feed, never a guess
   if (/(^|\.)reddit\.com$/.test(u.hostname)){
     throw new Error(REDDIT_NO);
@@ -6137,6 +6150,8 @@ function cleanTitle(t, url){
     return known ? known[0] : nq.site.replace(/^www\./, "").split("/")[0];
   }
   if (nq && nq.q && (/google news/i.test(t) || !t)) return "g/" + nq.q;
+  // Google News topic / publication feeds: "Analogue - Latest - Google News" → "Analogue"
+  if (nq && /google news$/i.test(t)){ const c = t.replace(/\s*[-–|]\s*(?:(?:latest|top stories|headlines|news)\s*[-–|]\s*)?google news$/i, "").trim(); if (c) return c; }
   const sub = (url || "").match(/reddit\.com\/r\/(\w+)/i);
   if (sub && (/submissions|^r\/|^\w+$/i.test(t) || !t)) return "r/" + ((t.match(/:\s*(\w+)\s*$/) || [])[1] || sub[1]);
   if (/bsky\.app\/profile\//.test(url || "")){
