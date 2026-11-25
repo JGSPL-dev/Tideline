@@ -2337,7 +2337,7 @@ async function loadOneFeed(url, feed, logOut){
   }
   if (!got.some(g => g.items.length)){
     if (got.some(g => g.unchanged)) return {title: feed.title, items: [], everyMin: feed.everyMin || null, unchanged: true};
-    throw new Error("The feed has no stories");
+    const e = new Error("The feed has no stories"); e.feedTitle = (got.find(g => g.title) || {}).title || ""; throw e;
   }
   const title = (got.find(g => g.title) || got[0]).title;
   const everyMin = Math.max(0, ...got.map(g => g.everyMin || 0)) || null;
@@ -6199,9 +6199,18 @@ async function addFeed(raw, direct, kind){
   } else {
     const res = await resolveInput(raw);
     feed.url = res.url;
-    p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed);
+    try{ p = res.text ? parseFeed(res.text, feed) : await loadFeed(res.url, feed); }
+    catch(e){
+      if (/news\.google\.com\/rss\/topics\//.test(feed.url) && /no stories/i.test(e.message || "")){ const g = new Error("Google's feed for this topic is empty"); g.gnEmpty = {name: cleanTitle(e.feedTitle || "", feed.url) || "", url: feed.url}; throw g; }
+      throw e;
+    }
   }
   if (state.feeds.some(f => f.url === feed.url)) throw new Error("You already follow that feed");
+  // Google keeps feeds for its news sections, but the feed of a "thing" topic (a company, a person: Analogue the
+  // games company) is often empty even though its web page has stories. Offer a search for its name instead.
+  if (/news\.google\.com\/rss\/topics\//.test(feed.url) && !p.items.length){
+    const e = new Error("Google's feed for this topic is empty"); e.gnEmpty = {name: cleanTitle(p.title, feed.url) || "", url: feed.url}; throw e;
+  }
   feed.title = cleanTitle(p.title, feed.url) || new URL(feed.url).hostname.replace(/^www\./, "");
   feed.lastFetched = Date.now(); feed.everyMin = p.everyMin || null; feed.audio = isPodcastFeed(p.items);
   if (p.icon && !/redditstatic\.com/.test(p.icon)) feed.icon = p.icon; if (p.site) feed.site = p.site;
@@ -7484,10 +7493,33 @@ $("#addForm").addEventListener("submit", async e => {
     input.value = ""; btn.textContent = "Add";
     setMsg(`Added ${feed.title} with ${storyCount(count)}.` + (feed.private ? " It's private: only this device fetches it, and its link is left out of reports and exports." : ""));
   }catch(err){
+    if (err && err.gnEmpty){ gnEmptyOffer(err.gnEmpty); return; }
     const m = String(err && err.message || "");
     setMsg(/failed to fetch|networkerror|load failed|couldn't connect/i.test(m) ? "Couldn't reach that address. Check the link, or try again when you're online." : m.replace(/\.$/, "") + ".", true);
   }finally{ btn.disabled = false; }
 });
+// A Google News topic whose feed is empty: follow a Google News search for its name instead, which the person can
+// narrow ("Analogue" Pocket OR 3D) so it stays on the right subject
+function gnEmptyOffer({name, url}){
+  setMsg(`Google's feed for ${name ? "“" + name + "”" : "that topic"} is empty: it only fills the feeds of its news sections. You can follow a Google News search for it instead.`, true);
+  const box = $("#addFolder"); box.hidden = false; box.textContent = "";
+  box.append(el("span", "fb-lbl", "Search Google News for"));
+  const q = el("input"); q.type = "text"; q.value = name ? `"${name}"` : ""; q.setAttribute("aria-label", "Search words"); q.maxLength = 200;
+  const go = el("button", "btn primary", "Follow this search"); go.type = "button";
+  const hint = el("p", "hint", `Add words to keep it on the right one, e.g. ${name ? "“" + name + "” " : ""}Pocket OR 3D. Quotes keep words together.`);
+  go.onclick = async () => {
+    const words = q.value.trim(); if (!words) return;
+    let ed = "hl=en-GB&gl=GB&ceid=GB:en"; try{ const u = new URL(url); ed = `hl=${u.searchParams.get("hl") || "en-GB"}&gl=${u.searchParams.get("gl") || "GB"}&ceid=${u.searchParams.get("ceid") || "GB:en"}`; }catch{}
+    go.disabled = true; setMsg("Looking for stories…");
+    try{
+      const {feed, count} = await addFeed(`https://news.google.com/rss/search?q=${encodeURIComponent(words)}&${ed}`, true);
+      if (name){ feed.title = name; save(); renderFeedList(); renderList(); }
+      $("#addInput").value = "";
+      setMsg(count ? `Added ${feed.title} with ${storyCount(count)}.` : `Added ${feed.title}. No stories yet: try fewer words.`);
+    }catch(e){ setMsg(String(e && e.message || "Couldn't add that").replace(/\.$/, "") + ".", true); go.disabled = false; }
+  };
+  box.append(q, go, hint);
+}
 // Full "Add to your feed" page
 $("#spForm").addEventListener("submit", e => {
   e.preventDefault();
