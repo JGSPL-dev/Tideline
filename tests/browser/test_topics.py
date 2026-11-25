@@ -56,6 +56,6 @@ def test_topic_video_keeps_playing_through_a_refresh(app):
     p.click(".tp-stop")
     # The page's timers run on the test's clock: move it on while waiting for the held-back stories to appear
     for _ in range(20):
-        if "brand new story" in p.inner_text("#list").lower(): break
+        if "brand new story" in p.text_content("#list").lower(): break
         p.clock.run_for(1000); p.wait_for_timeout(250)
-    assert "brand new story" in p.inner_text("#list").lower(), "new stories appear once the video is closed"
+    assert "brand new story" in p.text_content("#list").lower(), "new stories appear once the video is closed"
