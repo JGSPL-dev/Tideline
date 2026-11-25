@@ -98,3 +98,7 @@ Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data
 - `videoInList()` (a playing story-card video or the topic page player): a finished refresh, and the refresh button, don't redraw the list while one plays; `state.listStale` is set and the list is drawn when the video is closed (`stopCardVideos`, topic "Close video"). `renderListNow` clears `listStale`.
 - Service `/feed` refuses `looksPrivate` links unless `private=1`; replies are `no-store`, nothing is written to KV, nothing logged. `/discover` always refuses private links.
 - All other service calls still refuse private links (`viaService` guard), and exports/reports/shares still leave them out.
+
+## Google Play build
+- The Android workflow targets Android 16 (compile + target SDK 36, required by Play since 31 Aug 2026) and builds both `yourfeed.apk` (testers install directly) and `yourfeed.aab` (upload to Play), same code, version and key. The build fails unless aapt2 reports targetSdkVersion 36.
+- When creating the app in Play Console, choose to use our existing key for Play App Signing (export it with Google's PEPK tool), so sideloaded test APKs and Play installs update each other. Never commit the keystore.

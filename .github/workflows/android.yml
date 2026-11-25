@@ -49,6 +49,11 @@ jobs:
           sed -i "s|__APP_BUILD__|0.2.${{ github.run_number }} · $(date -u +'%-d %b %Y %H:%M') UTC · ${GITHUB_SHA::7}|" www/index.html
           grep -q "0.2.${{ github.run_number }}" www/index.html
           npx cap add android
+          # Google Play: new apps and updates must target Android 16 (API 36) from 31 Aug 2026.
+          # Capacitor 7 sets 35, so raise compile and target SDK (and tell the Gradle plugin 36 is fine)
+          sed -i -E 's/(compileSdkVersion *= *)[0-9]+/\136/; s/(targetSdkVersion *= *)[0-9]+/\136/' android/variables.gradle
+          grep -q "targetSdkVersion = 36" android/variables.gradle && grep -q "compileSdkVersion = 36" android/variables.gradle
+          echo "android.suppressUnsupportedCompileSdk=36" >> android/gradle.properties
           npx cap sync android
           cp -r res/* android/app/src/main/res/
           # Full-screen video inside the app (rotates to landscape)
@@ -80,13 +85,19 @@ jobs:
           }
           GRADLE
           cd android && chmod +x gradlew
-          for n in 1 2 3 4; do ./gradlew assembleRelease --no-daemon -q && break; echo "Build attempt $n failed, retrying"; sleep 20; done
+          # The APK is for testers to install directly; the app bundle (AAB) is what Google Play takes.
+          # Both come from the same code, version and key.
+          for n in 1 2 3 4; do ./gradlew assembleRelease bundleRelease --no-daemon -q && break; echo "Build attempt $n failed, retrying"; sleep 20; done
           cp app/build/outputs/apk/release/app-release.apk "$GITHUB_WORKSPACE/yourfeed.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "$GITHUB_WORKSPACE/yourfeed.aab"
+          AAPT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)aapt2
+          "$AAPT" dump badging "$GITHUB_WORKSPACE/yourfeed.apk" | grep -E "^package:|targetSdkVersion"
+          "$AAPT" dump badging "$GITHUB_WORKSPACE/yourfeed.apk" | grep -q "targetSdkVersion:'36'"
       - name: Publish as the "test-build" download
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release delete test-build --yes --cleanup-tag || true
-          gh release create test-build yourfeed.apk --prerelease --target "$GITHUB_SHA" \
+          gh release create test-build yourfeed.apk yourfeed.aab --prerelease --target "$GITHUB_SHA" \
             --title "YourFeed Android test build 0.2.${{ github.run_number }} ($KS_KIND key)" \
-            --notes "Test build from commit ${GITHUB_SHA::7}. Download yourfeed.apk on your Android phone and open it to install."
+            --notes "Test build from commit ${GITHUB_SHA::7}. Download yourfeed.apk on your Android phone and open it to install. yourfeed.aab is the same build for uploading to Google Play."
