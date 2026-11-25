@@ -84,21 +84,16 @@ html:has(.app.solo),body:has(.app.solo){height:auto}
 .cact svg{width:17px;height:17px}
 .flags{display:inline-flex;gap:5px;align-items:center;flex:none}
 .tag.len{font-variant-numeric:tabular-nums;letter-spacing:0;text-transform:none}
-.cacts.onimg{position:absolute;top:8px;right:8px;background:rgba(15,18,23,.62);border-radius:99px;padding:2px 3px;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.cacts.onimg .cact{color:#fff}
-.cacts.onimg{align-items:center}
+
 .thumb .ago{position:absolute;top:8px;left:8px;z-index:2;background:rgba(15,18,23,.62);color:#fff;font-size:12.5px;font-weight:600;line-height:1;padding:9px 11px;border-radius:99px;white-space:nowrap;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
-.cacts.onimg .cact:hover{background:rgba(255,255,255,.18);color:#fff}
-.cacts.onimg .cact[aria-pressed="true"]{color:#ffb38a}
-.cstrip{display:flex;align-items:center;gap:8px;min-height:28px;margin-top:6px}
+
 /* List: no gap column when there's no picture, so Save/Share line up at the right edge on every card */
 :root:not([data-layout="magazine"]) .card{column-gap:0}
 :root:not([data-layout="magazine"]) .card > .thumb{margin-left:14px}
 :root:not([data-layout="magazine"]){--tw:92px}
 :root:not([data-layout="magazine"])[data-thumbs="large"]{--tw:132px}
 /* Cards without a picture keep Save/Share in the same place as cards with one */
-:root:not([data-layout="magazine"]):not([data-thumbs="off"]) .card:not(:has(> .thumb)) .cstrip .cacts{margin-right:calc(var(--tw) + 14px)}
-.cstrip .cacts{margin-left:auto}
+
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;font-weight:600;z-index:80;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:calc(100vw - 32px)}
 body.has-mini .toast{bottom:calc(110px + env(safe-area-inset-bottom,0px))}
 .iorow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -229,20 +224,14 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .savedhead{font-weight:700;font-size:13.5px;color:var(--muted)}
 .brand{font:800 27px/1 var(--ui);letter-spacing:-.02em;margin:0;display:flex;align-items:center;justify-content:center;gap:9px}
 .wordmark{font-family:"Bricolage Grotesque",var(--ui);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--ink);white-space:nowrap}
-.wordmark .slash{width:.6em;height:.9em;margin:0 -.1em 0 .02em;overflow:visible}
+
 .wordmark .rss{color:var(--brand-fill)}
 .logo{flex:none;display:block}
 .status{font-size:12.5px;color:var(--muted);min-height:1em}
 .status b{font-weight:600;color:var(--danger)}
 .chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
 #chips{display:none}   /* the content types live in the filter box now */
-.fb-types{display:grid;grid-template-columns:1fr 1fr;gap:6px}
-.fb-type{display:flex;justify-content:space-between;align-items:center;gap:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:10px;padding:8px 10px;font:600 13.5px var(--ui);cursor:pointer}
-.fb-type[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
-.fb-type .count{font-size:12px;font-weight:700;background:var(--brand-fill);color:#fff;border-radius:99px;padding:1px 7px}
-.fb-type .count.zero{background:none;color:var(--muted)}
-.fb-type[aria-pressed="true"] .count.zero{color:inherit;opacity:.7}
-.fb-check{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600}
+
 .fb-manage summary{cursor:pointer;color:var(--accent);font:600 13px var(--ui);padding:4px 0}
 .fb-mrow{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px}
 .chips::-webkit-scrollbar{display:none}
@@ -290,12 +279,9 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 .open{display:inline-flex;align-items:center;justify-content:center;gap:5px;font-size:12.5px;font-weight:600;color:var(--accent);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--surface)}
 .open:hover{background:var(--accent-soft)}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.podplay{position:absolute;left:6px;bottom:6px;z-index:2;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
-:root[data-layout="magazine"] .podplay{left:10px;bottom:10px;width:46px;height:46px;background:var(--brand-fill)}
-.podplay svg{width:55%;height:55%}
-.podplay.on{background:var(--brand-fill)}
+
 .dl-icon.on{color:#2b8a3e}
-.cacts.onimg .dl-icon.on{color:#8ce99a}
+
 .dl-pct{font:700 10.5px var(--ui)}
 .thumb.vid::after{content:"";position:absolute;inset:auto auto 6px 6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.65) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M9 7v10l8-5z'/%3E%3C/svg%3E") center/16px no-repeat}
 .more{padding:20px;text-align:center;color:var(--muted);font-size:13px}
@@ -304,16 +290,14 @@ body.has-mini .totop{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
 
 /* Viewer (shared by desktop pane and phone inline) */
 .pane{min-width:0;min-height:0;display:flex;flex-direction:column;background:var(--surface)}
-.pane-empty{margin:auto;max-width:34ch;text-align:center;color:var(--muted);padding:24px}
-.pane-empty h2{font:600 26px/1.15 var(--read);color:var(--ink);margin:12px 0 8px;text-wrap:balance}
-.pane-empty kbd{font:600 12px var(--ui);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:1px 6px;background:var(--bg)}
+
 .viewer{display:flex;flex-direction:column;min-height:0;height:100%}
 .vbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));border-bottom:1px solid var(--line);background:var(--surface)}
 .vbar .meta{flex:1;min-width:120px}
 .seg{display:inline-flex;background:var(--sunk);border-radius:8px;padding:2px}
 .seg button{border:0;background:none;padding:5px 11px;border-radius:6px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
-.vbody{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;display:flex;flex-direction:column}
+
 .livenote a{color:var(--accent)}
 .livenote{font-size:12.5px;color:var(--muted);padding:7px 14px;background:var(--bg);border-bottom:1px solid var(--line)}
 iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#fff}
@@ -335,9 +319,9 @@ iframe.live{flex:1;width:100%;min-height:0;border:0;display:block;background:#ff
 .list.shortgrid .card .thumb .ago,.list.shortgrid .card .sum{display:none}
 .list.shortgrid .card .title{font-size:14.5px;line-height:1.25;-webkit-line-clamp:2;display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
 .list.shortgrid .card .meta{font-size:12px}
-.list.shortgrid .card .cacts.onimg{top:6px;right:6px}
+
 .list.shortgrid .card.vplaying{grid-column:1/-1}
-.list.shortgrid .card .cstrip .cacts{margin-right:0}
+
 .vbox.tall{aspect-ratio:9/16;width:auto;height:min(72vh,640px);max-width:100%;margin:0 auto;justify-self:center;align-self:center}
 .card.vplaying .thumb{display:none}
 .video iframe{width:100%;height:100%;border:0;display:block}
@@ -455,7 +439,7 @@ dialog.drawer.closing::backdrop{animation:fadeOut .18s ease-in forwards}
 .gmeta .newdot{width:7px;height:7px;margin:0 0 0 6px;display:inline-block;vertical-align:middle}
 .flist .acts .btn.icon{width:36px;height:36px}
 .flist .acts .btn.armed{width:auto;padding:0 10px;font-weight:600}
-.row-all{background:color-mix(in srgb,var(--sunk) 50%,transparent)}
+
 .flist li:first-child{border-top:0}
 .flist .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .flist .url{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -493,7 +477,7 @@ dialog.fullpage header{gap:10px}
 .art-body{padding:0 !important;display:block !important}
 .art-body .reader{padding-top:18px}
 .art-hero{width:100%;border-radius:10px;margin:0 0 18px;display:block}
-.art-audio{width:100%;margin:0 0 18px}
+
 .tag-in{border-color:var(--brand);color:var(--brand)}
 .tag-done{background:var(--sunk)}
 .tag-dl{border-color:#2b8a3e;color:#2b8a3e}
@@ -555,10 +539,7 @@ dialog.fullpage header{gap:10px}
 .pp-notes-text.clamp{display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden}
 .pp-now{font:700 13px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 #nowBtn.playing{color:var(--brand)}
-.pod-foot{display:flex;flex-wrap:wrap;gap:2px 16px;align-items:center;position:relative;z-index:2;margin-top:4px}
-.pod-foot .pod-more{font-size:13px;padding:6px 0}
-.dl-btn.on{color:var(--ok, #2b8a3e);text-decoration:none}
-.pod-more{align-self:flex-start;border:0;background:none;color:var(--accent);font:600 14px var(--ui);padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
 .mini{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);box-shadow:0 -4px 16px rgba(0,0,0,.08);
   padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
 .mini-prog{height:3px;background:var(--sunk);margin:0 calc(-1 * max(8px,env(safe-area-inset-left,0px)))}
@@ -591,29 +572,22 @@ dialog.fullpage header h2{font:600 21px/1.2 var(--ui)}
 .filterbtn{flex:none;height:36px;font-weight:600}
 .filterbtn[aria-expanded="true"]{border-color:var(--ink)}
 .filterbtn .fcount{min-width:18px;height:18px;padding:0 6px;border-radius:99px;background:var(--brand-fill);color:#fff;font-size:11px;font-weight:700;display:inline-grid;place-items:center}
-.filterbox{position:absolute;right:12px;top:calc(100% - 6px);width:min(340px,calc(100vw - 24px));background:var(--surface);color:var(--ink);border-radius:16px;box-shadow:0 12px 32px rgba(14,18,23,.24),0 0 0 1px var(--line);padding:14px;display:flex;flex-direction:column;gap:14px;z-index:30}
-.fb-head{display:flex;align-items:baseline;justify-content:space-between}
-.fb-head h2{margin:0;font:700 16px var(--ui)}
+
 .linkbtn{border:0;background:none;padding:2px 0;font-size:13.5px;font-weight:600;color:var(--accent);cursor:pointer}
-.fb-sec{display:flex;flex-direction:column;gap:6px;min-width:0}
+
 .fb-lbl{font:700 11.5px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.filterbox .seg,.org-row .seg{display:flex;padding:3px;border-radius:10px}
-.filterbox .seg button,.org-row .seg button{flex:1;padding:7px 4px;border-radius:8px;font-size:13px}
+.org-row .seg{display:flex;padding:3px;border-radius:10px}
+.org-row .seg button{flex:1;padding:7px 4px;border-radius:8px;font-size:13px}
 .fb-chips{display:flex;flex-wrap:wrap;gap:6px}
 .fb-select{width:100%;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);padding:0 10px;font-size:13.5px}
-.fb-two{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px}
-.fb-go{height:42px;justify-content:center;font-weight:700;border-radius:10px}
+
 /* stacks */
 .stack{background:var(--surface);border:1px solid var(--line);border-radius:14px;margin:6px 0;overflow:hidden}
-.stack-head{display:flex;align-items:center;gap:8px;padding:10px 12px 4px;font-weight:700;font-size:14.5px}
-.stack-head .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.stack-head .n{font-size:12px;font-weight:700;color:var(--muted)}
-.stack-close{margin-left:4px;border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 10px;font-size:12.5px;font-weight:600;color:var(--accent);cursor:pointer}
-.stack-head .n.new{background:var(--brand-fill);color:#fff;border-radius:99px;padding:1px 8px}
+
 .stack .card{border-radius:0;margin:0}
 .stack .card + .card{border-top:1px solid var(--line)}
 .stack .meta .src,.stack .meta .src + span,.stack .meta > .dot{display:none}
-.stack-more{display:block;width:100%;border:0;border-top:1px solid var(--line);background:var(--sunk);padding:10px 12px;text-align:left;font-size:13.5px;font-weight:600;color:var(--accent);cursor:pointer}
+
 :root[data-layout="magazine"] .stack .card{border:0;margin:0}
 /* menu groups */
 .groups{display:flex;flex-direction:column;gap:12px}
@@ -672,13 +646,13 @@ details.attn[open] > summary::after{content:"▴"}
 .about{padding:14px 2px 8px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
 .about p{margin:0}
 .about b{color:var(--ink)}
-.listhead{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:6px 0 -6px}
+
 .sresults{display:flex;flex-direction:column;gap:14px}
 .rsec h3{font:600 12px var(--ui);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 6px}
 .rlist{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .ritem{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-top:1px solid var(--line)}
-.ritem:first-child,.rnote:first-child{border-top:0}
-.rnote{padding:10px 12px;color:var(--muted);font-size:13.5px;border-top:1px solid var(--line)}
+.ritem:first-child{border-top:0}
+
 .ricon.yt{border-radius:50%}
 .ricon{width:32px;height:32px;border-radius:8px;background:var(--sunk);display:grid;place-items:center;overflow:hidden;font-weight:600;color:var(--muted);text-transform:uppercase}
 .ricon img{width:100%;height:100%;object-fit:cover}
@@ -708,7 +682,7 @@ a.rinfo:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .flist .checks .mark{text-align:left}
 .check{display:flex;gap:10px;align-items:flex-start;font-size:14px;cursor:pointer}
 .check input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--accent);flex:none}
-.flist .tagline{font-size:12px;color:var(--muted)}
+
 .swatches{display:flex;gap:8px;flex-wrap:wrap}
 .sw{width:28px;height:28px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;box-shadow:inset 0 0 0 2px var(--bg)}
 .sw[aria-checked="true"]{border-color:var(--ink)}
@@ -769,7 +743,7 @@ details summary{cursor:pointer;font-size:13.5px;color:var(--muted)}
 .ogbar .fpill span{display:none}
 .ogbar .fpill::before{content:"CLEAR"}
 .ogbar .statuspop{position:absolute;top:100%;left:8px;right:8px}
-.ogbar .filterbox{position:absolute;top:100%;left:0;right:0;font:400 15px var(--ui);text-transform:none}
+
 .ogbar .statuspop{font:400 14px var(--ui)}
 :root[data-look="offgrid"] .list{background:var(--og-paper);padding:0 0 calc(40px + env(safe-area-inset-bottom,0px));gap:0;display:block}
 :root[data-look="offgrid"] body.has-mini .list{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
@@ -879,10 +853,7 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .ogf-row{display:flex;justify-content:space-between;align-items:center;width:100%;height:48px;border:0;border-bottom:1px solid #000;background:none;color:#000;font:400 24px var(--og-disp);text-transform:uppercase;padding:0 4px;cursor:pointer}
 .ogf-row[aria-pressed="true"]{background:#000;color:var(--og-paper)}
 .ogf-n{font:700 13px var(--og-mono)}
-.ogf-switch{display:flex;margin-bottom:10px}
-.ogf-switch button{flex:1;height:44px;border:3px solid #000;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;cursor:pointer;border-radius:0}
-.ogf-switch button+button{border-left:0}
-.ogf-switch button[aria-pressed="true"]{background:#000;color:var(--og-paper)}
+
 .ogf-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ogf-chip{min-height:40px;border:3px solid #000;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;padding:0 10px;cursor:pointer;border-radius:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ogf-chip[aria-pressed="true"]{background:var(--og-hot)}
@@ -923,7 +894,7 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 :root[data-look="offgrid"] dialog.drawer .tabs.seg{display:none!important}
 :root[data-look="offgrid"] dialog.drawer[data-mode="add"] #flist{display:none}
 :root[data-look="offgrid"] dialog.drawer[data-mode="edit"] :is(.og-addlbl,#addForm,#searchFilters,.addhint,#searchResults){display:none!important}
-.og-filter .catmanage{margin-top:12px;font-family:var(--og-mono)}
+
 .ogf-foot{position:fixed;left:0;right:var(--og-rail);bottom:0;display:flex;gap:8px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--og-paper);border-top:3px solid #000}
 :root[data-rail="left"] .ogf-foot{left:var(--og-rail);right:0}
 .ogf-clear,.ogf-show{flex:1;height:56px;border:3px solid #000;border-radius:0;font:400 24px var(--og-disp);text-transform:uppercase;cursor:pointer}
@@ -1113,7 +1084,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 :root[data-look="offgrid"] #panelSettings .set-row .seg{display:flex;flex-wrap:wrap}
 :root[data-look="offgrid"] #panelSettings .swatch-b{width:52px;height:44px;background:var(--sw)!important;font-size:0!important;border-color:#fff!important}
 :root[data-look="offgrid"] #panelSettings .swatch-b[aria-pressed="true"]{outline:4px solid var(--og-hot);outline-offset:-10px;border-color:#fff}
-:root[data-look="offgrid"] #panelSettings #preview,:root[data-look="offgrid"] #resetDesign{display:none}
+
 :root[data-look="offgrid"] #panelSettings .about{font:400 11px var(--og-mono);color:#C8C8C8;border-top:0;padding-top:16px}
 :root[data-look="offgrid"] #panelSettings .about b{color:#fff}
 :root[data-look="offgrid"] #panelSettings .policies,:root[data-look="offgrid"] #faqBody{font:400 14px/1.5 var(--og-mono)}
@@ -1264,7 +1235,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 /* Live conversation: folded until asked for */
 .tp-livebtn{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;margin:12px 0 0;padding:0 12px;border:3px solid #000;border-radius:0;background:#000;color:var(--og-paper,#FFE600);font:700 13px var(--og-mono,monospace);text-transform:uppercase;cursor:pointer;text-align:left}
 .tp-livebtn[aria-expanded="true"]{background:none;color:#000}
-:root[data-look="offgrid"] dialog.drawer .sfilters,:root[data-look="offgrid"] dialog.drawer .svcbar{flex-wrap:wrap;overflow:visible;margin:4px 0 0;padding:0;gap:8px}
+:root[data-look="offgrid"] dialog.drawer .sfilters{flex-wrap:wrap;overflow:visible;margin:4px 0 0;padding:0;gap:8px}
 :root[data-look="offgrid"] dialog.drawer .sfilters .chip{min-height:40px;padding:0 10px;font-size:12px;flex:0 1 auto}
 .tp-livehint{margin:6px 0 0;font:400 11px/1.5 var(--og-mono,monospace);color:#000;opacity:.75}
 :root[data-look="offgrid"] .tpage .tp-foot{margin:4px 12px 8px;display:flex;flex-direction:column;align-items:stretch;gap:8px}
@@ -1405,9 +1376,8 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
         <span class="statusgap"></span>
         <div class="statuspop" id="statusPop" role="status" hidden><div class="status" id="status" aria-live="polite"></div><button type="button" class="linkbtn" id="healthLink" hidden>Open Source health</button></div>
         <button type="button" class="fpill" id="activeFilter" hidden></button>
-        <button type="button" class="btn filterbtn" id="filterBtn" aria-expanded="false" aria-controls="filterBox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Feeds<span class="fcount" id="filterCount" hidden></span></button>
+        <button type="button" class="btn filterbtn" id="filterBtn" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4"/></svg>Feeds<span class="fcount" id="filterCount" hidden></span></button>
       </div>
-      <div class="filterbox" id="filterBox" role="dialog" aria-label="Filter your feed" hidden></div>
     </div>
     <div class="list" id="list"><div class="empty"><h3>YourFeed isn't running</h3><p>This viewer is only showing a preview of the file. Open it in Safari, Chrome or another web browser so the app can load your feeds.</p></div></div>
   </section>
@@ -1448,9 +1418,7 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
       <details class="set-sec setfold" id="sf-look">
         <summary><span class="sf-t"><h3 id="sh-look">Look</h3><span class="sf-sub">Layout, picture size, colour</span></span><span class="sf-chev"></span></summary>
         <div class="set-body">
-        <div class="preview" id="preview" aria-hidden="true"></div>
         <div id="designRows" class="set-sec"></div>
-        <div><button class="btn" type="button" id="resetDesign">Reset look to default</button></div>
         </div>
       </details>
       <details class="set-sec setfold" id="sf-content">
@@ -1795,11 +1763,6 @@ const itemsDB = (() => {
   };
 })();
 const COLORS = ["#d9480f","#1c7ed6","#2b8a3e","#ae3ec9","#e67700","#c2255c","#0c8599","#5f3dc4","#5c940d","#1864ab"];
-const DEFAULT_FEEDS = [
-  {id:"bbc", title:"BBC News", url:"https://feeds.bbci.co.uk/news/rss.xml", color:COLORS[0]},
-  {id:"verge", title:"The Verge", url:"https://www.theverge.com/rss/index.xml", color:COLORS[1]},
-  {id:"veritasium", title:"Veritasium", url:"https://www.youtube.com/feeds/videos.xml?channel_id=UCHnyfMqiRRG1u-2MsSQLbXA", color:COLORS[2]}
-];
 const PAGE = 30;
 const READER_ENABLED = false;   // Reader view is off for now: stories show the live website instead
 const KEEP_DAYS = 7, MAX_PER_FEED = 300, MIN_PER_FEED = 20, MIN_MAX_AGE_DAYS = 180;   // story history kept per feed
@@ -1910,7 +1873,6 @@ function wholeSitemap(t){
   return end < 0 ? t : t.slice(0, end + 6) + "</urlset>";
 }
 const SITEMAP_RANGE = "bytes=0-2999999";      // news sitemaps: the first 3 MB is plenty (sites list at most 1,000 recent articles)
-const parseJsonIn = t => { const a = t.indexOf("{"), b = t.lastIndexOf("}"); if (a < 0 || b < a) throw new Error("No data"); return JSON.parse(t.slice(a, b + 1)); };
 function serviceBase(){
   const s = (state.service || SERVICE_DEFAULT || "").trim().replace(/\/+$/, "");
   return /^https:\/\//.test(s) ? s : "";
@@ -2977,7 +2939,6 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 
 /* ---------- sources: platforms, folders, story types ---------- */
 const UNSORTED = "Uncategorised";
-const PLATFORMS = ["YouTube", "Reddit", "Podcasts", "Websites", "News topics", "Social"];
 function platformOf(f){
   const u = f.url || "";
   if (/youtube\.com/.test(u)) return "YouTube";
@@ -3048,7 +3009,6 @@ function sourceLabel(){
   return s.replace(/^(folder|platform):/, "");
 }
 function checkView(){
-  if (view.saved && !state.saved.length && !isOG()) view.saved = false;
   if (view.source.startsWith("feed:") && !feedById(view.source.slice(5))) view.source = "all";
   if (view.source === "folder:Unsorted") view.source = "folder:" + UNSORTED;
   if (view.source.startsWith("folder:") && view.source !== "folder:" + UNSORTED && !state.folders.includes(view.source.slice(7))) view.source = "all";
@@ -3596,12 +3556,6 @@ document.addEventListener("visibilitychange", () => {
 });
 
 /* ---------- rendering: type tabs + status ---------- */
-function newCount(feedId){
-  let n = 0;
-  const dup = feedId === "all" ? dupeIds() : null;
-  for (const i of state.items) if ((feedId === "all" || i.feedId === feedId) && isNew(i) && !(dup && dup.has(i.id))) n++;
-  return n;
-}
 // Any new (not seen) post from today, for the menu's dots
 function newToday(feedId){
   const since = new Date().setHours(0, 0, 0, 0);
@@ -3614,7 +3568,7 @@ function selectFeed(src){
   view.source = src === "all" || /^(feed|folder|platform):/.test(src) ? src : "feed:" + src;
   view.type = "all"; view.saved = false;
   saveView(); state.shown = PAGE; snapLooked();
-  renderChips(); renderStatus(); renderList(); renderFilterBox(); scrollFeedTop();
+  renderChips(); renderStatus(); renderList(); scrollFeedTop();
 }
 function renderChips(){
   checkView();
@@ -3624,8 +3578,8 @@ function renderChips(){
   const sb = $("#savedBtn"), sc = $("#savedCount");
   sb.setAttribute("aria-pressed", String(!!view.saved));
   sb.setAttribute("aria-label", view.saved ? "Back to your feed" : `Saved posts, ${state.saved.length}`);
-  sc.hidden = !state.saved.length || view.saved; sc.textContent = isOG() && state.saved.length > 99 ? "99+" : String(state.saved.length);
-  if (isOG()) sb.setAttribute("aria-label", view.saved ? "Back to your feed" : `Saved, ${state.saved.length} item${state.saved.length === 1 ? "" : "s"}`);
+  sc.hidden = !state.saved.length || view.saved; sc.textContent = state.saved.length > 99 ? "99+" : String(state.saved.length);
+  sb.setAttribute("aria-label", view.saved ? "Back to your feed" : `Saved, ${state.saved.length} item${state.saved.length === 1 ? "" : "s"}`);
   if (view.saved){
     // Saved: the same tabs, counting saved posts of each kind
     const kinds = new Set(state.saved.map(typeOf));
@@ -3704,7 +3658,7 @@ function paintHealth(){
   ib.className = "infobtn" + (bad ? " warn" : idle ? " idle" : "");
   ib.textContent = bad ? "!" : "i";
   const os = $("#ogStatus");
-  { const rf = $("#refresh"); if (rf) rf.classList.toggle("spin", isOG() && !!state.busy); }
+  { const rf = $("#refresh"); if (rf) rf.classList.toggle("spin", !!state.busy); }
   if (os){
     os.textContent = "";
     const off = navigator.onLine === false;
@@ -3723,7 +3677,7 @@ function toggleStatusPop(open){
 }
 function renderFilterBar(){
   const pill = $("#activeFilter");
-  const typeName = (isOG() ? {articles: "Read", topics: "Topics", videos: "Watch", audio: "Listen", conversations: "Talk"} : {articles: "Articles", topics: "Topics", videos: "Videos", audio: "Audio", conversations: "Conversations"})[view.type];
+  const typeName = ({articles: "Read", topics: "Topics", videos: "Watch", audio: "Listen", conversations: "Talk"})[view.type];
   const label = [typeName, state.topic ? "Trending: " + state.topic.label : view.source !== "all" ? sourceLabel() : ""].filter(Boolean).join(" · ");
   if (!label){ pill.hidden = true; }
   else {
@@ -3734,7 +3688,7 @@ function renderFilterBar(){
   }
   const n = (view.type !== "all" ? 1 : 0) + (view.unread ? 1 : 0) + (view.source !== "all" ? 1 : 0) + (view.from !== "week" ? 1 : 0) + (view.sort !== "newest" ? 1 : 0) + (String(view.q || "").trim() ? 1 : 0);
   const oh = $("#ogHead");
-  if (oh && isOG()){
+  if (oh){
     const head = [view.saved ? "SAVED" : typeName ? typeName.toUpperCase() : (view.source !== "all" || state.topic ? "" : "EVERYTHING"), state.topic ? state.topic.label.toUpperCase() : view.source !== "all" ? sourceLabel().toUpperCase() : ""].filter(Boolean);
     if (!state.topic){ try{ head.push(String(visibleItems().length)); }catch{} }
     oh.textContent = head.join(" · ");
@@ -3749,81 +3703,8 @@ function renderFilterBar(){
 function setView(k, v, focusId){
   if (k === "source" || k === "saved") state.topic = null;
   view[k] = v; saveView(); state.shown = PAGE; snapLooked();
-  renderChips(); renderList(); renderFilterBox(); scrollFeedTop();
+  renderChips(); renderList(); scrollFeedTop();
   if (focusId){ const b = document.getElementById(focusId); if (b) b.focus(); }
-}
-function fbSeg(label, key, opts, cur, pick){
-  const wrap = el("div", "fb-sec"); const l = el("span", "fb-lbl", label); l.id = "fbl-" + key; wrap.append(l);
-  const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-labelledby", l.id);
-  opts.forEach(([v, t]) => {
-    const b = el("button", null, t); b.type = "button"; b.id = `fb-${key}-${v}`;
-    b.setAttribute("aria-pressed", String(cur === v)); b.onclick = () => pick(v, b.id); seg.append(b);
-  });
-  wrap.append(seg); return wrap;
-}
-function renderFilterBox(){
-  const box = $("#filterBox"); if (box.hidden) return;
-  box.textContent = "";
-  const head = el("div", "fb-head"); head.append(el("h2", null, view.saved ? "Filter saved posts" : "Filter"));
-  const reset = el("button", "linkbtn", "Reset"); reset.type = "button"; reset.id = "fb-reset";
-  reset.onclick = () => { Object.assign(view, VIEW_DEFAULT, {saved: view.saved}); setView("type", "all", "fb-reset"); };
-  head.append(reset); box.append(head);
-
-  // SHOW: the content types (were the tabs along the top)
-  const sec = el("div", "fb-sec"); const sl = el("span", "fb-lbl", "Show"); sl.id = "fbl-show"; sec.append(sl);
-  const grid = el("div", "fb-types"); grid.setAttribute("role", "group"); grid.setAttribute("aria-labelledby", sl.id);
-  const base = view.saved ? state.saved : baseItems();
-  [["all", "Everything"], ["articles", "Articles"], ["topics", "Topics"], ["videos", "Videos"], ["audio", "Audio"], ["conversations", "Conversations"]].forEach(([k, label]) => {
-    const its = k === "all" ? base : base.filter(i => typeOf(i) === k);
-    const n = view.saved ? its.length : its.filter(isNew).length;
-    const b = el("button", "fb-type"); b.type = "button"; b.id = "fb-type-" + k;
-    b.setAttribute("aria-pressed", String(view.type === k));
-    b.append(document.createTextNode(label), el("span", "count" + (n ? "" : " zero"), String(n)));
-    b.setAttribute("aria-label", `${label}, ${n} ${view.saved ? "saved" : "new"}`);
-    b.onclick = () => setView("type", k, b.id);
-    grid.append(b);
-  });
-  sec.append(grid);
-  const ur = el("label", "fb-check"); const ucb = el("input"); ucb.type = "checkbox"; ucb.id = "fb-unread"; ucb.checked = !!view.unread;
-  ucb.onchange = () => setView("unread", ucb.checked, "fb-unread");
-  ur.append(ucb, document.createTextNode(" Hide seen")); sec.append(ur);
-  box.append(sec);
-
-  // CATEGORY: our fixed list (plus any folders people made themselves)
-  const cs = el("div", "fb-sec"); cs.append(el("span", "fb-lbl", "Category"));
-  const csel = el("select", "fb-select"); csel.id = "fb-cat"; csel.setAttribute("aria-label", "Category");
-  const optc = (v, t, sel) => { const o = el("option", null, t); o.value = v; o.selected = sel; return o; };
-  csel.append(optc("all", "All categories", !view.source.startsWith("folder:")));
-  const used = new Map(); state.feeds.forEach(f => { const g = folderOf(f); used.set(g, (used.get(g) || 0) + 1); });
-  const fixed = INTERESTS.map(([n]) => n), custom = state.folders.filter(n => !fixed.includes(n));
-  const og1 = el("optgroup"); og1.label = "Categories";
-  fixed.forEach(n => { const o = optc("folder:" + n, `${n}${used.get(n) ? " (" + used.get(n) + ")" : ""}`, view.source === "folder:" + n); if (!used.get(n)) o.disabled = true; og1.append(o); });
-  csel.append(og1);
-  if (custom.length){ const og2 = el("optgroup"); og2.label = "Your own"; custom.forEach(n => og2.append(optc("folder:" + n, `${n} (${used.get(n) || 0})`, view.source === "folder:" + n))); csel.append(og2); }
-  if (used.get(UNSORTED)) csel.append(optc("folder:" + UNSORTED, `${UNSORTED} (${used.get(UNSORTED)})`, view.source === "folder:" + UNSORTED));
-  csel.onchange = () => setView("source", csel.value, "fb-cat");
-  cs.append(csel);
-  if (custom.length) cs.append(manageCategories(custom, used));
-  box.append(cs);
-
-  // FEED: just one source
-  const fs = el("div", "fb-sec"); fs.append(el("span", "fb-lbl", "Feed"));
-  const sel = el("select", "fb-select"); sel.id = "fb-one"; sel.setAttribute("aria-label", "Just one feed");
-  const o0 = el("option", null, "All feeds"); o0.value = ""; sel.append(o0);
-  [...state.feeds].sort(byName).forEach(f => { const o = el("option", null, f.title || redactUrl(f.url)); o.value = f.id; o.selected = view.source === "feed:" + f.id; sel.append(o); });
-  sel.onchange = () => setView("source", sel.value ? "feed:" + sel.value : "all", "fb-one");
-  fs.append(sel); box.append(fs);
-
-  const two = el("div", "fb-two");
-  two.append(fbSeg("From", "from", [["today", "Today"], ["week", "Week"], ["any", "Any"]], view.from, (v, id) => setView("from", v, id)));
-  two.append(fbSeg("Sort", "sort", [["newest", "Newest"], ["source", "Source"]], view.sort, (v, id) => setView("sort", v, id)));
-  box.append(two);
-  // Stacks: group several stories from one source
-  box.append(fbSeg("Stack stories from the same source", "stack", [["off", "Off"], ["on", "On"]], design.stack === "on" ? "on" : "off", (v, id) => { design.stack = v; saveDesign(); state.shown = PAGE; renderList(); renderFilterBox(); const b = document.getElementById(id); if (b) b.focus(); }));
-
-  const go = el("button", "btn primary fb-go", `Show ${storyCount(visibleItems().length)}`); go.type = "button";
-  go.onclick = () => closeFilterBox(true);
-  box.append(go);
 }
 // Your own categories: rename, or move their sources into the fixed list
 function manageCategories(custom, used){
@@ -3840,7 +3721,7 @@ function manageCategories(custom, used){
       state.feeds.forEach(f => { if (f.folder === name){ f.folder = target; f.folderSet = true; } });
       state.folders = state.folders.filter(n => n !== name); if (!state.folders.includes(target)) state.folders.push(target);
       if (view.source === "folder:" + name) view.source = "folder:" + target;
-      saveFolders(); save(); saveView(); toast(`Renamed to ${target}`); renderFeedList(); renderChips(); renderList(); renderFilterBox();
+      saveFolders(); save(); saveView(); toast(`Renamed to ${target}`); renderFeedList(); renderChips(); renderList();
     };
     const move = el("select", "fb-select"); move.setAttribute("aria-label", `Move ${name} into`);
     const m0 = el("option", null, `Move ${used.get(name) || 0} into…`); m0.value = ""; move.append(m0);
@@ -3858,15 +3739,13 @@ function manageCategories(custom, used){
       if (view.source === "folder:" + name) view.source = "all";
       saveFolders(); save(); saveView();
       toast(`${moved} source${moved === 1 ? "" : "s"} moved; ${name} removed`);
-      renderFeedList(); renderChips(); renderList(); renderFilterBox();
+      renderFeedList(); renderChips(); renderList();
     };
     row.append(inp, move); d.append(row);
   });
   return d;
 }
-function openFilterBox(){ const box = $("#filterBox"); box.hidden = false; $("#filterBtn").setAttribute("aria-expanded", "true"); renderFilterBox(); const f = box.querySelector('[aria-pressed="true"]') || box.querySelector("button"); if (f) f.focus(); }
-function closeFilterBox(focusBtn){ const box = $("#filterBox"); if (box.hidden) return; box.hidden = true; $("#filterBtn").setAttribute("aria-expanded", "false"); if (focusBtn) $("#filterBtn").focus(); }
-$("#filterBtn").onclick = () => { if (isOG()){ $("#ogFilter") ? closeOgFilter() : openOgFilter(); return; } $("#filterBox").hidden ? openFilterBox() : closeFilterBox(); };
+$("#filterBtn").onclick = () => { $("#ogFilter") ? closeOgFilter() : openOgFilter(); };
 $("#activeFilter").onclick = () => { state.topic = null; selectFeed("all"); };   // clears the source, the type and a topic
 // (i)/(!) opens the summary; "Open Source health" goes to Settings with Needs attention unfolded
 $("#infoBtn").onclick = e => { e.stopPropagation(); toggleStatusPop(); };
@@ -3879,9 +3758,7 @@ document.addEventListener("pointerdown", e => { const pop = $("#statusPop"); if 
 // Tapping outside an open filter box or summary only closes it: that tap doesn't also open a post
 let swallowTap = false;
 const eatTap = () => { swallowTap = true; setTimeout(() => { swallowTap = false; }, 700); };
-document.addEventListener("pointerdown", e => { const box = $("#filterBox"); if (!box.hidden && !box.contains(e.target) && !$("#filterBtn").contains(e.target)){ closeFilterBox(); eatTap(); } });
 document.addEventListener("click", e => { if (swallowTap){ swallowTap = false; e.preventDefault(); e.stopPropagation(); } }, true);
-document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("#filterBox").hidden){ e.preventDefault(); closeFilterBox(true); } });
 
 /* ---------- rendering: list ---------- */
 let io;
@@ -3955,7 +3832,7 @@ function toast(msg, action){
   if (!t){ t = el("div", "toast"); t.setAttribute("role", "status"); document.body.append(t); }
   t.textContent = msg; t.hidden = false;
   if (action){ const b = el("button", "toast-act", action.label); b.type = "button"; b.onclick = () => { t.hidden = true; action.run(); }; t.append(document.createTextNode(" · "), b); }
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, action ? 5000 : isOG() ? 1800 : 2600);
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, action ? 5000 : 1800);
 }
 function toggleSave(it, btn){
   if (isSaved(it.id)) state.saved = state.saved.filter(x => x.id !== it.id);
@@ -3965,7 +3842,7 @@ function toggleSave(it, btn){
   if (btn){ btn.setAttribute("aria-pressed", String(on)); btn.innerHTML = on ? ICON_SAVED : ICON_SAVE; btn.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); }
   toast(on ? "Saved for later" : "Removed from Saved");
   renderChips();
-  if (view.saved && !on){ if (!state.saved.length && !isOG()){ view.saved = false; view.type = "all"; saveView(); renderChips(); } renderList(); }
+  if (view.saved && !on) renderList();
 }
 async function sharePost(it){
   const f = feedById(it.feedId);
@@ -3980,103 +3857,11 @@ async function sharePost(it){
   }catch(e){ if (e && /cancel|abort/i.test(String(e.message || e.name))) return; }
   try{ await navigator.clipboard.writeText(url); toast("Link copied"); }catch{ toast("Couldn't share this link"); }
 }
-function cardEl(it){
-  // The whole card is one link (a "stretched" link over the card); Save and Share sit above it
-  const a = el("article", "card");
-  if (state.read.has(it.id)) a.classList.add("read");
-  a.dataset.id = it.id;
-  queueMicrotask(() => watchLook(a));
-  const isPod = it.audioUrl && !it.videoId;
-  // An episode with no picture of its own shows the podcast's artwork
-  const podArt = isPod && !it.image ? (feedById(it.feedId) || {}).icon : null;
-  const pic = podArt ? {...it, image: podArt} : it;
-  const link = el(it.link ? "a" : "span", "cardlink");
-  if (it.link){ link.href = it.link; link.target = "_blank"; link.rel = "noopener noreferrer"; }
-  link.textContent = it.title;
-  if (isPod){ a.classList.add("pod"); a.setAttribute("aria-expanded", String(pod.open === it.id)); link.setAttribute("aria-label", it.title + ", podcast episode, show player"); }
-  const body = el("div");
-  body.style.minWidth = "0";
-  const meta = metaRow(it, false), flags = flagsEl(it);
-  if (!feedById(it.feedId) && it.feedTitle){ const src = meta.querySelector(".src"); if (src) src.textContent = it.feedTitle; }
-  // Where flags and Save/Share go: Magazine puts them on the picture (or in the top line without one);
-  // List puts them in a strip along the bottom of the card
-  const mag = design.layout === "magazine", hasImg = !!pic.image && design.thumbs !== "off";
-  let acts = null;
-  if (it.link || it.audioUrl){
-    acts = el("span", "cacts");
-    const sv = el("button", "cact"); sv.type = "button";
-    const on = isSaved(it.id);
-    sv.setAttribute("aria-pressed", String(on)); sv.setAttribute("aria-label", (on ? "Unsave " : "Save ") + it.title); sv.title = "Save for later";
-    sv.innerHTML = on ? ICON_SAVED : ICON_SAVE;
-    sv.onclick = e => { e.preventDefault(); e.stopPropagation(); toggleSave(it, sv); };
-    const sh = el("button", "cact"); sh.type = "button"; sh.setAttribute("aria-label", "Share " + it.title); sh.title = "Share";
-    sh.innerHTML = ICON_SHARE;
-    sh.onclick = e => { e.preventDefault(); e.stopPropagation(); sharePost(it); };
-    acts.append(sv, sh);
-    if (it.audioUrl && !it.videoId && CAN_DOWNLOAD){ const dlb = downloadBtn(it, true); acts.append(dlb); }
-  }
-  if (mag){ if (flags.childNodes.length) meta.append(flags); if (acts && !hasImg) meta.append(acts); }
-  const h = el("h2", "title"); h.append(link);
-  body.append(meta, h);
-  if (it.summary) body.append(el("p", "sum", it.summary));
-  if (it.audioUrl && !it.videoId) body.append(podFoot(it));
-  a.append(body);
-  if (pic.image){
-    const th = el("div", "thumb" + (it.videoId ? " vid" : ""));
-    const img = el("img"); img.loading = "lazy"; img.alt = ""; img.referrerPolicy = "no-referrer"; img.decoding = "async";
-    const tries = imageCandidates(pic);
-    let n = 0;
-    const next = () => { n++; if (n < tries.length) img.src = tries[n]; else {
-      th.remove();
-      // No picture after all: put Save/Share back where picture-less cards have them
-      if (acts && mag && acts.parentNode !== meta){
-        acts.classList.remove("onimg");
-        const t = a.querySelector("time.ago"); if (t){ t.classList.remove("ago"); meta.querySelector(".src")?.after(el("span", null, "·"), t); }
-        meta.append(acts);
-      }
-    } };
-    img.onerror = next;
-    img.onload = () => {
-      if (img.naturalWidth && img.naturalWidth <= 120 && n < tries.length - 1) return next();   // e.g. YouTube's "no HD thumbnail" placeholder
-      if (!it.videoId) th.classList.add("shaped");   // Magazine shows the whole picture, not a 16:9 crop
-    };
-    img.src = tries[0];
-    th.append(img); a.append(th);
-    if (it.audioUrl && !it.videoId){
-      const pb = el("button", "podplay"); pb.type = "button"; pb.dataset.podBadge = it.id;
-      pb.innerHTML = ICONS.play; pb.setAttribute("aria-label", "Play " + it.title);
-      pb.onclick = e => { e.preventDefault(); e.stopPropagation(); playEpisode(it); };
-      th.append(pb);
-    }
-    if (mag && acts && hasImg){
-      acts.classList.add("onimg"); th.append(acts);
-      // The age moves onto the picture too, in its own pill at the top left
-      const t = meta.querySelector("time");
-      if (t){ const dotSep = t.previousSibling; t.classList.add("ago"); th.append(t); if (dotSep && dotSep.textContent === "·") dotSep.remove(); }
-    }
-  }
-  if (!mag){
-    // List: flags along the bottom of the text; Save/Share at the card's right edge, under the picture if there is one
-    const strip = el("div", "cstrip"); strip.append(flags);
-    body.append(strip);
-    if (acts) strip.append(acts);
-  }
-  link.addEventListener("click", e => {
-    state.read.add(it.id); save(); a.classList.add("read"); renderChips();
-    if (isPod){ e.preventDefault(); togglePodPanel(it); return; }
-    if (it.videoId && state.videoInApp){ e.preventDefault(); if (isWide()) openItem(it.id); else playInCard(a, it); return; }
-    if (state.keepInBrowser && it.link){
-      const intent = browserIntent(it.link);
-      if (intent){ e.preventDefault(); location.href = intent; }
-    }
-  });
-  return a;
-}
 // What the list shows: single stories, or (with stacking on) one stack per source
 const STACK_SHOW = 2, STACK_STEP = 10;
 function listUnits(){
   const items = visibleItems();
-  if (design.stack !== "on" || shortsGrid() || isOG()) return items.map(it => ({it}));
+  return items.map(it => ({it}));
   const groups = new Map();
   for (const it of items){
     let g = groups.get(it.feedId);
@@ -4085,7 +3870,7 @@ function listUnits(){
   }
   return [...groups.values()].map(g => g.items.length === 1 ? {it: g.items[0]} : {group: g});
 }
-const unitEl = u => u.it ? (isOG() ? (shortsGrid() ? ogShort(u.it) : ogCard(u.it)) : cardEl(u.it)) : stackEl(u.group);
+const unitEl = u => shortsGrid() ? ogShort(u.it) : ogCard(u.it);
 // A Short in the Off-grid grid: the tall picture, then source, age and title; tap opens it upright, full screen
 function ogShort(it){
   const a = el("article", "card og ogshort"); a.dataset.id = it.id;
@@ -4110,13 +3895,11 @@ function ogShort(it){
 /* ---------- Off-grid look (Settings → Look → Style) ----------
    From the Nov 2026 design canvas, option E: a black side bar for the controls, the feed in colour slabs
    (yellow, black, pink) with the source's logo shaped by type, big uppercase headlines, and one clear action. */
-const isOG = () => true;            // one layout now (Colourful or Basic); the old Classic layout code is unused
 const isBasic = () => design.look === "basic";
-const OG_PARKED = ["#manage", ".top .brand", "#savedBtn", "#nowBtn", "#refresh", "#statusPop", "#activeFilter", "#filterBtn", "#filterBox"];
+const OG_PARKED = ["#manage", ".top .brand", "#savedBtn", "#nowBtn", "#refresh", "#statusPop", "#activeFilter", "#filterBtn"];
 function placeLook(){
-  const on = isOG();
   let rail = $("#ogRail"), bar = $("#ogBar");
-  if (on && !rail){
+  if (!rail){
     rail = el("nav", "ograil"); rail.id = "ogRail"; rail.setAttribute("aria-label", "YourFeed controls");
     const st = el("button", "og-status"); st.type = "button"; st.id = "ogStatus";
     st.onclick = e => { e.stopPropagation(); if (dlg.open) closeMenu(); openReport(); };
@@ -4143,21 +3926,19 @@ function placeLook(){
     const n = document.querySelector(sel) || document.querySelector("[data-og='" + sel + "']");
     if (!n) return;
     if (!n.dataset.og){ n.dataset.og = sel; const mark = document.createComment("og:" + sel); n.before(mark); n._ogHome = mark; }
-    if (on){
-      if (sel === ".top .brand") rail.querySelector(".og-brandslot").append(n);
-      else if (["#filterBtn"].includes(sel)) bar.prepend(n);
-      else if (["#activeFilter", "#statusPop", "#filterBox"].includes(sel)) bar.append(n);
-      else $("#ogTools").append(n);
-    } else if (n._ogHome) n._ogHome.after(n);
+    if (sel === ".top .brand") rail.querySelector(".og-brandslot").append(n);
+    else if (["#filterBtn"].includes(sel)) bar.prepend(n);
+    else if (["#activeFilter", "#statusPop"].includes(sel)) bar.append(n);
+    else $("#ogTools").append(n);
   });
-  rail.hidden = bar.hidden = !on;
-  document.body.classList.toggle("og", on);
+  rail.hidden = bar.hidden = false;
+  document.body.classList.add("og");
   if (!state.activeId && $("#pane")) renderPaneEmpty();
-  if (on && !store.get("yf.thumbAsked", 0) && !isWide()) setTimeout(ogThumb, 900);
+  if (!store.get("yf.thumbAsked", 0) && !isWide()) setTimeout(ogThumb, 900);
 }
 // Asked once, the first time Off-grid is used: which side should the bar sit?
 function ogThumb(){
-  if (!isOG() || $("#ogThumb") || store.get("yf.thumbAsked", 0)) return;
+  if ($("#ogThumb") || store.get("yf.thumbAsked", 0)) return;
   // Not on top of the first-run screens: wait until there's a feed and the tour is over
   if (!state.feeds.length || document.querySelector(".spot, dialog.onboard[open]") || (typeof dlg !== "undefined" && dlg.open)){ setTimeout(ogThumb, 5000); return; }
   store.set("yf.thumbAsked", 1);
@@ -4171,7 +3952,7 @@ function ogThumb(){
   // Not from anything that scrolls sideways (the Trending bar, video rows, topic boxes): swiping along it with a
   // slight downward drift was checking the feed. The gesture must also be clearly downward before it counts.
   const SIDEWAYS = ".trendstrip, .trow, .tp-opts, .tp-scroll, .shortgrid, .og-vrow, [data-noswipe]";
-  const ready = () => isOG() && scrollY <= 0 && !dlg.open && !$("#ogFilter") && !$("#ogVideo") && !document.querySelector(".og-sheet");
+  const ready = () => scrollY <= 0 && !dlg.open && !$("#ogFilter") && !$("#ogVideo") && !document.querySelector(".og-sheet");
   addEventListener("touchstart", e => {
     const ok = ready() && e.touches.length === 1 && $("#list").contains(e.target) && !(e.target.closest && e.target.closest(SIDEWAYS));
     y0 = ok ? e.touches[0].clientY : null; x0 = ok ? e.touches[0].clientX : 0; pulled = false; dir = "";
@@ -4188,7 +3969,7 @@ function ogThumb(){
   addEventListener("touchend", () => { if (strip){ strip.remove(); strip = null; } if (pulled && y0 != null && dir === "down" && !state.busy) $("#refresh").click(); y0 = null; pulled = false; dir = ""; }, {passive: true});
   addEventListener("touchcancel", () => { if (strip){ strip.remove(); strip = null; } y0 = null; pulled = false; dir = ""; }, {passive: true});
 }
-addEventListener("offline", () => { paintHealth(); if (isOG()) toast("YOU'RE OFFLINE"); });
+addEventListener("offline", () => { paintHealth(); toast("YOU'RE OFFLINE"); });
 addEventListener("online", () => paintHealth());
 function paintOgNew(){
   const bar = $("#ogBar"); if (!bar) return;
@@ -4204,8 +3985,7 @@ function ogReset(){
   Object.assign(view, {type: "all", source: "all", unread: false, saved: false, from: VIEW_DEFAULT.from, sort: VIEW_DEFAULT.sort, q: ""});
   { const w = $("#ogWords"); if (w) w.value = ""; }
   saveView(); state.shown = PAGE; snapLooked();
-  if (typeof closeFilterBox === "function" && !$("#filterBox").hidden) closeFilterBox(true);
-  renderChips(); renderStatus(); renderList(); renderFilterBar(); renderFilterBox(); scrollFeedTop();
+  renderChips(); renderStatus(); renderList(); renderFilterBar(); scrollFeedTop();
 }
 // Long press on a slab: three quick choices
 function ogSheet(it){
@@ -4721,52 +4501,6 @@ function ogCard(it){
   a.addEventListener("contextmenu", e => e.preventDefault());
   return a;
 }
-function stackEl(g){
-  const f = feedById(g.feedId) || {title: "Feed", color: "#888"};
-  const total = g.items.length, fresh = g.items.filter(isNew).length;
-  const box = el("section", "stack"); box.setAttribute("aria-label", `${f.title}, ${total} stories`);
-  const head = el("div", "stack-head");
-  const d = iconFor(feedById(g.feedId), 18);
-  head.append(d, el("span", "nm", f.title || "Feed"), fresh ? el("span", "n new", fresh + " new") : el("span", "n", String(total)));
-  box.append(head);
-  const shown = Math.min(total, state.stackShown[g.feedId] || STACK_SHOW);
-  // Put a stack back to its first two stories, keeping its heading in view
-  const collapse = () => {
-    state.stackShown[g.feedId] = STACK_SHOW;
-    const fresh = stackEl(g); box.replaceWith(fresh);
-    if (!isWide() && state.activeId) placeInline();
-    placePodPanel();
-    if (fresh.getBoundingClientRect().top < 0) fresh.scrollIntoView({block: "start"});
-  };
-  if (shown > STACK_SHOW){
-    const c = el("button", "stack-close", "Show fewer"); c.type = "button";
-    c.setAttribute("aria-label", `Show fewer from ${f.title}`); c.onclick = collapse;
-    head.append(c);
-  }
-  g.items.slice(0, shown).forEach(it => box.append(cardEl(it)));
-  if (total > STACK_SHOW){
-    const more = total - shown;
-    const b = el("button", "stack-more", more ? `Show ${Math.min(more, STACK_STEP)} more from ${f.title}` + (more > STACK_STEP ? ` (${more} left)` : "") : `Show fewer from ${f.title}`);
-    b.type = "button"; b.setAttribute("aria-expanded", String(!more));
-    b.onclick = () => {
-      if (!more) return collapse();
-      // Open the next stories below where you are: the first new story takes the button's place on screen
-      const y = b.getBoundingClientRect().top;
-      state.stackShown[g.feedId] = shown + STACK_STEP;
-      const fresh = stackEl(g);
-      // Keep the stories already on screen (and their loaded pictures), so nothing above moves
-      const olds = [...box.querySelectorAll(":scope > .card")], news = [...fresh.querySelectorAll(":scope > .card")];
-      olds.forEach((o, i) => { if (news[i] && news[i].dataset.id === o.dataset.id) news[i].replaceWith(o); });
-      box.replaceWith(fresh);
-      if (!isWide() && state.activeId) placeInline();
-      placePodPanel();
-      const first = fresh.querySelectorAll(".card")[shown];
-      if (first){ const d = first.getBoundingClientRect().top - y; window.scrollBy(0, d); $("#list").scrollTop += d; }
-    };
-    box.append(b);
-  }
-  return box;
-}
 const shortsGrid = () => view.type === "videos" && view.vkind === "shorts" && !state.hideShorts;
 // The Videos | Shorts switch at the top of the Videos tab (only when there are Shorts)
 function videoSwitch(){
@@ -4786,7 +4520,7 @@ function videoSwitch(){
 // If Android closes YourFeed in the background while a story is open in the browser tab, it starts again from
 // scratch when you come back. Remember the story at the top of the screen and go back to it (within 30 minutes).
 function firstOnScreen(){
-  const bar = isOG() ? (($("#ogBar") || {}).getBoundingClientRect?.().bottom || 0) : 0;
+  const bar = ($("#ogBar") || {}).getBoundingClientRect?.().bottom || 0;
   for (const c of document.querySelectorAll("#list > .card[data-id]")){ const r = c.getBoundingClientRect(); if (r.bottom > bar + 1) return {id: c.dataset.id, off: r.top}; }
   return null;
 }
@@ -4813,7 +4547,7 @@ setTimeout(restorePlace, 400);
 // Redrawing the feed keeps your place: the first story on screen stays where it was. Views that should start at
 // the top (a new filter, a topic, Saved) call scrollFeedTop() themselves afterwards.
 function renderList(){
-  const bar = isOG() ? (($("#ogBar") || {}).getBoundingClientRect?.().bottom || 0) : 0;
+  const bar = ($("#ogBar") || {}).getBoundingClientRect?.().bottom || 0;
   let anchor = null, top = 0;
   const y = window.scrollY;
   if (y > 0){
@@ -4839,11 +4573,11 @@ function renderListNow(){
   const all = listUnits();
   if (!all.length){
     const e = el("div", "empty");
-    if (isOG() && view.saved && !state.saved.length){
+    if (view.saved && !state.saved.length){
       e.append(el("h3", null, "Nothing saved"), el("p", null, "Tap SAVE on any story to keep it here."));
       list.append(e); return;
     }
-    if (state.busy && !state.items.length && isOG()){
+    if (state.busy && !state.items.length){
       for (let k = 0; k < 3; k++){ const sk = el("article", "card og skel"); sk.setAttribute("aria-hidden", "true");
         const tp = el("div", "og-top"); tp.append(el("span", "og-logo square"), el("div", "og-pic")); sk.append(tp, el("div", "og-src", "LOADING"), el("div", "og-tag", "…")); list.append(sk); }
       return;
@@ -4929,7 +4663,7 @@ function continueListening(){
 }
 function addSentinel(total){
   const list = $("#list");
-  if (state.shown >= total){ list.append(el("div", "more", isOG() ? "END OF THE LIST. THAT IS ALL OF IT." : "You're all caught up")); return; }
+  if (state.shown >= total){ list.append(el("div", "more", "END OF THE LIST. THAT IS ALL OF IT.")); return; }
   const s = el("div", "more", "Loading more…"); list.append(s);
   io = new IntersectionObserver(es => {
     if (!es.some(e => e.isIntersecting)) return;
@@ -4950,24 +4684,8 @@ function markActive(){
 
 /* ---------- viewer ---------- */
 const ICON_EXT = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>';
-const ICON_X = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 let viewerEl = null;
 
-function openItem(id){
-  const it = itemById(id); if (!it) return;
-  if (!isWide() && state.activeId === id){ closeViewer(); return; }
-  state.activeId = id;
-  state.read.add(id); save();
-  markActive();
-  viewerEl = buildViewer(it);
-  if (isWide()){
-    $("#pane").replaceChildren(viewerEl);
-  } else {
-    placeInline();
-    const card = cardFor(id);
-    if (card) requestAnimationFrame(() => card.scrollIntoView({block: "start", behavior: matchMedia("(prefers-reduced-motion:reduce)").matches ? "auto" : "smooth"}));
-  }
-}
 const cardFor = id => [...document.querySelectorAll(".card")].find(c => c.dataset.id === id);
 function placeInline(){
   document.querySelectorAll(".inline").forEach(n => n.remove());
@@ -5005,23 +4723,6 @@ addEventListener("message", e => {
 const vidSeen = new IntersectionObserver(entries => entries.forEach(en => {
   if (!en.isIntersecting || en.intersectionRatio < 0.25){ const f = en.target.querySelector("iframe"); if (f) ytCmd(f, "pauseVideo"); }
 }), {threshold: [0, 0.25]});
-function playInCard(card, it){
-  if (card.classList.contains("vplaying")){ stopCardVideos(); return; }
-  stopCardVideos(card);
-  if (pod.item && !pod.audio.paused) pod.audio.pause();
-  const box = el("div", "vbox"), f = el("iframe");
-  f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1`;
-  f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-  f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
-  // In the app: short clips (under 3 minutes, mostly Shorts) stay upright in full screen; longer videos turn to landscape
-  // In the app, full screen turns the phone to landscape, except for Shorts (upright videos)
-  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!isShortItem(it)); }catch{}
-  if (isShortItem(it)) box.classList.add("tall");   // Shorts play upright
-  watchVideo(f);
-  box.append(f); card.prepend(box); card.classList.add("vplaying");
-  vidSeen.observe(box);
-  requestAnimationFrame(() => { const r = card.getBoundingClientRect(); if (r.top < 0 || r.top > innerHeight * 0.5) card.scrollIntoView({block: "start", behavior: "smooth"}); });
-}
 // Full screen: remember which card, and on the way out pause it and put it back where it was on screen
 let fsCard = null, fsTop = 0;
 window.yfVideoEnter = () => { fsCard = document.querySelector(".card.vplaying"); fsTop = fsCard ? fsCard.getBoundingClientRect().top : 0; };
@@ -5044,40 +4745,7 @@ function closeViewer(){
   renderPaneEmpty(); markActive();
 }
 function renderPaneEmpty(){
-  if (isOG()){ const p = el("div", "og-paneempty"); p.append(el("h2", null, "Pick something")); $("#pane").replaceChildren(p); return; }
-  const p = el("div", "pane-empty");
-  p.innerHTML = '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" style="color:var(--accent)"><path d="M2 8c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 13c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/><path d="M2 18c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.5 5-1"/></svg>';
-  p.append(el("h2", null, "Pick a story from the feed"));
-  const t = el("p"); t.innerHTML = 'Stories load here, right beside your feed. Tap <b>Open</b> on any story to view it in a new tab instead. Use <kbd>J</kbd> and <kbd>K</kbd> to move through stories.';
-  p.append(t);
-  $("#pane").replaceChildren(p);
-}
-function buildViewer(it){
-  const v = el("div", "viewer");
-  const bar = el("div", "vbar");
-  bar.append(metaRow(it));
-  const body = el("div", "vbody");
-  if (!it.videoId && READER_ENABLED){
-    const seg = el("div", "seg"); seg.setAttribute("role", "group"); seg.setAttribute("aria-label", "View mode");
-    const mode = state.modes[it.id] || "reader";
-    [["reader", "Reader"], ["live", "Live"]].forEach(([m, label]) => {
-      const b = el("button", null, label); b.type = "button";
-      b.setAttribute("aria-pressed", String(mode === m));
-      b.onclick = () => {
-        state.modes[it.id] = m;
-        seg.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
-        renderBody(it, body);
-      };
-      seg.append(b);
-    });
-    bar.append(seg);
-  }
-  const x = el("button", "btn icon"); x.type = "button"; x.setAttribute("aria-label", "Close"); x.innerHTML = ICON_X;
-  x.onclick = closeViewer;
-  bar.append(x);
-  v.append(bar, body);
-  renderBody(it, body);
-  return v;
+  const p = el("div", "og-paneempty"); p.append(el("h2", null, "Pick something")); $("#pane").replaceChildren(p);
 }
 function renderBody(it, body){
   body.textContent = "";
@@ -5112,69 +4780,8 @@ function renderBody(it, body){
   }
   loadReader(it, body);
 }
-// Strip the parts of a page that are never the article, while class and id names are still there to go on
-const NOT_ARTICLE = [
-  "script","style","noscript","iframe","form","nav","header","footer","aside","dialog","button","svg","template",
-  "[role=navigation]","[role=banner]","[role=contentinfo]","[role=complementary]","[role=dialog]","[role=search]","[aria-hidden=true]",
-  "[class*=comment i]","[id*=comment i]","[class*=related i]","[id*=related i]","[class*=share i]","[class*=social i]",
-  "[class*=newsletter i]","[class*=subscribe i]","[class*=promo i]","[class*=advert i]","[class*=ad-slot i]","[class*=sponsor i]",
-  "[class*=sidebar i]","[id*=sidebar i]","[class*=cookie i]","[id*=cookie i]","[class*=consent i]","[class*=paywall i]",
-  "[class*=recommend i]","[class*=most-read i]","[class*=mostread i]","[class*=trending i]","[class*=breadcrumb i]",
-  "[class*=byline-share i]","[class*=author-bio i]","[class*=popup i]","[class*=modal i]","[class*=signup i]","[data-component*=links i]"
-].join(",");
-function pruneDoc(doc){
-  const total = (doc.body && doc.body.textContent.length) || 1;
-  doc.querySelectorAll(NOT_ARTICLE).forEach(n => {
-    if (!doc.body.contains(n)) return;
-    // never remove the article itself, or anything holding a large share of the page's text
-    if (n === doc.body || n.matches("article, main") || n.querySelector("article, main")) return;
-    if (!/^(SCRIPT|STYLE|NOSCRIPT|IFRAME|SVG|TEMPLATE)$/i.test(n.tagName) && n.textContent.length > total * 0.4) return;
-    n.remove();
-  });
-}
-// Pages that are a security check, block or paywall rather than the article
-const BLOCK_PAGE = /banned your ip|has banned|you have been blocked|sorry, you have been blocked|cloudflare ray id|ray id:|error 10(0[0-9]|1[0-9]|20)\b|used cloudflare to restrict|security service to protect itself|just a moment|attention required|checking (your|if the site connection is secure|your browser)|verify (you are|you're) (a )?human|are you a robot|enable javascript and cookies|access denied|request blocked|unusual traffic|captcha|cf-chl|subscribe to (continue|read)|to continue reading|already a subscriber|log in to continue|sign in to continue/i;
 const blocked = msg => Object.assign(new Error(msg || "This site has extra security that stops Reader from loading it"), {blocked: true});
 const isBlockStatus = e => e && (e.blocked || /error (401|402|403|429|451|503)\b/.test(e.message || ""));
-function extractArticle(html, link){
-  const head = (html.match(/<title[^>]*>([^<]*)/i) || [])[1] || "";
-  if (BLOCK_PAGE.test(head) || (html.length < 60000 && BLOCK_PAGE.test(html.replace(/<script[\s\S]*?<\/script>/gi, "").slice(0, 20000)) && !/<article/i.test(html))) throw blocked();
-  if (typeof Readability !== "function") throw new Error("The reader tool didn't load");
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const base = doc.createElement("base"); base.href = link; doc.head.prepend(base);
-  const backup = doc.cloneNode(true);
-  pruneDoc(doc);
-  let parsed = new Readability(doc, {charThreshold: 300}).parse();
-  const ok = x => x && x.content && (x.textContent || "").trim().length >= 200;
-  if (!ok(parsed)) parsed = new Readability(backup, {charThreshold: 300}).parse();   // pruning went too far: try the full page
-  if (!ok(parsed)) throw new Error("This page doesn't have a readable article");
-  const t = (parsed.textContent || "").trim();
-  if (t.length < 1500 && BLOCK_PAGE.test(t.slice(0, 1200))) throw blocked();
-  return parsed;
-}
-// Small Markdown converter, used if the Markdown library fails to load
-function miniMarkdown(md){
-  const esc = t => t.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-  const inline = t => esc(t)
-    .replace(/!\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (m, a, u) => /^https?:/.test(u) ? `<img alt="${a}" src="${u}">` : "")
-    .replace(/\[([^\]]*)\]\(([^)\s]+)[^)]*\)/g, (m, a, u) => /^https?:/.test(u) ? `<a href="${u}">${a}</a>` : a)
-    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-    .replace(/(^|[\s(])[*_]([^*_]+)[*_]/g, "$1<em>$2</em>")
-    .replace(/`([^`]+)`/g, "<code>$1</code>");
-  return md.replace(/\r/g, "").split(/\n\s*\n/).map(block => {
-    const b = block.trim(); if (!b) return "";
-    const h = b.match(/^(#{1,6})\s+(.*)$/s);
-    if (h && !b.includes("\n")) return `<h${h[1].length}>${inline(h[2])}</h${h[1].length}>`;
-    const lines = b.split("\n");
-    if (lines.every(l => /^\s*([*+-]|\d+\.)\s+/.test(l) || /^\s{2,}\S/.test(l))){
-      const tag = /^\s*\d+\./.test(lines[0]) ? "ol" : "ul";
-      return `<${tag}>` + lines.filter(l => /^\s*([*+-]|\d+\.)\s+/.test(l)).map(l => "<li>" + inline(l.replace(/^\s*([*+-]|\d+\.)\s+/, "")) + "</li>").join("") + `</${tag}>`;
-    }
-    if (lines.every(l => /^>/.test(l))) return "<blockquote><p>" + inline(lines.map(l => l.replace(/^>\s?/, "")).join(" ")) + "</p></blockquote>";
-    if (/^[-*_]{3,}$/.test(b)) return "<hr>";
-    return "<p>" + inline(lines.join(" ")) + "</p>";
-  }).join("\n");
-}
 // Reader view is off (READER_ENABLED): no outside reader services are used.
 async function getArticle(){ throw new Error("The reader is off"); }
 // Remove leftovers that aren't the article: menus, share bars, comments, "related" blocks.
@@ -5334,7 +4941,6 @@ function noteRedditFailure(f){
   const rs = state.feeds.filter(isRedditFeed), failing = rs.filter(g => g.redditFail && Date.now() - g.redditFail < 86400000);
   if (failing.length >= Math.min(2, rs.length)){ store.set("yf.redditGone", Date.now()); renderStatus(); renderAttention(); }
 }
-function redditRetry(){ store.set("yf.redditGone", 0); state.feeds.filter(isRedditFeed).forEach(f => { delete f.redditFail; f.nextCheck = 0; }); save(); refreshAll(); }
 // Crash guard: remember which sources are loading. If the app is closed mid-load (a crash), those sources are
 // suspects; one that was loading during two crashes is paused until checked by hand (Source health → Check)
 const inflight = new Set();
@@ -5464,7 +5070,7 @@ async function refreshAllInner(force){
   const results = [];
   // Progress for the Off-grid status line ("CHECKING 12/48")
   state.progress = {done: 0, total: due.length};
-  const counted = async f => { try{ return await fetchFeedNow(f); } finally { state.progress.done++; if (isOG()) paintHealth(); } };
+  const counted = async f => { try{ return await fetchFeedNow(f); } finally { state.progress.done++; paintHealth(); } };
   for (const f of suspects) results.push(await counted(f));
   results.push(...await pool(due.slice(suspects.length), 4, counted));
   state.progress = null;
@@ -5486,8 +5092,8 @@ async function refreshAllInner(force){
   const keepScroll = $("#list").scrollTop;
   // A video playing in a card would stop if the list were redrawn: wait until it's closed
   // Off-grid: never move the list under someone reading further down; offer the new stories instead
-  const readingDown = isOG() && (window.scrollY || $("#list").scrollTop) > 400;
-  if (isOG()){ toast(added ? `${added} NEW ${added === 1 ? "STORY" : "STORIES"}` : "NOTHING NEW"); }
+  const readingDown = (window.scrollY || $("#list").scrollTop) > 400;
+  toast(added ? `${added} NEW ${added === 1 ? "STORY" : "STORIES"}` : "NOTHING NEW");
   if (readingDown && added){ state.ogNew = (state.ogNew || 0) + added; paintOgNew(); }
   else if (videoInList()) state.listStale = true; else renderList();
   $("#list").scrollTop = keepScroll;
@@ -5545,7 +5151,7 @@ function feedSub(f){
   if (isPrivateFeed(f) && !IS_APP && !f.webOk){ sub.append(el("span", "url", "Private: updates in the YourFeed app")); return sub; }
   if (isRedditFeed(f)){ sub.append(el("span", "er", "Reddit no longer offers feeds")); return sub; }
   if (f.paused){ sub.append(el("span", null, "Paused · not being checked")); return sub; }
-  if (isTroubled(f)){ sub.append(el("span", "er", isOG() ? "NOT WORKING · TAP EDIT FOR WHY" : "Needs a look")); return sub; }
+  if (isTroubled(f)){ sub.append(el("span", "er", "NOT WORKING · TAP EDIT FOR WHY")); return sub; }
   const bits = [state.organise === "type" ? folderOf(f) : platformOf(f)];
   if (f.lastFetched) bits.push("checked " + ago(f.lastFetched));
   sub.append(el("span", "url", bits.join(" · ")));
@@ -5860,8 +5466,8 @@ function feedRow(f, pickRow){
     removeFeed(f);
   };
   if (isRedditFeed(f)){ rm.classList.add("danger"); rm.textContent = "Remove"; }
-  if (isOG()){ ed.textContent = "EDIT"; ed.className = "og-edit"; }
-  acts.append(ed); if (!isOG() || isRedditFeed(f)) acts.append(rm);
+  ed.textContent = "EDIT"; ed.className = "og-edit";
+  acts.append(ed); if (isRedditFeed(f)) acts.append(rm);
   li.append(pickRow("feed:" + f.id, f.color, f.title || "Untitled feed", feedSub(f)), acts);
   return li;
 }
@@ -5882,7 +5488,7 @@ function folderField(cur){
   return {node: fF, value: () => sel.value === "\u0000new" ? (makeFolder(nf.value) || cur) : sel.value};
 }
 // The Off-grid EDIT FEED screen (from a feed's EDIT): one feed, drawn like the FEEDS panel, CANCEL / SAVE footer
-const ogEditScreen = () => isOG() && dlg.open && dlg.dataset.mode === "edit";
+const ogEditScreen = () => dlg.open && dlg.dataset.mode === "edit";
 const startPoint = f => !f ? 0 : typeof f.startAt === "number" ? f.startAt : sourceType(f) === "Audio" ? store.get("yf.startAtOld", 0) : 0;
 const START_POINTS = [[0, "Start"], [30, "0:30"], [60, "1:00"], [90, "1:30"], [120, "2:00"], [180, "3:00"]];
 function editForm(f){
@@ -5936,7 +5542,7 @@ function editForm(f){
     const showWeb = () => { webF.hidden = !(privC.checked || autoPriv); }; privC.addEventListener("change", showWeb); showWeb();
   }
   form.append(nameF, folder.node, urlF, privF, ...(webF ? [webF] : []), diag, colF, msg, row);
-  if (isOG()){
+  {
     // LOGO row (applies at once) and PAUSE
     const lg = el("div", "og-logorow");
     const tile = () => { const t = ogLogo(f, "square"); t.tabIndex = -1; t.onclick = null; t.setAttribute("aria-hidden", "true"); return t; };
@@ -6075,7 +5681,7 @@ function openMenu(tab){
   if ($("#addInput").value || search.q){ $("#addInput").value = ""; $("#addBtn").textContent = "Add"; search.q = ""; search.seq++; renderTopResults(); }
   if (editingId){ editingId = null; renderFeedList(); }
   dlg.classList.remove("closing");
-  if (isOG()){ closeOgFilter(); if (!dlg.open) dlg.show(); } else dlg.showModal();
+  closeOgFilter(); if (!dlg.open) dlg.show();
   // Don't open the keyboard by itself: focus the menu, not the search box
   if (document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)){ document.activeElement.blur(); dlg.tabIndex = -1; dlg.focus({preventScroll: true}); }
   $("#manage").setAttribute("aria-expanded", String(mode === "settings"));
@@ -6106,7 +5712,6 @@ function ogSetPage(d){
   if (d){ d.open = true; ps.scrollTop = 0; dlg.querySelector(".dlg").scrollTop = 0; $("#ogSetBack").focus({preventScroll: true}); }
 }
 document.querySelectorAll(".setfold > summary").forEach(sm => sm.addEventListener("click", e => {
-  if (!isOG()) return;
   e.preventDefault(); const d = sm.parentElement; ogSetPage(d.open ? null : d);
 }));
 $("#dlgClose").onclick = closeMenu;
@@ -7392,7 +6997,6 @@ function serviceBar(onPick){
 const pillLoading = p => { const P = PILLS.find(x => x.key === p); return !!P && P.from.some(k => search.status[k] === "loading"); };
 const pillError = p => { const P = PILLS.find(x => x.key === p); return !!P && P.from.every(k => search.status[k] === "error"); };
 const KIND_LABEL = {web: "Website", youtube: "YouTube", reddit: "Reddit", podcasts: "Podcast", news: "News topic", bluesky: "Bluesky", mastodon: "Mastodon", flipboard: "Flipboard", lemmy: "Lemmy", peertube: "PeerTube"};
-const decodeAmp = u => (u || "").replace(/&amp;/g, "&");
 
 async function searchWebAll(q){
   const local = searchDirectory(q).map(r => ({...r, kind: r.viaNews ? "news" : "web", suggested: true}));
@@ -7404,64 +7008,6 @@ async function searchWebAll(q){
 }
 async function searchYouTubeAll(q){
   return (await searchYouTube(q)).map(r => ({...r, kind: "youtube"}));
-}
-// Does r/<words without spaces> exist? e.g. "gunners" → r/Gunners
-async function redditExact(q){
-  const name = q.replace(/^r\//i, "").replace(/[^\w]/g, "");
-  if (name.length < 2) return null;
-  const j = await getJSON(`https://www.reddit.com/r/${name}/about.json`, 10000);
-  const d = j && j.data; if (!d || !d.display_name || d.over18) return null;
-  return {kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/.rss`,
-    website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
-    followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")), exact: true};
-}
-async function searchReddit(q){
-  if (redditGone()) return [];
-  let [ex, list] = await Promise.all([redditExact(q).catch(() => null), searchRedditList(q).catch(() => [])]);
-  const name = q.replace(/^r\//i, "").replace(/[^\w]/g, "");
-  if (!ex && name.length >= 2 && !list.some(r => r.title.toLowerCase() === "r/" + name.toLowerCase())){
-    // Reddit couldn't be asked directly: still offer the obvious subreddit; adding it checks it exists
-    ex = {kind: "reddit", title: "r/" + name, url: `https://www.reddit.com/r/${name}/.rss`, website: `https://www.reddit.com/r/${name}/`,
-      site: "Subreddit · tap to check it's the right one", exact: true};
-  }
-  const rest = list.filter(r => !ex || r.url.toLowerCase() !== ex.url.toLowerCase()).map(r => ex ? {...r, exact: false} : r);
-  return ex ? [ex, ...rest] : rest;
-}
-async function searchRedditList(q){
-  // Reddit's JSON search is often refused to apps and cloud servers; its RSS version of the same search usually isn't
-  const [j, r] = await Promise.all([searchRedditDirect(q).catch(() => []), searchRedditRss(q).catch(() => [])]);
-  const seen = new Set(j.map(x => x.url.toLowerCase()));
-  return [...j, ...r.filter(x => !seen.has(x.url.toLowerCase()))];
-}
-async function searchRedditRss(q){
-  const name = q.replace(/^r\//i, "").replace(/\s+/g, "");
-  const xml = await fetchFeedText("https://www.reddit.com/subreddits/search.rss?include_over_18=0&limit=25&q=" + encodeURIComponent(q), 12000);
-  const doc = new DOMParser().parseFromString(xml, "application/xml");
-  const out = [];
-  for (const e of [...doc.getElementsByTagName("entry")]){
-    const l = [...e.getElementsByTagName("link")].map(x => x.getAttribute("href") || "").find(h => /\/r\/\w+/.test(h)) || "";
-    const sub = (l.match(/\/r\/(\w+)/) || [])[1]; if (!sub) continue;
-    const head = (e.getElementsByTagName("title")[0] || {}).textContent || "";
-    const body = htmlToText(((e.getElementsByTagName("content")[0] || {}).textContent || "")).replace(/\s+/g, " ").trim();
-    if (/\bnsfw\b|over ?18/i.test(head + " " + body)) continue;
-    out.push({kind: "reddit", title: "r/" + sub, url: `https://www.reddit.com/r/${sub}/.rss`, website: `https://www.reddit.com/r/${sub}/`,
-      site: head && head.toLowerCase() !== sub.toLowerCase() && head.toLowerCase() !== "r/" + sub.toLowerCase() ? head : "",
-      desc: body.slice(0, 160), exact: sub.toLowerCase() === name.toLowerCase()});
-  }
-  return out;
-}
-async function searchRedditDirect(q){
-  const out = [];
-  const name = q.replace(/^r\//i, "").replace(/\s+/g, "");
-  const j = await getJSON("https://www.reddit.com/subreddits/search.json?include_over_18=0&limit=25&q=" + encodeURIComponent(q));
-  for (const c of (j.data && j.data.children) || []){
-    const d = c.data || {}; if (!d.display_name || d.over18) continue;
-    out.push({kind: "reddit", title: d.display_name_prefixed || "r/" + d.display_name, url: `https://www.reddit.com/r/${d.display_name}/.rss`,
-      website: `https://www.reddit.com/r/${d.display_name}/`, site: d.title || "", desc: htmlToText(d.public_description || ""),
-      followers: d.subscribers || 0, icon: safeUrl(decodeAmp(d.community_icon || d.icon_img || "")),
-      exact: d.display_name.toLowerCase() === name.toLowerCase()});
-  }
-  return out.sort((a, b) => (b.exact ? 1 : 0) - (a.exact ? 1 : 0));
 }
 async function searchPodcasts(q){
   const j = await getJSON("https://itunes.apple.com/search?media=podcast&entity=podcast&limit=25&country=GB&term=" + encodeURIComponent(q));
@@ -7865,7 +7411,7 @@ function applyDesign(){
   else { r.style.setProperty("--og-paper", design.paper || "#FFE600"); r.style.setProperty("--og-hot", hot || "#FF6FB5"); }
   try{ placeLook(); }catch(e){ console.warn(e); }
   const meta = document.querySelector('meta[name="theme-color"]');
-  const bg = isOG() ? "#000000" : (getComputedStyle(r).getPropertyValue("--bg").trim() || "#edf0f3");
+  const bg = "#000000";
   if (meta) meta.content = bg;
   // In the app: Android's status and navigation bars take the page background (not orange), with matching icons
   try{
@@ -7878,11 +7424,11 @@ function applyDesign(){
 function saveDesign(){ store.set("tl.design", design); applyDesign(); }
 function renderDesign(){
   const rows = $("#designRows"); rows.textContent = "";
-  const OG_ROWS = ["look", "rail", "paper", "hot", "thumbs", "sum", "scale"], CLASSIC_HIDE = ["rail", "paper", "hot"];
+  const OG_ROWS = ["look", "rail", "paper", "hot", "thumbs", "sum", "scale"];
   DESIGN_ROWS.forEach(([key, label, opts]) => {
-    if (isOG() ? !OG_ROWS.includes(key) : CLASSIC_HIDE.includes(key)) return;
+    if (!OG_ROWS.includes(key)) return;
     if (isBasic() && (key === "paper" || key === "hot")) return;   // Basic is always yellow, white and black
-    if (isOG()){
+    {
       if (key === "thumbs") opts = [["large", "Big"], ["small", "Small"], ["off", "None"]];
       if (key === "sum") opts = [["on", "On"], ["off", "Off"]];
       if (key === "scale") opts = [["m", "Normal"], ["l", "Large"]];
@@ -7894,26 +7440,21 @@ function renderDesign(){
       const b = el("button", null, t); b.type = "button"; b.id = "set-" + key + "-" + String(v).replace(/^#/, "");
       if (key === "paper" || key === "hot"){ b.classList.add("swatch-b"); b.style.setProperty("--sw", v); b.setAttribute("aria-label", t); }
       b.setAttribute("role", "radio"); b.setAttribute("aria-checked", String(design[key] === v)); b.setAttribute("aria-pressed", String(design[key] === v));
-      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "look"){ state.shown = PAGE; renderList(); renderFilterBar(); paintHealth(); } else if (key === "stack"){ state.shown = PAGE; renderList(); } else if (key === "layout" || key === "thumbs") renderList(); const nb = document.getElementById(b.id); if (nb) nb.focus(); if (key === "look" && dlg.open){ dlg.close(); openMenu("settings"); const d = $("#sf-look"); if (isOG()) ogSetPage(d); else d.open = true; const nb2 = document.getElementById(b.id); if (nb2) nb2.focus(); } };
+      b.onclick = () => { design[key] = v; saveDesign(); renderDesign(); if (key === "look"){ state.shown = PAGE; renderList(); renderFilterBar(); paintHealth(); } else if (key === "stack"){ state.shown = PAGE; renderList(); } else if (key === "layout" || key === "thumbs") renderList(); const nb = document.getElementById(b.id); if (nb) nb.focus(); if (key === "look" && dlg.open){ dlg.close(); openMenu("settings"); const d = $("#sf-look"); ogSetPage(d); const nb2 = document.getElementById(b.id); if (nb2) nb2.focus(); } };
       seg.append(b);
     });
     row.append(lab, seg); rows.append(row);
   });
-  // live preview using a real story when there is one
-  const pv = $("#preview"); pv.textContent = "";
-  const sample = state.items.find(i => i.image) || state.items[0] || {id:"x", feedId:(state.feeds[0] || {}).id, title:"Example headline for a story in your feed", summary:"A short summary of the story appears here so you can judge the size and spacing.", date:Date.now() - 3600000, image:null};
-  pv.append(cardEl(sample));
 }
 $("#appVersion").textContent = IS_APP
   ? (APP_BUILD.startsWith("__") ? "Android app · development build" : "Android app · test build " + APP_BUILD)
   : "Website version";
-$("#resetDesign").onclick = () => { design = {...DESIGN_DEFAULT}; saveDesign(); renderDesign(); renderList(); };
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => { applyDesign(); if (dlg.open && !$("#panelSettings").hidden) renderDesign(); });
 applyDesign();
 
 /* ---------- keyboard + layout ---------- */
 document.addEventListener("keydown", e => {
-  if (dlg.open || $("#articlePage").open || !$("#filterBox").hidden || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+  if (dlg.open || $("#articlePage").open || /input|textarea/i.test(document.activeElement.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k !== "j" && k !== "k") return;
   const cards = [...document.querySelectorAll("#list .card")]; if (!cards.length) return;
@@ -7938,8 +7479,8 @@ matchMedia("(min-width:900px)").addEventListener("change", () => {
 }
 // Play button, always there: the episode that's loaded, else the last one you started (ready to continue), else the Audio feed
 $("#nowBtn").onclick = () => {
-  if (isOG() && nowLong){ nowLong = false; return; }
-  if (isOG()){
+  if (nowLong){ nowLong = false; return; }
+  {
     if (pod.item){ pod.audio.paused ? pod.audio.play().catch(() => {}) : pod.audio.pause(); return; }
     const st = startedEpisodes()[0]; if (st){ playEpisode(st); return; }
   }
@@ -7958,12 +7499,11 @@ let nowLong = false;
     try{ ogEpisode(it); }catch(e){ logError(e); }
     if (pod.stripHidden){ pod.stripHidden = false; try{ ogStrip(); }catch{} }
   };
-  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); if (!isOG()) return; t = setTimeout(openFull, 550); });
+  nb.addEventListener("pointerdown", () => { nowLong = false; clearTimeout(t); t = setTimeout(openFull, 550); });
   ["pointerup", "pointerleave", "pointercancel"].forEach(ev => nb.addEventListener(ev, () => clearTimeout(t)));
   // Android's own long press arrives as a context menu: treat it the same
-  nb.addEventListener("contextmenu", e => { if (!isOG()) return; e.preventDefault(); clearTimeout(t); openFull(); }); }
+  nb.addEventListener("contextmenu", e => { e.preventDefault(); clearTimeout(t); openFull(); }); }
 $("#savedBtn").onclick = () => {
-  if (!view.saved && !state.saved.length && !isOG()){ toast("Nothing saved yet. Tap the bookmark on any post to keep it here"); return; }
   view.saved = !view.saved; view.type = "all"; saveView(); state.shown = PAGE;
   renderChips(); renderStatus(); renderList(); scrollFeedTop();
 };
@@ -8005,7 +7545,6 @@ pod.audio.preload = "metadata";
 const NativeMS = IS_APP && window.Capacitor ? ((window.Capacitor.Plugins && window.Capacitor.Plugins.MediaSession) || (window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("MediaSession")) || null) : null;
 const nms = (fn, ...args) => { try{ const r = NativeMS && NativeMS[fn] && NativeMS[fn](...args); if (r && r.catch) r.catch(() => {}); }catch{} };
 let nmsState = "none", nmsPosAt = 0;
-const SPEEDS = [0.8, 1, 1.25, 1.5, 1.75, 2];
 let BACK_S = store.get("yf.skipBack", 15), FWD_S = store.get("yf.skipFwd", 30);
 const OG_SPEEDS = [1, 1.25, 1.5, 2];
 const fmtTime = t => { if (!isFinite(t) || t < 0) t = 0; t = Math.floor(t); const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, sec = String(t % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${sec}` : `${m}:${sec}`; };
@@ -8053,7 +7592,7 @@ function playEpisode(it){
 }
 const skip = s => { if (!pod.item) return; pod.audio.currentTime = Math.max(0, Math.min((pod.audio.duration || 1e9) - 1, pod.audio.currentTime + s)); syncPod(); };
 function cycleSpeed(){
-  const list = isOG() ? OG_SPEEDS : SPEEDS;
+  const list = OG_SPEEDS;
   pod.speed = list.at((list.indexOf(pod.speed) + 1) % list.length) || 1;
   pod.audio.playbackRate = pod.speed; store.set("tl.podSpeed", pod.speed); syncPod();
 }
@@ -8114,22 +7653,6 @@ function podControls(it, withDescription){
   box.append(row, bar);
   return box;
 }
-// Under an episode's post: description, its website, and download (no need to press play first)
-function podFoot(it){
-  {
-    const foot = el("div", "pod-foot");
-    const more = el("button", "pod-more", "Read description"); more.type = "button";
-    more.onclick = e => { e.stopPropagation(); openArticle(it); };
-    foot.append(more);
-    // The episode's page on the podcast's own website
-    if (it.link && !(isPrivateFeed(feedById(it.feedId)) && isPrivateUrl(it.link)) && it.link !== it.audioUrl){
-      const web = el("a", "pod-more", "Website ↗"); web.href = it.link; web.target = "_blank"; web.rel = "noopener";
-      web.onclick = e => { e.stopPropagation(); if (IS_APP){ e.preventDefault(); openOutside(it.link); } };
-      foot.append(web);
-    }
-    return foot;
-  }
-}
 /* ---------- downloads for offline listening (app only) ----------
    Files go in the app's own storage; a downloaded episode is also saved, so it stays after the feed moves on.
    Played downloads are deleted (setting), and everything can be cleared in Settings. */
@@ -8185,11 +7708,6 @@ async function deleteDownload(id, quiet){
 }
 const ICON_DL = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
 const ICON_DL_DONE = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l3 3 5-6"/></svg>';
-function downloadBtn(it, asIcon){
-  const b = el("button", asIcon ? "cact dl-icon" : "pod-more dl-btn"); b.type = "button"; b.dataset.dlFor = it.id;
-  b.onclick = e => { e.preventDefault(); e.stopPropagation(); if (dl.busy[it.id] != null) return; isDownloaded(it.id) ? deleteDownload(it.id) : downloadEpisode(it); };
-  paintDl(b, it.id); return b;
-}
 function paintDl(b, id){
   const busy = dl.busy[id];
   if (b.classList.contains("og-dl")){
@@ -8228,12 +7746,6 @@ function renderDlSummary(){
   $("#dlCount").textContent = ids.length ? `${ids.length} episode${ids.length === 1 ? "" : "s"} downloaded · ${mb} MB` : "No episodes downloaded";
   $("#dlClear").disabled = !ids.length;
 }
-function togglePodPanel(it){
-  pod.open = pod.open === it.id ? null : it.id;
-  document.querySelectorAll("#list .card.pod").forEach(c => c.setAttribute("aria-expanded", String(c.dataset.id === pod.open)));
-  placePodPanel();
-  if (pod.open && (!pod.item || pod.item.id !== it.id)) playEpisode(it);
-}
 function placePodPanel(){
   document.querySelectorAll("#list .pod-panel").forEach(n => n.remove());
   if (!pod.open) return;
@@ -8245,13 +7757,13 @@ function placePodPanel(){
 // Mini player along the bottom, on every page while an episode is loaded
 function renderMini(){
   const m = $("#mini");
-  if (isOG()) ogStrip(); else { const s = $("#ogStrip"); if (s) s.remove(); }
+  ogStrip();
   const nb = $("#nowBtn"); if (nb){ nb.hidden = false; nb.classList.toggle("playing", !!pod.item && !pod.audio.paused); nb.classList.toggle("loaded", !!pod.item); }
   // Off-grid: the rail's Play button mirrors the strip (pause sign while playing)
-  if (nb){ if (!nb.dataset.icon) nb.dataset.icon = nb.innerHTML; const never = isOG() && !pod.item && !Object.keys(pod.pos).length && !pod.played.size;
-    const want = never ? '<span class="og-playword">PLAY</span>' : isOG() && pod.item && !pod.audio.paused ? ICONS.pause : nb.dataset.icon; if (nb.innerHTML !== want) nb.innerHTML = want; nb.setAttribute("aria-label", isOG() ? (pod.item ? (pod.audio.paused ? "Play" : "Pause") + ". Hold for the episode page" : "Listen") : "Listen: open the player or your audio"); }
+  if (nb){ if (!nb.dataset.icon) nb.dataset.icon = nb.innerHTML; const never = !pod.item && !Object.keys(pod.pos).length && !pod.played.size;
+    const want = never ? '<span class="og-playword">PLAY</span>' : pod.item && !pod.audio.paused ? ICONS.pause : nb.dataset.icon; if (nb.innerHTML !== want) nb.innerHTML = want; nb.setAttribute("aria-label", pod.item ? (pod.audio.paused ? "Play" : "Pause") + ". Hold for the episode page" : "Listen"); }
   if (!pod.item){ m.hidden = true; document.body.classList.remove("has-mini"); return; }
-  m.hidden = false; document.body.classList.toggle("has-mini", !(isOG() && pod.stripHidden));
+  m.hidden = false; document.body.classList.toggle("has-mini", !pod.stripHidden);
   const f = feedById(pod.item.feedId) || {};
   $("#miniTitle").textContent = pod.item.title;
   $("#miniSrc").textContent = f.title || "";
@@ -8298,7 +7810,7 @@ function syncPod(){
     if (d && isFinite(d) && Date.now() - nmsPosAt > 10000){ nmsPosAt = Date.now(); nms("setPositionState", {duration: d, position: Math.min(t, d), playbackRate: a.playbackRate || 1}); }
   }
   if (Date.now() - lastPosSave > 5000){ lastPosSave = Date.now(); savePos(); }
-  if (isOG()) ogSyncPod();
+  ogSyncPod();
 }
 // Native notification and lock-screen buttons
 if (NativeMS){
@@ -8331,7 +7843,7 @@ function checkPod(){
   // leave it paused rather than bursting into sound when YourFeed is next opened
   if (still > 60000){
     pod.audio.pause(); savePos(); syncPod();
-    if (!document.hidden) toast(isOG() ? "PAUSED · THE EPISODE STOPPED LOADING" : "Paused: the episode stopped loading");
+    if (!document.hidden) toast("PAUSED · THE EPISODE STOPPED LOADING");
     return;
   }
   if (still > 20000) recoverPod("stalled");
@@ -8347,7 +7859,7 @@ window.yfNoisy = () => {
   const was = pod.item && !pod.audio.paused;
   if (was){ pod.audio.pause(); savePos(); syncPod(); }
   pauseAllVideos();
-  if (was) toast(isOG() ? "PAUSED · HEADPHONES DISCONNECTED" : "Paused: headphones disconnected");
+  if (was) toast("PAUSED · HEADPHONES DISCONNECTED");
 };
 pod.audio.addEventListener("error", () => { if (pod.item && pod.audio.getAttribute("src")) setTimeout(() => recoverPod("error"), 2000); });
 ["play", "pause", "timeupdate", "loadedmetadata", "durationchange", "ratechange", "waiting", "playing"].forEach(ev => pod.audio.addEventListener(ev, syncPod));
@@ -8411,7 +7923,7 @@ function articleFragment(html, base){
 async function openArticle(it){
   if (it.audioUrl && !it.videoId) return openPlayer(it);
   $("#articlePage").classList.remove("is-pod", "og-ep"); $("#artOpen").style.display = "";
-  $("#articlePage").classList.toggle("og-rd", isOG());
+  $("#articlePage").classList.add("og-rd");
   const page = $("#articlePage"), body = $("#artBody");
   const f = feedById(it.feedId) || {};
   const src = el("div", "meta"); const dot = iconFor(feedById(it.feedId) || f, 16);
@@ -8422,7 +7934,7 @@ async function openArticle(it){
   const kick = el("div", "kicker");
   kick.append(el("span", null, f.title || ""));
   if (it.date) kick.append(el("span", null, "· " + new Date(it.date).toLocaleString(undefined, {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"})));
-  if (isOG()){
+  {
     // Off-grid reader: BACK and OPEN WEBSITE on a black bar, then the story on Paper
     const top = el("div", "ogr-bar");
     const bk = el("button", "oge-back", "BACK"); bk.type = "button"; bk.onclick = () => page.close();
@@ -8458,7 +7970,7 @@ async function openArticle(it){
 }
 // Episodes open as a full-screen player: artwork, title, controls, then Save / Share / Download / Website, then the notes
 function openPlayer(it){
-  if (isOG()) return ogEpisode(it);
+  return ogEpisode(it);
   const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
   page.classList.remove("og-ep", "og-rd");
   page.classList.add("is-pod");
@@ -8556,8 +8068,8 @@ function buildReport(){
 }
 function openReport(focusId){
   const R = buildReport(), body = $("#rpBody"); body.textContent = "";
-  $("#reportPage").classList.toggle("og-rp", isOG());
-  if (isOG()) return ogReport(R, focusId);
+  $("#reportPage").classList.add("og-rp");
+  return ogReport(R, focusId);
   body.append(el("p", "hint", "Every source, how it's doing and why. Sources that fail now and then fix themselves and aren't flagged; only those failing for a day, or that have stopped being a feed, ask for your help. Share or save this if you want help with a source."));
   const sum = el("div", "rp-sum");
   [[R.rows.filter(r => r.status === "ok").length, "working"], [R.rows.filter(r => r.status === "failing").length, "need a look"], [R.rows.filter(r => r.status === "retrying").length, "retrying"]]
@@ -8670,7 +8182,7 @@ function ogReport(R, focusId){
     list.append(li);
   });
   body.append(list);
-  if (!$("#reportPage").open){ if (isOG()) $("#reportPage").show(); else $("#reportPage").showModal(); }
+  if (!$("#reportPage").open) $("#reportPage").show();
   if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
   else back.focus({preventScroll: true});
 }
@@ -8697,8 +8209,7 @@ renderFaqs();
 document.querySelectorAll(".setfold").forEach(d => d.addEventListener("toggle", () => {
   if (!d.open) return;
   document.querySelectorAll(".setfold[open]").forEach(o => { if (o !== d) o.open = false; });
-  if (isOG()){ setTimeout(() => { $("#panelSettings").scrollTop = 0; }, 0); return; }
-  setTimeout(() => d.scrollIntoView({block: "nearest", behavior: "smooth"}), 30);
+  setTimeout(() => { $("#panelSettings").scrollTop = 0; }, 0);
 }));
 // Check search list: load every DIRECTORY feed once from this device, report what fails, is empty, or only works via the site's home page
 let dirReport = "";
@@ -9091,7 +8602,6 @@ function startTour(step = 0){
 function goBack(){
   if (document.querySelector(".spot-tip")){ document.querySelectorAll(".spot,.spot-tip").forEach(n => n.remove()); return true; }
   const ob = document.querySelector("dialog.onboard[open]"); if (ob){ ob.close(); ob.remove(); return true; }
-  if (!$("#filterBox").hidden){ closeFilterBox(true); return true; }
   if ($("#articlePage").open){ $("#articlePage").close(); return true; }
   if ($("#reportPage").open){ $("#reportPage").close(); return true; }
   if ($("#searchPage").open){ $("#searchPage").close(); return true; }
