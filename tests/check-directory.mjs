@@ -1,13 +1,12 @@
-// Checks every feed in the search catalogue (DIRECTORY in index.html) the way the app reads it.
+// Checks every feed in the search catalogue (catalogue.js) the way the app reads it.
 // Run on a machine with open internet (GitHub Actions: "Check catalogue" workflow): node tests/check-directory.mjs
 // Prints one line per problem and a JSON report (directory-report.json).
 import fs from "node:fs";
 
-const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
-const start = html.indexOf("const DIRECTORY = [");
-const end = html.indexOf("\n];", start);
+// catalogue.js sets window.YF_CATALOGUE; run it with a stand-in window
+const loadCatalogue = () => { const window = {}; Function("window", fs.readFileSync(new URL("../catalogue.js", import.meta.url), "utf8"))(window); return window.YF_CATALOGUE; };
 // Optional: a JSON file of [name, url, tags] to check instead (trying replacements); CONC = how many at once
-const DIRECTORY = process.argv[2] ? JSON.parse(fs.readFileSync(process.argv[2], "utf8")) : Function('"use strict";return ' + html.slice(start + "const DIRECTORY = ".length, end + 3))();
+const DIRECTORY = process.argv[2] ? JSON.parse(fs.readFileSync(process.argv[2], "utf8")) : loadCatalogue();
 const CONC = +process.env.CONC || 8, GAP = +process.env.GAP || 0;
 
 const UA = "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36";

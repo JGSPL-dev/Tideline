@@ -106,3 +106,8 @@ Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data
 ## Topic page matching
 - A topic's page matches its full phrase. A single last word joins only for people (first word in FIRST_NAMES: "Reeves" for Rachel Reeves); never for other names ("Race" ≠ Wave Race, "London" ≠ MCM London).
 - "Also:" skips related subjects that share a word with the topic or an earlier related one ("Race Blue" from "Wave Race Blue Storm").
+
+## Code layout and checks (clean-up, 25 Nov 2026)
+- `catalogue.js`: the search catalogue (871 sites), `window.YF_CATALOGUE`, loaded before the main script; `DIRECTORY = window.YF_CATALOGUE || []`. The Android build copies it into the app. `tests/check-directory.mjs` reads it.
+- Every push (`checks.yml`): code check (`node tools/lint.mjs`, ESLint core correctness rules on the app script and the service), start-up smoke test, service tests, browser tests (`tests/browser`, pytest + Playwright, the real app served from a test address with mocked feeds).
+- Article text is cleaned only by our own allowlist cleaner (`basicSanitize`); no outside library.

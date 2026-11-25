@@ -37,3 +37,11 @@ def test_podcast_start_point_is_set_per_show(app):
     p.locator(".ef-cancel").wait_for()
     assert p.locator(".ef-startat").count() == 0
     assert a.errors == []
+
+def test_catalogue_search(app):
+    # The catalogue lives in catalogue.js; searching it works before any web results arrive
+    a = app(feeds=[]); p = a.page
+    assert p.evaluate("Array.isArray(window.YF_CATALOGUE) && window.YF_CATALOGUE.length > 500")
+    a.open_add(); p.fill("#addInput", "bbc sport"); p.click("#addBtn")
+    p.wait_for_function("document.querySelector('#searchResults').innerText.toUpperCase().includes('BBC SPORT')", timeout=10000)
+    assert a.errors == []
