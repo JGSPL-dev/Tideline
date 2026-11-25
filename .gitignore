@@ -2,3 +2,4 @@
 __pycache__/
 directory-report.json
 tests/node_modules
+tools/build/

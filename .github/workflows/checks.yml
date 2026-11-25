@@ -19,6 +19,8 @@ jobs:
           node-version: 22
       - run: npm install --no-audit --no-fund
       - run: npx playwright install --with-deps chromium
+      - name: Code check (ESLint, core correctness rules)
+        run: npm install -g --no-audit --no-fund eslint@9 && node ../tools/lint.mjs
       - name: Start-up smoke test
         run: node smoke.mjs
       - name: Service tests

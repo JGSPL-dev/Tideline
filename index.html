@@ -3347,7 +3347,7 @@ function topicPage(tp){
       f.src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(it.videoId)}?rel=0&playsinline=1&autoplay=1&enablejsapi=1`;
       f.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
       f.allowFullscreen = true; f.referrerPolicy = "strict-origin-when-cross-origin"; f.title = it.title;
-      try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!isShortItem(it)); }catch{}
+      try{ if (window.YFNative && window.YFNative.setRotateFull) window.YFNative.setRotateFull(!isShortItem(it)); }catch{}
       player.classList.toggle("tall", isShortItem(it));
       watchVideo(f);
       const cap = el("div", "tp-cap"); const f2 = feedById(it.feedId);
@@ -3825,7 +3825,6 @@ function imageCandidates(it){
 }
 const ICON_SAVE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>';
 const ICON_SAVED = '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.1" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h12v18l-6-4.5L6 21z"/></svg>';
-const ICON_SHARE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
 let toastTimer;
 function toast(msg, action){
   let t = $(".toast");
@@ -3857,18 +3856,9 @@ async function sharePost(it){
   }catch(e){ if (e && /cancel|abort/i.test(String(e.message || e.name))) return; }
   try{ await navigator.clipboard.writeText(url); toast("Link copied"); }catch{ toast("Couldn't share this link"); }
 }
-// What the list shows: single stories, or (with stacking on) one stack per source
-const STACK_SHOW = 2, STACK_STEP = 10;
+// What the list shows: one unit per story (stacking by source went with the Classic layout)
 function listUnits(){
-  const items = visibleItems();
-  return items.map(it => ({it}));
-  const groups = new Map();
-  for (const it of items){
-    let g = groups.get(it.feedId);
-    if (!g){ g = {feedId: it.feedId, items: []}; groups.set(it.feedId, g); }
-    g.items.push(it);
-  }
-  return [...groups.values()].map(g => g.items.length === 1 ? {it: g.items[0]} : {group: g});
+  return visibleItems().map(it => ({it}));
 }
 const unitEl = u => shortsGrid() ? ogShort(u.it) : ogCard(u.it);
 // A Short in the Off-grid grid: the tall picture, then source, age and title; tap opens it upright, full screen
@@ -4278,7 +4268,7 @@ function ogVideo(it){
   info.addEventListener("touchend", e => { if (y0 != null && e.changedTouches[0].clientY - y0 > 90) closeOgVideo(); y0 = null; }, {passive: true});
   pg.dataset.y = String(window.scrollY);
   document.body.append(pg); document.body.classList.add("og-vopen");
-  try{ if (window.YFNative && YFNative.setRotateFull) YFNative.setRotateFull(!short); }catch{}
+  try{ if (window.YFNative && window.YFNative.setRotateFull) window.YFNative.setRotateFull(!short); }catch{}
   // Straight to full screen (this runs inside the tap, which browsers require); landscape in the app unless it's a Short
   if (!isWide()) try{ const req = pl.requestFullscreen || pl.webkitRequestFullscreen; if (req) req.call(pl).catch(() => {}); }catch{}
   close.focus({preventScroll: true});
@@ -4814,7 +4804,7 @@ function cleanArticle(root){
     if (/logo|avatar|icon|sprite|badge|pixel|tracking|gravatar|emoji/.test(hint)) i.remove();
   });
 }
-// Fallback cleaner if DOMPurify fails to load: keep only safe article tags and attributes
+// Article cleaner: keeps only an allowlist of safe article tags and attributes (no scripts, styles, forms or frames)
 function basicSanitize(html){
   const OK = new Set(["P","H1","H2","H3","H4","H5","H6","UL","OL","LI","A","IMG","FIGURE","FIGCAPTION","BLOCKQUOTE","EM","STRONG","B","I","U","CODE","PRE","BR","HR","TABLE","THEAD","TBODY","TR","TD","TH","SPAN","DIV","SECTION","ARTICLE","PICTURE","SUP","SUB","SMALL"]);
   const DROP = new Set(["SCRIPT","STYLE","IFRAME","OBJECT","EMBED","FORM","INPUT","BUTTON","SVG","MATH","NOSCRIPT","TEMPLATE","LINK","META","BASE","SELECT","TEXTAREA","VIDEO","AUDIO","SOURCE"]);
@@ -4862,11 +4852,7 @@ async function loadReader(it, body){
     const extra = [art.byline, Math.max(1, Math.round(words / 230)) + " min read"].filter(Boolean).join(" · ");
     kick.append(el("span", null, "· " + extra));
     const holder = el("div");
-    if (window.DOMPurify){
-      holder.innerHTML = DOMPurify.sanitize(art.content, {FORBID_TAGS:["style","form","input","button","iframe","svg"], FORBID_ATTR:["style","class","id"]});
-    } else {
-      holder.append(basicSanitize(art.content));
-    }
+    holder.append(basicSanitize(art.content));   // our own allowlist cleaner (no outside library)
     cleanArticle(holder);
     holder.querySelectorAll("a").forEach(a => { a.target = "_blank"; a.rel = "noopener noreferrer"; });
     holder.querySelectorAll("img").forEach(i => { i.loading = "lazy"; i.referrerPolicy = "no-referrer"; i.removeAttribute("height"); i.onerror = () => i.remove(); });
@@ -6904,7 +6890,7 @@ function searchDirectory(q){
   store.get("yf.community", []).filter(d => !known.has(d) && sqc.length >= 3 && (squash(d).includes(sqc) || dirMatch(q, d.replace(/\.[a-z.]+$/, "").replace(/[.-]/g, " "), d))).slice(0, 8)
     .forEach(d => found.push({title: d, url: "https://" + d + "/", site: d, website: "https://" + d + "/", desc: "Added by other YourFeed users"}));
   // A publisher with no feed: first when you search for it by name ("bbc food"), after the real feeds for a subject ("food")
-  for (const [title, site, tags] of NO_FEED.filter(([t, site]) => dirMatch(q, t, site))){
+  for (const [title, site] of NO_FEED.filter(([t, site]) => dirMatch(q, t, site))){
     const sq = squash(q), named = sq.length >= squash(title).length * 0.6 && (squash(title).startsWith(sq) || squash(site).startsWith(sq));
     found[named ? "unshift" : "push"](
       {title, url: "", site, noFeed: true, desc: `${title} doesn't offer a feed, so it can't be added directly. Try its stories through Google News below, or look for its account under Bluesky & Mastodon.`},
@@ -7415,9 +7401,9 @@ function applyDesign(){
   if (meta) meta.content = bg;
   // In the app: Android's status and navigation bars take the page background (not orange), with matching icons
   try{
-    if (window.YFNative && YFNative.setBars){
+    if (window.YFNative && window.YFNative.setBars){
       const h = bg.replace("#", ""), rgb = h.length === 3 ? [...h].map(c => parseInt(c + c, 16)) : [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16));
-      YFNative.setBars("#" + (h.length === 3 ? [...h].map(c => c + c).join("") : h), (rgb[0] * .299 + rgb[1] * .587 + rgb[2] * .114) < 128);
+      window.YFNative.setBars("#" + (h.length === 3 ? [...h].map(c => c + c).join("") : h), (rgb[0] * .299 + rgb[1] * .587 + rgb[2] * .114) < 128);
     }
   }catch{}
 }
@@ -7664,7 +7650,7 @@ state.dlWifi = store.get("yf.dlWifi", true); state.dlAutoDelete = store.get("yf.
 const saveDl = () => store.set("yf.downloads", dl.list);
 const isDownloaded = id => !!dl.list[id];
 const dlSrc = id => { const d = dl.list[id]; try{ return d && window.Capacitor.convertFileSrc(d.uri); }catch{ return null; } };
-function dlName(it){ let h = 0; for (const c of it.id) h = (h * 31 + c.charCodeAt(0)) >>> 0; return "episodes/" + h.toString(36) + "-" + Date.now().toString(36) + "." + ((it.audioUrl.match(/\.(mp3|m4a|aac|ogg|opus|wav)(\?|$)/i) || [, "mp3"])[1].toLowerCase()); }
+function dlName(it){ let h = 0; for (const c of it.id) h = (h * 31 + c.charCodeAt(0)) >>> 0; return "episodes/" + h.toString(36) + "-" + Date.now().toString(36) + "." + (((it.audioUrl.match(/\.(mp3|m4a|aac|ogg|opus|wav)(\?|$)/i) || [])[1] || "mp3").toLowerCase()); }
 async function downloadEpisode(it){
   if (!CAN_DOWNLOAD || dl.busy[it.id] || isDownloaded(it.id)) return;
   const c = navigator.connection;
@@ -7971,47 +7957,6 @@ async function openArticle(it){
 // Episodes open as a full-screen player: artwork, title, controls, then Save / Share / Download / Website, then the notes
 function openPlayer(it){
   return ogEpisode(it);
-  const page = $("#articlePage"), body = $("#artBody"), f = feedById(it.feedId) || {};
-  page.classList.remove("og-ep", "og-rd");
-  page.classList.add("is-pod");
-  $("#artSrc").replaceChildren(el("span", "pp-now", pod.item && pod.item.id === it.id ? "Now playing" : "Episode"));
-  $("#artOpen").style.display = "none";
-  body.textContent = "";
-  const pp = el("div", "pp");
-  const art = el("div", "pp-art");
-  const pic = it.image || f.icon;
-  if (pic){ const im = el("img"); im.alt = ""; im.referrerPolicy = "no-referrer"; im.src = hiRes(pic); im.onerror = () => { im.remove(); art.append(srcIcon(f, 120)); }; art.append(im); }
-  else art.append(srcIcon(f, 120));
-  const show = el("div", "pp-show"); show.append(iconFor(f, 18), el("span", null, f.title || it.feedTitle || ""));
-  const h = el("h1", "pp-title", it.title);
-  const when = el("div", "pp-when", [it.date ? new Date(it.date).toLocaleDateString(undefined, {weekday: "short", day: "numeric", month: "short", year: "numeric"}) : "", itemDur(it) ? minsLen(itemDur(it)) : ""].filter(Boolean).join(" · "));
-  const ctl = podControls(it, false); ctl.classList.add("pp-ctl");
-  // Save, Share, Download, Website
-  const acts = el("div", "pp-acts");
-  const act = (label, svg, fn, pressed) => { const b = el("button", "pp-act"); b.type = "button"; b.innerHTML = svg; b.append(el("span", null, label)); if (pressed != null) b.setAttribute("aria-pressed", String(pressed)); b.onclick = () => fn(b); return b; };
-  const sv = act(isSaved(it.id) ? "Saved" : "Save", isSaved(it.id) ? ICON_SAVED : ICON_SAVE, b => {
-    toggleSave(it); const on = isSaved(it.id);
-    b.innerHTML = on ? ICON_SAVED : ICON_SAVE; b.append(el("span", null, on ? "Saved" : "Save")); b.setAttribute("aria-pressed", String(on));
-  }, isSaved(it.id));
-  acts.append(sv, act("Share", ICON_SHARE, () => sharePost(it)));
-  if (CAN_DOWNLOAD){ const d = el("button", "pp-act pp-dl"); d.type = "button"; d.dataset.dlFor = it.id; d.onclick = () => { if (dl.busy[it.id] != null) return; isDownloaded(it.id) ? deleteDownload(it.id) : downloadEpisode(it); }; paintDl(d, it.id); acts.append(d); }
-  if (it.link && it.link !== it.audioUrl && !(isPrivateFeed(f) && isPrivateUrl(it.link))){
-    acts.append(act("Website", '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>', () => IS_APP ? openOutside(it.link) : window.open(it.link, "_blank", "noopener")));
-  }
-  pp.append(art, show, h, when, ctl, acts);
-  // Episode notes, folded to a few lines
-  const notes = (it.summary || "").trim();
-  if (notes){
-    const n = el("section", "pp-notes"); n.append(el("h2", null, "Episode notes"));
-    const p = el("p", "pp-notes-text clamp", notes); n.append(p);
-    if (notes.length > 260){ const more = el("button", "linkbtn", "Show more"); more.type = "button"; more.onclick = () => { const c = p.classList.toggle("clamp"); more.textContent = c ? "Show more" : "Show less"; }; n.append(more); }
-    pp.append(n);
-    if (it.full) artDB.get(it.id).then(saved => { if (saved && saved.html && p.isConnected){ const c = articleFragment(saved.html, saved.base || it.link); p.replaceChildren(...c.childNodes); } }).catch(() => {});
-  }
-  body.append(pp);
-  if (!page.open) page.showModal();
-  syncPod();
-  body.scrollTop = 0;
 }
 $("#artBack").onclick = () => $("#articlePage").close();
 $("#articlePage").addEventListener("close", () => { $("#artBody").textContent = ""; });   // the episode keeps playing in the mini player
@@ -8040,7 +7985,6 @@ function sourceState(f){
   return {f, its: its.length, newest, status};
 }
 const ORDER = ["failing", "retrying", "empty", "quiet", "not checked", "ok"];
-const STATUS_WORDS = {ok: "working", failing: "needs a look", retrying: "retrying by itself", empty: "no stories", quiet: "quiet lately", "not checked": "not checked yet"};
 // Group similar errors ("…error 404", "…error 429") so the causes stand out
 const errorKind = e => String(e || "Unknown").replace(/\.$/, "").replace(/(https?:\/\/)\S+/g, "$1…");
 function buildReport(){
@@ -8070,68 +8014,6 @@ function openReport(focusId){
   const R = buildReport(), body = $("#rpBody"); body.textContent = "";
   $("#reportPage").classList.add("og-rp");
   return ogReport(R, focusId);
-  body.append(el("p", "hint", "Every source, how it's doing and why. Sources that fail now and then fix themselves and aren't flagged; only those failing for a day, or that have stopped being a feed, ask for your help. Share or save this if you want help with a source."));
-  const sum = el("div", "rp-sum");
-  [[R.rows.filter(r => r.status === "ok").length, "working"], [R.rows.filter(r => r.status === "failing").length, "need a look"], [R.rows.filter(r => r.status === "retrying").length, "retrying"]]
-    .forEach(([n, t]) => { const d = el("div"); d.append(el("b", null, String(n)), el("span", null, t)); sum.append(d); });
-  body.append(sum);
-  const acts = el("div", "iorow");
-  const share = el("button", "btn primary", "Share report"); share.type = "button";
-  share.onclick = async () => {
-    const S = IS_APP && window.Capacitor.Plugins && window.Capacitor.Plugins.Share;
-    try{
-      if (S && S.share){ await S.share({title: "YourFeed source report", text: R.text, dialogTitle: "Share the report"}); return; }
-      if (navigator.share){ await navigator.share({title: "YourFeed source report", text: R.text}); return; }
-    }catch(e){ if (/cancel|abort/i.test(String(e && (e.message || e.name)))) return; }
-    try{ await navigator.clipboard.writeText(R.text); toast("Report copied"); }catch{ toast("Couldn't share the report"); }
-  };
-  const copy = el("button", "btn", "Copy"); copy.type = "button";
-  copy.onclick = async () => { try{ await navigator.clipboard.writeText(R.text); toast("Report copied"); }catch{ toast("Couldn't copy"); } };
-  const dl = el("button", "btn", IS_APP ? "Save as file" : "Download"); dl.type = "button";
-  dl.onclick = async () => { try{ const how = await deliverFile(`yourfeed-source-health.txt`, R.text, "text/plain", "Save or send the report", {save: true}); if (how.startsWith("downloads:")) toast("Saved to Downloads as " + how.slice(10)); }catch(e){ if (!/cancel/i.test(String(e && e.message))) toast("Couldn't save the file"); } };
-  const retry = el("button", "btn", "Retry failing"); retry.type = "button"; retry.disabled = !R.failing.length;
-  retry.onclick = async () => {
-    retry.disabled = true; retry.textContent = "Checking…";
-    await pool(R.failing.map(r => r.f), 3, f => refreshOne(f));
-    openReport();
-  };
-  acts.append(share, dl, copy, retry); body.append(acts);
-  if (R.failing.length){
-    body.append(el("h3", "rp-h", "Why sources are failing"));
-    const ul = el("ul", "rp-causes");
-    Object.entries(R.causes).sort((a, b) => b[1].length - a[1].length).forEach(([k, rs]) => {
-      const li = el("li"); li.append(el("span", "n", String(rs.length)), el("span", null, `${k} · ${rs.slice(0, 4).map(r => r.f.title).join(", ")}${rs.length > 4 ? ` and ${rs.length - 4} more` : ""}`)); ul.append(li);
-    });
-    body.append(ul);
-  }
-  body.append(el("h3", "rp-h", "By platform"));
-  const pl = el("ul", "rp-causes");
-  Object.entries(R.byPlatform).forEach(([p, b]) => { const li = el("li"); li.append(el("span", "n" + (b.bad ? "" : " good"), `${b.all - b.bad}/${b.all}`), el("span", null, `${p} working`)); pl.append(li); });
-  body.append(pl, el("h3", "rp-h", "Every source"));
-  const list = el("ul", "rp-list");
-  R.rows.forEach(r => {
-    const li = el("li");
-    li.id = "rp-" + r.f.id;
-    const t = el("div", "t"); t.append(el("span", "hdot" + (r.status === "ok" || r.status === "retrying" ? "" : r.status === "not checked" ? " idle" : " warn")), el("span", null, r.f.title || redactUrl(r.f.url)));
-    if (isPrivateFeed(r.f)) t.append(lockEl());
-    li.append(t, el("span", "d", `${platformOf(r.f)} · ${STATUS_WORDS[r.status]} · ${r.its} stories${r.newest ? ", newest " + ago(r.newest) : ""}${r.f.lastFetched ? " · checked " + ago(r.f.lastFetched) : ""}`));
-    if (r.status === "failing") li.append(el("span", "e", plainTrouble(r.f)));
-    if (r.f.movedFrom) li.append(el("span", "d", "Found again after its feed moved"));
-    // The technical detail: what each route answered last time
-    const det = el("details", "rp-det"); det.append(el("summary", null, "Details"));
-    if (r.f.error) det.append(el("div", "e", "Last error: " + r.f.error + ((r.f.fails || 0) > 1 ? ` (${r.f.fails} checks in a row)` : "")));
-    det.append(el("div", "d", isPrivateFeed(r.f) ? redactUrl(r.f.url) : r.f.url));
-    (r.f.routes || []).forEach(x => {
-      const what = x.ok ? (x.unchanged ? "no change since last check" : `${x.n} stor${x.n === 1 ? "y" : "ies"}` + (x.newest ? `, newest ${ago(x.newest)}` : "")) : x.skip ? "not needed" : x.slow ? "no answer in time" : x.err;
-      det.append(el("div", "rt", `${x.ok ? (x.n ? "✓" : "–") : x.skip || x.slow ? "·" : "✕"} ${ROUTE_NAMES[x.k] || x.k}: ${what}`));
-    });
-    if (focusId === r.f.id) det.open = true;
-    li.append(det);
-    list.append(li);
-  });
-  body.append(list);
-  if (!$("#reportPage").open) $("#reportPage").showModal();
-  if (focusId){ const n = document.getElementById("rp-" + focusId); if (n) setTimeout(() => n.scrollIntoView({block: "start"}), 60); }
 }
 // Source health (Off-grid): not working first, each with CHECK NOW and EDIT; one share button
 function shareReportText(R){
@@ -8216,7 +8098,7 @@ let dirReport = "";
 $("#dirCheck").onclick = async () => {
   const btn = $("#dirCheck"), msg = $("#dirCheckMsg"), out = $("#dirCheckOut"), share = $("#dirCheckShare");
   btn.disabled = true; share.hidden = true; out.hidden = true; out.textContent = "";
-  const rows = [], list = DIRECTORY.map(([name, url]) => ({name, url}));
+  const list = DIRECTORY.map(([name, url]) => ({name, url}));
   let done = 0;
   const test = async e => {
     const t0 = Date.now();
@@ -8245,7 +8127,7 @@ $("#dirCheck").onclick = async () => {
       refusals = e.status === "fail" && GN_REFUSED.test(e.info) ? refusals + 1 : 0;
       await new Promise(r => setTimeout(r, 2500));
     }
-    if (refusals >= 2) gnRefused(), gnRefused(), gnRefused();   // also pause the feeds' own Google News checks
+    if (refusals >= 2) for (let k = 0; k < 3; k++) gnRefused();   // three refusals in a row: also pause the feeds' own Google News checks
   })()]);
   const by = k => list.filter(e => e.status === k);
   const head = `YourFeed search list check · ${new Date().toLocaleString()} · ${IS_APP ? "app" : "website"}\n${by("ok").length} working · ${by("fail").length} failing · ${by("moved").length} feed moved · ${by("empty").length} empty · ${by("stale").length} nothing in 30 days${by("skipped").length ? ` · ${by("skipped").length} not checked` : ""}`;
@@ -8541,7 +8423,7 @@ function categorise(feed, items){
     const kids = scores.filter(([n, sc]) => (FAMILY[scores[0][0]] || []).includes(n) && sc >= 2.4);
     if (kids.length) pick = [kids[0], ...scores.filter(x => x !== kids[0] && x[0] !== scores[0][0])];
   }
-  const [best, second] = pick, fam = Object.keys(FAMILY).find(k => FAMILY[k].includes(best[0]));
+  const [best] = pick, fam = Object.keys(FAMILY).find(k => FAMILY[k].includes(best[0]));
   const rival = pick.slice(1).find(x => x[0] !== fam) || [null, 0];
   return best[1] >= 2.4 && best[1] >= rival[1] * 1.4 ? best[0] : null;
 }
