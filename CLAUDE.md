@@ -102,3 +102,7 @@ Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data
 ## Google Play build
 - The Android workflow targets Android 16 (compile + target SDK 36, required by Play since 31 Aug 2026) and builds both `yourfeed.apk` (testers install directly) and `yourfeed.aab` (upload to Play), same code, version and key. The build fails unless aapt2 reports targetSdkVersion 36.
 - When creating the app in Play Console, choose to use our existing key for Play App Signing (export it with Google's PEPK tool), so sideloaded test APKs and Play installs update each other. Never commit the keystore.
+
+## Topic page matching
+- A topic's page matches its full phrase. A single last word joins only for people (first word in FIRST_NAMES: "Reeves" for Rachel Reeves); never for other names ("Race" ≠ Wave Race, "London" ≠ MCM London).
+- "Also:" skips related subjects that share a word with the topic or an earlier related one ("Race Blue" from "Wave Race Blue Storm").

@@ -3281,7 +3281,16 @@ function trendTopics(){
     if (home){ home.terms.push(t); t.ids.forEach(id => home.ids.add(id)); t.pubs.forEach(p => home.pubs.add(p)); home.newest = Math.max(home.newest, t.newest); }
     else if (topics.length < 12) topics.push({key: t.key, label: t.label, terms: [t], ids: new Set(t.ids), pubs: new Set(t.pubs), newest: t.newest, score: t.score, spike: t.spike, usual: t.usual, cover});
   });
-  topics.forEach(tp => { tp.related = tp.terms.slice(1).filter(t => !t.inside).map(t => t.label).filter(l => !tp.label.toLowerCase().includes(l.toLowerCase())).slice(0, 3); });
+  // "Also:" leaves out pieces of the same name ("Race Blue" from "Wave Race Blue Storm"): a related subject that
+  // shares a word with the topic or with one already listed
+  topics.forEach(tp => {
+    const used = new Set(tp.label.toLowerCase().split(/\s+/)); tp.related = [];
+    tp.terms.slice(1).filter(t => !t.inside).forEach(t => {
+      const ws = t.label.toLowerCase().split(/\s+/);
+      if (tp.related.length >= 3 || ws.some(w => used.has(w))) return;
+      ws.forEach(w => used.add(w)); tp.related.push(t.label);
+    });
+  });
   // What belongs to a topic: every story of the last week whose headline names it ("Black Friday", or for a
   // person "Rachel Reeves" or just "Reeves"), so it agrees with FIND WORDS. Related subjects that were merged in
   // are shown as "Also: …" but don't bring their own stories (that's how unrelated football videos got in).
@@ -3290,8 +3299,10 @@ function trendTopics(){
   topics.forEach(tp => {
     // A name's last word counts on its own ("Reeves" for "Rachel Reeves"); its first word never does
     // ("Black" would bring in Sunderland's "Black Cats")
-    const main = tp.terms[0], last = main.key.split(" ").pop();
-    const phrases = [main.key, ...tp.terms.filter(t => t.inside === main && t.key === last && main.key.includes(" ")).map(t => t.key)];
+    // Only for people: "Race" alone isn't Wave Race and "London" alone isn't MCM London (25 Nov 2026)
+    const main = tp.terms[0], mw = main.key.split(" "), last = mw[mw.length - 1];
+    const person = mw.length === 2 && FIRST_NAMES.has(mw[0]);
+    const phrases = [main.key, ...(person ? tp.terms.filter(t => t.inside === main && t.key === last).map(t => t.key) : [])];
     const esc = x => x.split(" ").map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s-]+");
     const re = new RegExp("(^|[^\\p{L}\\p{N}])(" + phrases.map(esc).join("|") + ")(?=$|[^\\p{L}\\p{N}])", "iu");
     const ids = new Set(), pubs = new Set(); let newest = 0;
