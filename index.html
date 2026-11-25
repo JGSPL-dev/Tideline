@@ -3082,9 +3082,14 @@ function trendTokens(it){
   let t = String(it.title || "");
   if (isGNItem(it)) t = t.replace(/\s+[-–—|]\s+[^-–—|]{2,60}$/, "");          // " - Publisher" on Google News
   t = t.replace(/^(watch|live|listen|video|breaking|exclusive|podcast|opinion|analysis|review)\s*[:|–-]\s*/i, "");
+  // Punctuation between words ends a name: "Friday Night Football: Arsenal top" has no "Football Arsenal".
+  // The "&&" marker stays in the word list (never a word itself) so side-by-side pairs can't cross it.
+  t = t.replace(/\s*[:;,|!?–—(){}\[\]"“”]+\s*|\s+-\s+/g, " && ");
   return t.split(/[^\p{L}\p{N}’'.&-]+/u).map(w => w.replace(/^[-.’']+|[-.’']+$/g, "")).filter(Boolean);
 }
 const isCap = w => /^\p{Lu}/u.test(w);
+// Common first names: never a trend on their own ("Scott" could be anyone); they only count as part of a full name
+const FIRST_NAMES = new Set("aaron adam adrian aidan alan albert alex alexander alfie alfred ali alice alison amanda amber amelia amy andrea andrew andy angela ann anna anne annie anthony archie arthur ashley barbara barry ben benjamin beth billy bob bobby brad brandon brian bruce callum calvin cameron carl carlos caroline carol catherine charles charlie charlotte chloe chris christian christine christopher claire colin connor craig dan daniel danny dave david dean debbie declan dennis derek diana diane dominic donald donna doug douglas dylan ed eddie edward eleanor elizabeth ella ellie emily emma eric erin ethan eva evan evie frank fred freddie freya gary gavin george georgia gordon grace graham greg harry harvey hannah heather helen henry holly ian isaac isabella isla jack jackie jacob jake james jamie jane janet jason jay jean jeff jennifer jenny jeremy jess jessica jim jimmy jo joan joe joel john johnny jon jonathan jordan joseph josh joshua julia julie justin karen kate katherine katie keith kelly ken kevin kim kieran kyle laura lauren lee leo leon lewis liam lily linda lisa logan louis louise lucas lucy luke maria mark martin mary matt matthew max megan mel michael michelle mike mohammed molly nathan neil nicholas nick nicola noah oliver olivia oscar owen pat patrick paul peter phil philip rachel rebecca richard rob robert robbie ron rose ross ruby ryan sam samuel sandra sarah scott sean sebastian simon sophie stephen steve steven stuart sue susan theo thomas tim timothy toby tom tommy tony tyler victoria will william zoe".split(" "));
 // A tag as a trend key, written the way headline words are ("Rachel Reeves" → "rachel reeves")
 const tagKey = g => String(g).split(/[^\p{L}\p{N}’'.&-]+/u).map(w => trendNorm(w.replace(/^[-.’']+|[-.’']+$/g, ""))).filter(Boolean).join(" ");
 const isAcronym = w => /^\p{Lu}[\p{Lu}\d&.]{1,5}$/u.test(w) && /\p{Lu}.*\p{Lu}/u.test(w);
@@ -3178,6 +3183,20 @@ function trendTopics(){
   // A name's pair is the label over its single words when it covers most of their stories ("Rachel Reeves", not
   // "Reeves"); the single word still joins the topic, bringing stories that only say "Reeves"
   const pairs = list.filter(t => t.key.includes(" "));
+  // People: a single word needs to be a surname that belongs to one person. A common first name on its own is
+  // dropped; a surname used by several different people in the headlines ("Ridley Scott", "Lee Scott") is too
+  // ambiguous; a surname that mostly comes with one first name is labelled with the full name ("Reeves" → Rachel Reeves)
+  const mentions = t => t.ids.size + t.base.size;
+  list = list.filter(t => {
+    if (t.key.includes(" ")) return true;
+    if (FIRST_NAMES.has(t.key)) return false;
+    const full = [...terms.values()].filter(p => p.named && p.key.split(" ").length === 2 && p.key.endsWith(" " + t.key) && mentions(p) && !TREND_STOP.has(p.key.split(" ")[0]) && !EN_WORDS.has(p.key.split(" ")[0]));
+    if (!full.length) return true;
+    const total = full.reduce((n, p) => n + mentions(p), 0), top = full.sort((a, b) => mentions(b) - mentions(a))[0];
+    if (full.length > 1 && mentions(top) < total * 0.7) return false;
+    if (!pairs.includes(top) && top.shows.size){ t.label = [...top.shows].sort((a, b) => b[1] - a[1])[0][0]; t.fullName = top.key; }
+    return true;
+  });
   list.forEach(t => {
     if (t.key.includes(" ")) return;
     // …except everyday parts of a name: "Friday" in "Black Friday" or "League" in "Premier League" would pull in
@@ -4054,16 +4073,26 @@ function ogThumb(){
   document.body.append(sh); sh.querySelector("button").focus({preventScroll: true});
 }
 // Pull the feed down from the very top to check for new stories
-{ let y0 = null, pulled = false, strip = null;
+{ let y0 = null, x0 = 0, pulled = false, strip = null, dir = "";
+  // Not from anything that scrolls sideways (the Trending bar, video rows, topic boxes): swiping along it with a
+  // slight downward drift was checking the feed. The gesture must also be clearly downward before it counts.
+  const SIDEWAYS = ".trendstrip, .trow, .tp-opts, .tp-scroll, .shortgrid, .og-vrow, [data-noswipe]";
   const ready = () => isOG() && scrollY <= 0 && !dlg.open && !$("#ogFilter") && !$("#ogVideo") && !document.querySelector(".og-sheet");
-  addEventListener("touchstart", e => { y0 = ready() && e.touches.length === 1 && $("#list").contains(e.target) ? e.touches[0].clientY : null; pulled = false; }, {passive: true});
+  addEventListener("touchstart", e => {
+    const ok = ready() && e.touches.length === 1 && $("#list").contains(e.target) && !(e.target.closest && e.target.closest(SIDEWAYS));
+    y0 = ok ? e.touches[0].clientY : null; x0 = ok ? e.touches[0].clientX : 0; pulled = false; dir = "";
+  }, {passive: true});
   addEventListener("touchmove", e => {
     if (y0 == null) return;
-    const dy = e.touches[0].clientY - y0;
+    const dy = e.touches[0].clientY - y0, dx = e.touches[0].clientX - x0;
+    // Decide once, after the finger has moved a little: sideways (or upward) ends it
+    if (!dir && Math.hypot(dx, dy) > 12) dir = dy > Math.abs(dx) * 1.5 ? "down" : "other";
+    if (dir !== "down"){ if (dir === "other"){ y0 = null; if (strip){ strip.remove(); strip = null; } } return; }
     if (dy > 20 && !strip){ strip = el("div", "og-pull"); strip.setAttribute("aria-hidden", "true"); $("#ogBar").after(strip); }
     if (strip){ pulled = dy > 80; strip.textContent = pulled ? "LET GO TO CHECK" : "PULL TO CHECK"; strip.style.height = Math.min(56, Math.max(0, dy - 20)) + "px"; strip.classList.toggle("go", pulled); }
   }, {passive: true});
-  addEventListener("touchend", () => { if (strip){ strip.remove(); strip = null; } if (pulled && y0 != null && !state.busy) $("#refresh").click(); y0 = null; pulled = false; }, {passive: true});
+  addEventListener("touchend", () => { if (strip){ strip.remove(); strip = null; } if (pulled && y0 != null && dir === "down" && !state.busy) $("#refresh").click(); y0 = null; pulled = false; dir = ""; }, {passive: true});
+  addEventListener("touchcancel", () => { if (strip){ strip.remove(); strip = null; } y0 = null; pulled = false; dir = ""; }, {passive: true});
 }
 addEventListener("offline", () => { paintHealth(); if (isOG()) toast("YOU'RE OFFLINE"); });
 addEventListener("online", () => paintHealth());
