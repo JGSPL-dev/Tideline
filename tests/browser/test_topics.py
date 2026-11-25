@@ -58,4 +58,6 @@ def test_topic_video_keeps_playing_through_a_refresh(app):
     for _ in range(20):
         if "brand new story" in p.text_content("#list").lower(): break
         p.clock.run_for(1000); p.wait_for_timeout(250)
-    assert "brand new story" in p.text_content("#list").lower(), "new stories appear once the video is closed"
+    found = "brand new story" in p.text_content("#list").lower()
+    assert found, ("new stories appear once the video is closed", [u for u in a.requests if "bbc.example" in u],
+                   p.evaluate("JSON.parse(localStorage.getItem('tl.feeds')).filter(f => f.id === 'bbc')"), a.errors)
