@@ -47,9 +47,15 @@ def test_topic_video_keeps_playing_through_a_refresh(app):
     fx.FEEDS["https://bbc.example/feed"] = fx.rss("bbc", [fx.item("Black Friday: brand new story", "https://bbc.example/new", 0), fx.item("Black Friday: the best early deals", "https://bbc.example/0", 1)])
     before = len([u for u in a.requests if "bbc.example" in u])
     p.clock.run_for(20 * 60 * 1000)
-    p.wait_for_function(f"performance.getEntriesByType('resource').length >= 0", timeout=1000)
-    p.wait_for_timeout(3000)
+    for _ in range(20):   # let the refresh finish
+        if len([u for u in a.requests if "bbc.example" in u]) > before: break
+        p.clock.run_for(1000); p.wait_for_timeout(250)
+    p.clock.run_for(3000); p.wait_for_timeout(1500)
     assert len([u for u in a.requests if "bbc.example" in u]) > before, "the refresh ran"
     assert p.locator(".tp-player iframe").count() == 1, "the video is still playing"
     p.click(".tp-stop")
-    p.wait_for_function("document.querySelector('#list').innerText.toLowerCase().includes('brand new story')", timeout=5000)
+    # The page's timers run on the test's clock: move it on while waiting for the held-back stories to appear
+    for _ in range(20):
+        if "brand new story" in p.inner_text("#list").lower(): break
+        p.clock.run_for(1000); p.wait_for_timeout(250)
+    assert "brand new story" in p.inner_text("#list").lower(), "new stories appear once the video is closed"
