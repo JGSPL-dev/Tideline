@@ -5350,14 +5350,17 @@ async function fetchFeedNow(f){
 }
 // Errors that won't clear by waiting: the address is no longer a feed, or it's gone
 const PERMANENT = /isn't an RSS|isn't a feed|web page, not a feed|Didn't send a feed|error 410|error 404|no stories/i;
-const isPermanent = f => !!f.error && PERMANENT.test(f.error) && !ytChannelOf(f.url) && !redditJsonUrl(f.url);
+// (Google News sends an empty feed while it's limiting a phone, so "no stories" from it is never taken as final)
+const isPermanent = f => !!f.error && PERMANENT.test(f.error) && !ytChannelOf(f.url) && !redditJsonUrl(f.url) && !isGN(f.url);
 // A source needs you only if it has failed for a day, or failed twice in a way that won't fix itself
 const TROUBLE_AFTER = 24 * 3600000;
 const isTroubled = f => !!f.error && !(isPrivateFeed(f) && !IS_APP) && !(redditGone() && isRedditFeed(f)) && (Date.now() - (f.failingSince || f.lastTried || 0) > TROUBLE_AFTER || (isPermanent(f) && (f.fails || 0) >= 2));
 // Self-healing: when a website's feed has moved, look for it again from the site's home page (once a day)
 async function healFeed(f){
   // A filtered sitemap (#only=/food/) must never be "healed" into the whole site's feed
-  if (!isPermanent(f) || isPrivateFeed(f) || /#only=/.test(f.url) || Date.now() - (f.healTried || 0) < 86400000) return null;
+  // Nor a Google News feed: news.google.com's own feed is Google's world news, so a topic or search that came back
+  // empty (Google does that while limiting a phone) was "healed" into world news (g/Analogue, 25 Nov 2026)
+  if (!isPermanent(f) || isPrivateFeed(f) || /#only=/.test(f.url) || isGN(f.url) || Date.now() - (f.healTried || 0) < 86400000) return null;
   f.healTried = Date.now();
   try{
     const res = await resolveInput(new URL(f.url).origin);
@@ -8887,6 +8890,18 @@ function startTidy(){
   state.feeds.forEach(f => { const t = cleanTitle(f.title, f.url); if (t && t !== f.title && /submissions|\s-\s|bsky\.social|google news/i.test(f.title || "")) f.title = t; });
   // A source added through Google News whose site now has a direct route in our list (e.g. its news sitemap): switch it over
   let changedRoutes = false;
+  // Google News feeds "healed" into Google's world news (before 0.2.86): put them back. A pasted "thing" topic
+  // (/rss/topics/…, which Google leaves empty) becomes a Google News search for its name instead. The world
+  // news stories go at the first successful check.
+  state.feeds.forEach(f => {
+    if (!f.movedFrom || !isGN(f.movedFrom) || !isGN(f.url)) return;
+    let to = f.movedFrom;
+    const name = String(f.title || "").replace(/^g\//i, "").trim();
+    if (/\/rss\/topics\//.test(to) && name){ try{ const u = new URL(to); to = `https://news.google.com/rss/search?q=${encodeURIComponent('"' + name + '"')}&hl=${u.searchParams.get("hl") || "en-GB"}&gl=${u.searchParams.get("gl") || "GB"}&ceid=${u.searchParams.get("ceid") || "GB:en"}`; }catch{} }
+    if (state.feeds.some(g => g !== f && g.url === to)) return;
+    f.url = to; delete f.movedFrom; f.http = {}; f.nextCheck = 0; f.error = null; f.fails = 0; delete f.failingSince; f.purgeOld = true; changedRoutes = true;
+    if (name) f.title = name;
+  });
   // Catalogue addresses found broken or wrong (24 Nov 2026 check): move people who follow them to the fixed address.
   // purge: the old address brought the wrong stories (BBC Food showed all of BBC News), so they go at the next check.
   state.feeds.forEach(f => {
