@@ -1,8 +1,11 @@
 // YourFeed service: a small, locked-down helper the YourFeed website (and the app, as a fallback) uses
 // for the few things a browser can't do itself. It never relays web pages: it returns feeds, JSON, or
 // facts it has extracted (a feed address, a YouTube channel ID). No keys, no logs kept by this code.
+// An empty `catch{}` here means a best-effort step failed harmlessly (a cache or shared-store write, a
+// candidate address that doesn't parse or answer while the next one is tried); the reply still goes out.
 //
 //   GET /feed?url=…               → the feed's text, only if it really is RSS, Atom, RDF or JSON Feed
+//                                  (a private feed link only with &private=1: the website asked the person first)
 //   GET /json?url=…               → JSON from a short list of public APIs (Apple Podcasts, Bluesky, Mastodon)
 //   GET /discover?url=…           → {feeds:[…], title} found on a website
 //   GET /youtube/channel?url=…    → {id, title, avatar} for a channel, @handle or video page

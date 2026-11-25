@@ -1682,6 +1682,10 @@ body.has-mini .article-page.og-ep .dlg{padding-bottom:0}
 <script>
 (() => {
 "use strict";
+// Convention: an empty `catch{}` means the failure is expected and harmless, and the code carries on:
+// storage full or blocked, an address that doesn't parse, an optional phone feature that isn't there,
+// a media call the browser refuses, or one of several routes failing while the next is tried. Real
+// failures are shown to the person (toasts, feed errors, the status report) or kept by logError().
 // Inside the Android/iPhone app (Capacitor), requests go out natively from the phone: no browser
 // cross-site rules, and sites see an ordinary phone on home or mobile internet. The YourFeed service is the backup.
 const IS_APP = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
