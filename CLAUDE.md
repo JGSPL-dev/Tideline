@@ -93,5 +93,8 @@ Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data
 - The app reads private (paid) feed links straight from the phone; they never reach the service.
 - The website can't (browsers can't read other sites' feeds), so adding a private link there shows a consent box (`privOffer`). Only after "Allow and add" is the feed saved with `f.webOk = true`, and it's read with `privateViaService` (`/feed?url=…&private=1`). Without `webOk` the website says "Private feeds work in the YourFeed app" (assume an iPhone app at launch, so never say "Android").
 - Edit form (website only): "Read on this website" toggles `f.webOk`.
+
+## Videos survive refreshes
+- `videoInList()` (a playing story-card video or the topic page player): a finished refresh, and the refresh button, don't redraw the list while one plays; `state.listStale` is set and the list is drawn when the video is closed (`stopCardVideos`, topic "Close video"). `renderListNow` clears `listStale`.
 - Service `/feed` refuses `looksPrivate` links unless `private=1`; replies are `no-store`, nothing is written to KV, nothing logged. `/discover` always refuses private links.
 - All other service calls still refuse private links (`viaService` guard), and exports/reports/shares still leave them out.

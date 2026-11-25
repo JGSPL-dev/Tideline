@@ -3382,7 +3382,9 @@ function topicPage(tp){
       const cap = el("div", "tp-cap"); const f2 = feedById(it.feedId);
       cap.append(el("b", null, it.title), el("span", null, (f2 ? f2.title + " · " : "") + ago(it.date || it.seen)));
       const shut = el("button", "tp-stop", "Close video"); shut.type = "button";
-      shut.onclick = () => { player.replaceChildren(); player.hidden = true; opts.querySelectorAll(".tp-opt").forEach(o => o.classList.remove("on")); };
+      shut.onclick = () => { player.replaceChildren(); player.hidden = true; opts.querySelectorAll(".tp-opt").forEach(o => o.classList.remove("on"));
+        // New stories arrived while the video played: show them now
+        if (state.listStale){ state.listStale = false; renderList(); } };
       cap.append(shut);
       player.replaceChildren(f, cap); player.hidden = false;
     };
@@ -4816,7 +4818,7 @@ function renderList(){
   else if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
 }
 function renderListNow(){
-  const list = $("#list");
+  const list = $("#list"); state.listStale = false;   // anything waiting is drawn now
   if (io) io.disconnect();
   list.textContent = "";
   list.classList.toggle("shortgrid", shortsGrid());
@@ -4964,6 +4966,8 @@ function placeInline(){
   card.after(wrap);
 }
 // Phones: the video plays in the card itself, where its picture was. Tapping the card again stops it.
+// A video playing inside the list (a story card, or the player on a topic page) would stop if the list were redrawn
+const videoInList = () => !!document.querySelector("#list .card.vplaying, #list .tp-player:not([hidden]) iframe");
 function stopCardVideos(except){
   document.querySelectorAll(".card.vplaying").forEach(c => { if (c === except) return; c.classList.remove("vplaying"); const b = c.querySelector(".vbox"); if (b){ vidSeen.unobserve(b); b.remove(); } });
   if (!except && state.listStale){ state.listStale = false; renderList(); }
@@ -5474,7 +5478,7 @@ async function refreshAllInner(force){
   const readingDown = isOG() && (window.scrollY || $("#list").scrollTop) > 400;
   if (isOG()){ toast(added ? `${added} NEW ${added === 1 ? "STORY" : "STORIES"}` : "NOTHING NEW"); }
   if (readingDown && added){ state.ogNew = (state.ogNew || 0) + added; paintOgNew(); }
-  else if (document.querySelector(".card.vplaying")) state.listStale = true; else renderList();
+  else if (videoInList()) state.listStale = true; else renderList();
   $("#list").scrollTop = keepScroll;
 }
 
@@ -7955,7 +7959,7 @@ $("#savedBtn").onclick = () => {
 $("#refresh").onclick = async () => {
   if (state.busy) return;
   state.baseline = Date.now(); store.set("tl.baseline", state.baseline);
-  snapLooked(); state.shown = PAGE; renderList(); renderChips();
+  snapLooked(); state.shown = PAGE; if (!videoInList()) renderList(); renderChips();
   await refreshAll(true);
   if (state.note === "upToDate") setTimeout(() => { state.note = ""; renderStatus(); }, 4000);
 };
