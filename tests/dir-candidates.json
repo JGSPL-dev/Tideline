@@ -1,1 +1,182 @@
-[["Analogue home", "https://www.analogue.co/", "x"]]
+[
+[
+"Golf Monthly",
+"https://www.golfmonthly.co.uk/feeds.xml",
+"golf uk"
+],
+[
+"Golf Monthly 2",
+"https://www.golfmonthly.co.uk/feeds/all",
+"golf uk"
+],
+[
+"CAR magazine",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.carmagazine.co.uk",
+"cars uk"
+],
+[
+"MCN",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.motorcyclenews.com",
+"motorbikes uk"
+],
+[
+"Today's Golfer",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.todays-golfer.com",
+"golf uk"
+],
+[
+"PistonHeads",
+"https://www.pistonheads.com/xml/news091.asp",
+"cars uk"
+],
+[
+"Sky at Night",
+"https://www.skyatnightmagazine.com/feed",
+"science astronomy"
+],
+[
+"Music Week",
+"https://www.musicweek.com/rss",
+"music industry"
+],
+[
+"The Bookseller",
+"https://www.thebookseller.com/rss",
+"books publishing"
+],
+[
+"The Stage",
+"https://www.thestage.co.uk/rss",
+"theatre uk"
+],
+[
+"Travel Weekly",
+"https://travelweekly.co.uk/rss",
+"travel industry"
+],
+[
+"Gentleman's Journal",
+"https://www.thegentlemansjournal.com/feed/",
+"lifestyle men"
+],
+[
+"Yardbarker",
+"https://www.yardbarker.com/rss/rumors",
+"sport us"
+],
+[
+"The Ringer",
+"https://www.theringer.com/rss/index.xml",
+"sport culture"
+],
+[
+"CBS Sports",
+"https://www.cbssports.com/rss/headlines/",
+"sport us"
+],
+[
+"Sporting News",
+"https://www.sportingnews.com/uk/rss",
+"sport"
+],
+[
+"Management Today",
+"https://www.managementtoday.co.uk/rss",
+"business"
+],
+[
+"GSMArena",
+"https://www.gsmarena.com/rss-news-reviews.php3",
+"phones tech"
+],
+[
+"Eurosport UK",
+"https://www.eurosport.co.uk/rss.xml",
+"sport"
+],
+[
+"VG247",
+"https://www.vg247.com/feed/news",
+"games"
+],
+[
+"VG247 b",
+"https://www.vg247.com/feed",
+"games"
+],
+[
+"Pitpass",
+"https://www.pitpass.com/rss/news.xml",
+"f1"
+],
+[
+"Fashion United",
+"https://fashionunited.uk/rss-news",
+"fashion industry"
+],
+[
+"Racing Post",
+"https://www.racingpost.com/news/rss",
+"horse racing"
+],
+[
+"The Anfield Wrap",
+"https://www.theanfieldwrap.com/feed/",
+"football liverpool"
+],
+[
+"Great British Chefs",
+"https://www.greatbritishchefs.com/rss/articles",
+"food"
+],
+[
+"Honest John",
+"https://www.honestjohn.co.uk/rss/news/",
+"cars"
+],
+[
+"Planet Sport",
+"https://www.planetsport.com/feed",
+"sport"
+],
+[
+"Formula Spy",
+"https://formulaspy.com/feed",
+"f1"
+],
+[
+"Rough Guides",
+"https://www.roughguides.com/feed/",
+"travel"
+],
+[
+"Ultimate Rugby",
+"https://www.ultimaterugby.com/news/rss",
+"rugby"
+],
+[
+"Fact",
+"https://www.factmag.com/feed/",
+"music"
+],
+[
+"Kerrang!",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.kerrang.com",
+"music rock"
+],
+[
+"Golf World / Today's Golfer",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.todays-golfer.com",
+"golf"
+],
+[
+"Mother&Baby",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.motherandbaby.com",
+"parenting baby uk"
+],
+[
+"Yours",
+"https://rss.onebauer.media/api/feed-aggregator?hostname=https://www.yours.co.uk",
+"lifestyle"
+]
+]
