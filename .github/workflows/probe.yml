@@ -1,0 +1,23 @@
+name: Probe addresses
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: Space-separated addresses to fetch (status and the start of the reply are printed)
+        required: true
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Fetch
+        env:
+          URLS: ${{ inputs.urls }}
+        run: |
+          for u in $URLS; do
+            echo "=== $u"
+            curl -s -m 20 -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36" -H "Accept: application/json" -o /tmp/out -w "HTTP %{http_code} %{content_type}\n" "$u"
+            head -c 1500 /tmp/out | tr '\n' ' '; echo
+          done
