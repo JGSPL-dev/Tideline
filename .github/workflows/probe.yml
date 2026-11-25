@@ -22,4 +22,6 @@ jobs:
             head -c 1500 /tmp/out | tr '\n' ' '; echo
             echo "ITEMS $(grep -o '<item>\|<entry>' /tmp/out | wc -l) BYTES $(wc -c < /tmp/out)"
             grep -o '<item><title>[^<]*' /tmp/out | head -5 | sed 's/^/TITLE /'
+            echo "ARTICLE-LINKS $(grep -o './read/[A-Za-z0-9_-]*\|./articles/[A-Za-z0-9_-]*' /tmp/out | sort -u | wc -l)"
+            grep -o 'aria-label="[^"]\{20,140\}"' /tmp/out | head -6 | sed 's/^/LABEL /'
           done
