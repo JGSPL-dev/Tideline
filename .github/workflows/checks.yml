@@ -1,5 +1,5 @@
 name: Checks
-# Every push: the app must start cleanly from saved data of every era, and the service tests must pass.
+# Every push: the app must start cleanly from saved data of every era, and the service and browser tests must pass.
 on:
   push:
   pull_request:
@@ -23,3 +23,11 @@ jobs:
         run: node smoke.mjs
       - name: Service tests
         run: node --test worker.test.mjs
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Browser tests (the real app with mocked feeds)
+        run: |
+          pip install -q -r browser/requirements.txt
+          python -m playwright install chromium
+          python -m pytest -q browser
