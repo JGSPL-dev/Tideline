@@ -2195,6 +2195,22 @@ function ytPause(){
   store.set("yf.ytCoolUntil", Date.now() + 30 * 60000 * Math.pow(2, trips - 1));
 }
 const hhmm = t => new Date(t).toLocaleTimeString("en-GB", {hour: "2-digit", minute: "2-digit"});
+// Google News limits one connection that asks for many feeds in a row (a list check of ~140 Google News feeds
+// had every one after the first ~80 refused, 25 Nov 2026). Three refusals in a row: no Google News requests for
+// 30 min, doubling up to 4 h; the feeds aren't marked as broken meanwhile, they just wait.
+const isGN = u => /(^|\/\/)news\.google\.com\//.test(u || "");
+const GN_REFUSED = /error 429|error 503|couldn't connect|couldn't reach|failed to fetch|networkerror|load failed|timed? ?out|aborted/i;
+function gnCooling(){ return Date.now() < (store.get("yf.gnCoolUntil", 0) || 0); }
+function gnAnswered(){ state.gnStreak = 0; if (store.get("yf.gnTrips", 0)) store.set("yf.gnTrips", 0); }
+function gnRefused(){
+  state.gnStreak = (state.gnStreak || 0) + 1;
+  if (state.gnStreak < 3 || gnCooling()) return gnCooling();
+  const trips = Math.min(4, (store.get("yf.gnTrips", 0) || 0) + 1);
+  store.set("yf.gnTrips", trips); store.set("yf.gnCoolUntil", Date.now() + 30 * 60000 * Math.pow(2, trips - 1));
+  // The refusals that led here weren't the feeds' fault: clear them
+  state.feeds.forEach(f => { if (isGN(f.url) && f.error && GN_REFUSED.test(f.error) && (f.fails || 0) <= 2){ f.error = null; f.fails = 0; delete f.failingSince; } });
+  state.gnStreak = 0; return true;
+}
 // The official YouTube Data API, through the YourFeed service (cached there and shared by everyone)
 async function ytViaApi(channelId, feed){
   const j = JSON.parse(await viaService("/youtube/latest", {id: channelId}, 15000));
@@ -5260,6 +5276,7 @@ function everyMin(f){
 }
 function nextCheck(f){
   if (ytChannelOf(f.url) && ytCooling()) return Math.max(store.get("yf.ytCoolUntil", 0), f.lastFetched ? 0 : 0);
+  if (isGN(f.url) && gnCooling()) return store.get("yf.gnCoolUntil", 0);
   if (!f.lastFetched) return 0;
   if (f.error){                                             // failed: try again after 5, 10, 20… minutes, at most an hour
     const wait = Math.min(60, 5 * 2 ** Math.min(4, (f.fails || 1) - 1));
@@ -5318,9 +5335,12 @@ async function fetchFeedNow(f){
     f.everyMin = p.everyMin || null;
     if (!f.folder && !f.folderSet && !f.autoCat && p.items.length){ f.autoCat = true; const c = categorise(f, p.items); if (c){ f.folder = makeFolder(c); } }
     if (p.items.length) f.audio = isPodcastFeed(p.items);
+    if (isGN(f.url)) gnAnswered();
     return p.items;
   }catch(e){
     if (f.crashPaused) return null;
+    // Google News refusing this connection: wait it out without counting it against the feed
+    if (isGN(f.url) && GN_REFUSED.test(e.message || "") && gnRefused()) return null;
     if (isRedditFeed(f)) noteRedditFailure(f);
     f.error = e.message; f.fails = (f.fails || 0) + 1; if (!f.lastFetched) f.lastFetched = Date.now();
     if (!f.failingSince) f.failingSince = Date.now();
@@ -5393,6 +5413,10 @@ async function refreshAllInner(force){
   const ytNow = (ytCooling() && !serviceBase()) ? [] : ytDue.slice(0, serviceBase() ? 40 : 10);
   state.ytWaiting = ytDue.length - ytNow.length;
   due = due.filter(f => !isYT(f)).concat(ytNow);
+  // Google News: none while it's limiting us, and at most 20 per round (oldest first; the rest follow next round)
+  const gnDue = due.filter(f => isGN(f.url)).sort((a, b) => (a.lastFetched || 0) - (b.lastFetched || 0));
+  const gnNow = gnCooling() ? [] : gnDue.slice(0, 20);
+  due = due.filter(f => !isGN(f.url)).concat(gnNow);
   if (!due.length){ state.note = "upToDate"; renderStatus(); return; }
   state.note = "";
   state.busy = true; renderStatus();
@@ -8255,6 +8279,7 @@ function buildReport(){
   const lines = [
     `YourFeed source report · ${new Date().toLocaleString("en-GB")}`,
     ...(ytCooling() ? [`YouTube: paused until ${hhmm(ytUntil("yf.ytCoolUntil"))} after refusals`] : ytFeedsDown() ? ["YouTube: its feeds are down, using backup routes"] : []),
+    ...(gnCooling() ? [`Google News: paused until ${hhmm(store.get("yf.gnCoolUntil", 0))}: it was refusing this connection`] : []),
     `Build: ${IS_APP ? "Android app " + (APP_BUILD.startsWith("__") ? "dev" : APP_BUILD) : "website"} · service: ${serviceBase() ? "on" : "off"}`,
     `Sources: ${rows.length} · working ${rows.filter(r => r.status === "ok").length} · failing ${failing.length} · retrying ${rows.filter(r => r.status === "retrying").length} · quiet/empty ${rows.filter(r => r.status === "quiet" || r.status === "empty").length} · not checked ${rows.filter(r => r.status === "not checked").length}`,
     "", "By platform: " + Object.entries(byPlatform).map(([p, b]) => `${p} ${b.all - b.bad}/${b.all} ok`).join(" · "),
@@ -8434,12 +8459,24 @@ $("#dirCheck").onclick = async () => {
     e.ms = Date.now() - t0; done++;
     msg.textContent = `Checked ${done} of ${list.length}…`;
   };
-  // Google News one at a time with a pause (it dislikes bursts); everything else four at a time
-  const gn = list.filter(e => /news\.google\.com/.test(e.url)), rest = list.filter(e => !/news\.google\.com/.test(e.url));
-  await Promise.all([pool(rest, 4, test), (async () => { for (const e of gn){ await test(e); await new Promise(r => setTimeout(r, 900)); } })()]);
+  // Google News one at a time, 2.5 s apart (it limits bursts); once it refuses twice in a row (or is already
+  // pausing us) the rest aren't asked for and are listed as not checked rather than failing. Everything else
+  // four at a time.
+  const gn = list.filter(e => isGN(e.url)), rest = list.filter(e => !isGN(e.url));
+  await Promise.all([pool(rest, 4, test), (async () => {
+    let refusals = 0;
+    for (const e of gn){
+      if (refusals >= 2 || gnCooling()){ e.status = "skipped"; e.info = "not checked: Google News is limiting this phone, run the check again later"; done++; continue; }
+      await test(e);
+      refusals = e.status === "fail" && GN_REFUSED.test(e.info) ? refusals + 1 : 0;
+      await new Promise(r => setTimeout(r, 2500));
+    }
+    if (refusals >= 2) gnRefused(), gnRefused(), gnRefused();   // also pause the feeds' own Google News checks
+  })()]);
   const by = k => list.filter(e => e.status === k);
-  const head = `YourFeed search list check · ${new Date().toLocaleString()} · ${IS_APP ? "app" : "website"}\n${by("ok").length} working · ${by("fail").length} failing · ${by("moved").length} feed moved · ${by("empty").length} empty · ${by("stale").length} nothing in 30 days`;
-  const lines = ["fail", "moved", "empty", "stale"].flatMap(k => by(k).map(e => `[${k}] ${e.name} — ${e.info} — ${e.url}`));
+  const head = `YourFeed search list check · ${new Date().toLocaleString()} · ${IS_APP ? "app" : "website"}\n${by("ok").length} working · ${by("fail").length} failing · ${by("moved").length} feed moved · ${by("empty").length} empty · ${by("stale").length} nothing in 30 days${by("skipped").length ? ` · ${by("skipped").length} not checked` : ""}`;
+  const skipped = by("skipped").length;
+  const lines = (skipped ? [`[not checked] ${skipped} Google News entries: Google News started refusing this phone partway through, so the rest weren't asked for. Run the check again in an hour.`] : []).concat(["fail", "moved", "empty", "stale"].flatMap(k => by(k).map(e => `[${k}] ${e.name} — ${e.info} — ${e.url}`)));
   dirReport = head + "\n\n" + (lines.join("\n") || "Everything works.");
   msg.textContent = head.split("\n")[1];
   lines.slice(0, 200).forEach(l => out.append(el("li", null, l)));
