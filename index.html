@@ -3253,7 +3253,14 @@ function trendTopics(){
     // …except everyday parts of a name: "Friday" in "Black Friday" or "League" in "Premier League" would pull in
     // every Friday-night football story
     if (TREND_PART_SKIP.has(t.key)) return;
-    const p = pairs.find(p => p.key.split(" ").includes(t.key) && [...p.ids].filter(id => t.ids.has(id)).length >= p.ids.size * 0.6);
+    // A person's surname belongs to the full name ("Reeves" → Rachel Reeves). Anything else only if most of its
+    // own stories are about the pair ("Claudia" → Storm Claudia, but not "London" → MCM London: that test was
+    // the wrong way round and pulled every London headline into "MCM London", 25 Nov 2026)
+    const p = pairs.find(p => {
+      const w = p.key.split(" "); if (!w.includes(t.key)) return false;
+      if (FIRST_NAMES.has(w[0]) && w[w.length - 1] === t.key) return true;
+      return [...t.ids].filter(id => p.ids.has(id)).length >= t.ids.size * 0.6;
+    });
     if (p){ t.inside = p; t.score = Math.min(t.score, p.score - 0.01); }
   });
   list.sort((a, b) => b.score - a.score);
