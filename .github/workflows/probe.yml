@@ -20,4 +20,6 @@ jobs:
             echo "=== $u"
             curl -s -m 20 -A "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/130 Mobile Safari/537.36" -H "Accept: application/json" -o /tmp/out -w "HTTP %{http_code} %{content_type}\n" "$u"
             head -c 1500 /tmp/out | tr '\n' ' '; echo
+            echo "ITEMS $(grep -o '<item>\|<entry>' /tmp/out | wc -l) BYTES $(wc -c < /tmp/out)"
+            grep -o '<item><title>[^<]*' /tmp/out | head -5 | sed 's/^/TITLE /'
           done
