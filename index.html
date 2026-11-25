@@ -2438,6 +2438,26 @@ function postTitle(text){
   const pick = first.length >= 20 && first.length <= 140 ? first : t;
   return pick.length > 120 ? pick.slice(0, 117).replace(/\s+\S*$/, "") + "…" : pick;
 }
+// The publisher's own tags for a story (RSS <category>, Atom <category term/label>): names and subjects for
+// Trending ("Rachel Reeves", "Autumn Budget", "bird flu"). Sections, site furniture and everyday words are left out.
+const TAG_GENERIC = new Set(("news uk world us sport sports latest featured feature top stories top story home homepage uncategorized uncategorised " +
+  "video videos podcast podcasts opinion analysis comment lifestyle culture business politics tech technology science health entertainment " +
+  "breaking breaking news live blog liveblog article articles blog post posts general misc other more editors picks editor's picks trending " +
+  "popular must read reviews review features columns column interview interviews gallery photos newsletter sponsored partner content promoted " +
+  "deals shopping how to guide guides explainer explainers premium free subscriber only").split(" ").concat(["top stories", "editors picks", "must read", "how to", "breaking news", "editor's picks", "partner content", "subscriber only"]));
+function cleanTags(list){
+  const out = [];
+  for (let g of list){
+    g = String(g || "").replace(/\s+/g, " ").trim();
+    if (g.length < 3 || g.length > 40 || /^https?:|^\d+$|[<>{}=]/.test(g) || g.split(" ").length > 4) continue;
+    const k = g.toLowerCase();
+    if (TAG_GENERIC.has(k) || INTERESTS.some(([n]) => n.toLowerCase() === k) || (!k.includes(" ") && (EN_WORDS.has(k) || TREND_STOP.has(k)))) continue;
+    if (!out.some(x => x.toLowerCase() === k)) out.push(g);
+    if (out.length >= 6) break;
+  }
+  return out;
+}
+function withTags(it, list){ const t = cleanTags(list); if (t.length) it.tags = t; return it; }
 function makeItem(feed, o){
   let link = safeUrl(o.link) || "";
   const videoId = o.videoId || ytId(link);
@@ -2557,7 +2577,7 @@ function parseFeed(xml, feed){
     title = txt(kid(root, "title"));
     icon = txt(kid(root, "icon")) || txt(kid(root, "logo"));
     const alt = kids(root, "link").find(l => !attr(l, "rel") || attr(l, "rel") === "alternate"); site = alt ? attr(alt, "href") : "";
-    items = newestOf(kids(root, "entry"), e => Date.parse(txt(kid(e, "published")) || txt(kid(e, "updated"))), KEEP_PARSE).map(e => atomItem(e, feed));
+    items = newestOf(kids(root, "entry"), e => Date.parse(txt(kid(e, "published")) || txt(kid(e, "updated"))), KEEP_PARSE).map(e => withTags(atomItem(e, feed), kids(e, "category").map(c => attr(c, "label") || attr(c, "term"))));
   } else if (rn === "rss" || rn.endsWith("rdf")){
     const ch = deep(root, "channel")[0];
     title = txt(kid(ch, "title"));
@@ -2565,7 +2585,7 @@ function parseFeed(xml, feed){
     const it = deep(ch, "itunes:image")[0];
     icon = (it && attr(it, "href")) || txt(kid(kid(ch, "image") || ch, "url")) || "";
     site = txt(kid(ch, "link"));
-    items = newestOf(deep(root, "item"), e => Date.parse(txt(kid(e, "pubdate")) || txt(kid(e, "dc:date"))), KEEP_PARSE).map(e => rssItem(e, feed));
+    items = newestOf(deep(root, "item"), e => Date.parse(txt(kid(e, "pubdate")) || txt(kid(e, "dc:date"))), KEEP_PARSE).map(e => withTags(rssItem(e, feed), kids(e, "category").map(txt)));
   } else if (rn === "urlset"){
     // News sitemap: <url><loc> + <news:news> (title, date, publication) + <image:image>
     const only = ((feed && feed.url || "").match(/#only=([^&]+)/) || [])[1];
@@ -2587,6 +2607,11 @@ function parseFeed(xml, feed){
   } else if (rn === "sitemapindex") throw new Error("That's a list of sitemaps, not the news sitemap itself");
   else throw new Error("That address isn't an RSS or Atom feed");
   items = items.filter(i => i.link || i.title);
+  // A tag on most of a feed's stories is its section ("Football", "UK news"), not a subject: drop it
+  if (items.length >= 4){
+    const n = new Map(); items.forEach(i => (i.tags || []).forEach(g => n.set(g, (n.get(g) || 0) + 1)));
+    items.forEach(i => { if (i.tags){ i.tags = i.tags.filter(g => n.get(g) <= items.length * 0.4); if (!i.tags.length) delete i.tags; } });
+  }
   // Google News topics: English only (its English edition still mixes in other languages now and then)
   if (feed && /news\.google\.com/.test(feed.url || "") && !/site%3A|site:/i.test(feed.url || "")) items = items.filter(i => looksEnglish(i.title));
   // Posts with no date (Formula 1's feed) get the time they were first seen, in feed order (newest first), so
@@ -3060,6 +3085,8 @@ function trendTokens(it){
   return t.split(/[^\p{L}\p{N}’'.&-]+/u).map(w => w.replace(/^[-.’']+|[-.’']+$/g, "")).filter(Boolean);
 }
 const isCap = w => /^\p{Lu}/u.test(w);
+// A tag as a trend key, written the way headline words are ("Rachel Reeves" → "rachel reeves")
+const tagKey = g => String(g).split(/[^\p{L}\p{N}’'.&-]+/u).map(w => trendNorm(w.replace(/^[-.’']+|[-.’']+$/g, ""))).filter(Boolean).join(" ");
 const isAcronym = w => /^\p{Lu}[\p{Lu}\d&.]{1,5}$/u.test(w) && /\p{Lu}.*\p{Lu}/u.test(w);
 // Which source a story counts for: one publisher for all of a site's section feeds; each channel or account on its own
 function trendPub(f){
@@ -3072,7 +3099,12 @@ function trendTopics(){
   const now = Date.now(), cut = now - TREND_HOURS * 3600000;
   const m = trendTopics.memo;
   if (m && m.items === state.items && m.n === state.items.length && now - m.at < 10 * 60000) return m.topics;
-  const items = state.items.filter(i => (i.date || i.seen || 0) >= cut && i.title);
+  // The last 48 h is what's being talked about now; the five days before are each subject's usual level, so
+  // names that are in the news every day ("Premier League", "Trump") only trend when they're mentioned more
+  // than usual (the spike), and new names jump straight up. Stories are kept 7 days, so this works from day one.
+  const DAY = 86400000, baseFrom = now - 7 * DAY;
+  const items = state.items.filter(i => (i.date || i.seen || 0) >= baseFrom && i.title);
+  const isOld = it => (it.date || it.seen || 0) < cut;
   // Words seen capitalised in the middle of an ordinary headline are names; title-case headlines and
   // first words only count when the same word is a name elsewhere (so "Perfect Roast Potatoes" adds nothing)
   const proper = new Set();
@@ -3087,10 +3119,13 @@ function trendTopics(){
   const terms = new Map();   // key → {key, shows: Map(display → n), ids: Set, pubs: Set, newest}
   const note = (key, display, it, pub) => {
     let t = terms.get(key);
-    if (!t){ t = {key, shows: new Map(), ids: new Set(), pubs: new Set(), newest: 0, recent: 0}; terms.set(key, t); }
+    if (!t){ t = {key, shows: new Map(), ids: new Set(), pubs: new Set(), base: new Set(), newest: 0, recent: 0}; terms.set(key, t); }
+    // Older stories only count toward the usual level: publishers per day
+    if (isOld(it)){ t.base.add(Math.floor((it.date || it.seen || 0) / DAY) + "|" + pub); return t; }
     t.shows.set(display, (t.shows.get(display) || 0) + 1);
     if (!t.ids.has(it.id)){ t.ids.add(it.id); if ((it.date || 0) > now - 12 * 3600000) t.recent++; }
     t.pubs.add(pub); t.newest = Math.max(t.newest, it.date || it.seen || 0);
+    return t;
   };
   items.forEach(it => {
     const f = feedById(it.feedId), pub = trendPub(f); if (!pub) return;
@@ -3116,12 +3151,30 @@ function trendTopics(){
       if (k && !own.includes(k) && !seen.has(k)){ seen.add(k); note(k, x.replace(/[’']s$/, ""), it, pub); }
       if (pairAt(i)){ const kk = capw[i] + " " + capw[i + 1]; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, x + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); if (!tcase.has(it.id) || ok[i] || ok[i + 1]) terms.get(kk).named = true; } }
     });
+    // The publisher's own tags are names it chose itself: they count like headline names, and mark a headline
+    // name as confirmed ("Rachel Reeves" tagged by the Guardian and found in a BBC headline)
+    (it.tags || []).forEach(g => {
+      const k = tagKey(g); if (!k || own.includes(k) || seen.has(k)) return;
+      seen.add(k); const t = note(k, g, it, pub); t.tagged = true; t.named = true;
+    });
   });
   // Trending: mentioned by 3+ different publishers (2 for someone following only a few)
   const pubCount = new Set(state.feeds.map(trendPub)).size;
   const need = pubCount < 15 ? 2 : 3;
+  // Usual level: publishers per day over the days before the last 48 h that we have stories for (up to 5)
+  const oldest = items.reduce((m, i) => Math.min(m, i.date || i.seen || now), now);
+  const cover = Math.max(0, Math.min(5, Math.floor((cut - oldest) / DAY)));
   let list = [...terms.values()].filter(t => t.pubs.size >= need && (t.key.includes(" ") ? t.named : !TREND_PART_SKIP.has(t.key)));
-  list.forEach(t => { t.score = t.pubs.size * 3 + t.ids.size + t.recent; t.label = [...t.shows].sort((a, b) => b[1] - a[1])[0][0]; });
+  list.forEach(t => {
+    t.usual = cover ? t.base.size / cover : 0;
+    t.spike = (t.pubs.size / 2 + 0.5) / (t.usual + 0.5);
+  });
+  // With two or more days to compare against, something mentioned about as much as usual isn't trending
+  if (cover >= 2) list = list.filter(t => t.spike >= 1.3);
+  list.forEach(t => {
+    t.score = (t.pubs.size * 3 + t.ids.size + t.recent + (t.tagged ? 2 : 0)) * Math.min(4, Math.max(0.5, t.spike));
+    t.label = [...t.shows].sort((a, b) => b[1] - a[1])[0][0];
+  });
   // A name's pair is the label over its single words when it covers most of their stories ("Rachel Reeves", not
   // "Reeves"); the single word still joins the topic, bringing stories that only say "Reeves"
   const pairs = list.filter(t => t.key.includes(" "));
@@ -3139,7 +3192,7 @@ function trendTopics(){
   list.forEach(t => {
     const home = topics.find(tp => [...t.ids].filter(id => tp.ids.has(id)).length >= t.ids.size * 0.5);
     if (home){ home.terms.push(t); t.ids.forEach(id => home.ids.add(id)); t.pubs.forEach(p => home.pubs.add(p)); home.newest = Math.max(home.newest, t.newest); }
-    else if (topics.length < 12) topics.push({key: t.key, label: t.label, terms: [t], ids: new Set(t.ids), pubs: new Set(t.pubs), newest: t.newest, score: t.score});
+    else if (topics.length < 12) topics.push({key: t.key, label: t.label, terms: [t], ids: new Set(t.ids), pubs: new Set(t.pubs), newest: t.newest, score: t.score, spike: t.spike, usual: t.usual, cover});
   });
   topics.forEach(tp => { tp.related = tp.terms.slice(1).filter(t => !t.inside).map(t => t.label).filter(l => !tp.label.toLowerCase().includes(l.toLowerCase())).slice(0, 3); });
   // What belongs to a topic: every story of the last week whose headline names it ("Black Friday", or for a
@@ -3157,13 +3210,19 @@ function trendTopics(){
     const ids = new Set(), pubs = new Set(); let newest = 0;
     recentAll.forEach(it => {
       const t = trendTokens(it).map(trendNorm).join(" ");
-      if (!re.test(t)) return;
+      if (!re.test(t) && !(it.tags || []).some(g => tagKey(g) === main.key)) return;
       ids.add(it.id); pubs.add(trendPub(feedById(it.feedId))); newest = Math.max(newest, it.date || it.seen || 0);
     });
     if (ids.size){ tp.ids = ids; tp.pubs = pubs; tp.newest = newest; }
   });
   trendTopics.memo = {items: state.items, n: state.items.length, at: now, topics};
   return topics;
+}
+// Why it's trending, for the stats line: new this week, or how far above its usual level
+function trendWhy(tp){
+  if (!tp || !tp.cover || tp.cover < 2 || !tp.spike) return "";
+  if (tp.usual < 0.2) return " · new this week";
+  return tp.spike >= 1.5 ? ` · ${tp.spike >= 10 ? Math.round(tp.spike) : tp.spike.toFixed(1).replace(/\.0$/, "")}× its usual` : " · above its usual";
 }
 // The topic being looked at (not kept between visits: trends move on)
 state.topic = null;
@@ -3210,7 +3269,7 @@ function topicPage(tp){
   const dup = dupeIds(state.items.filter(i => tp.ids.has(i.id)), "topic:" + tp.key);
   const its = state.items.filter(i => tp.ids.has(i.id) && !dup.has(i.id)).sort((a, b) => (b.date || 0) - (a.date || 0));
   const first = its.reduce((a, b) => (a && (a.date || 0) <= (b.date || 0)) ? a : b, null), ff = first && feedById(first.feedId);
-  page.append(el("p", "tp-stats", `${its.length} ${its.length === 1 ? "story" : "stories"} from ${tp.pubs.size} sources · first ${first ? ago(first.date || first.seen) : ""}${ff ? " in " + ff.title : ""} · latest ${ago(tp.newest)}`));
+  page.append(el("p", "tp-stats", `${its.length} ${its.length === 1 ? "story" : "stories"} from ${tp.pubs.size} sources · first ${first ? ago(first.date || first.seen) : ""}${ff ? " in " + ff.title : ""} · latest ${ago(tp.newest)}${trendWhy(tp)}`));
   // Videos: pick one and it plays here, staying at the top while you read
   const vids = its.filter(i => typeOf(i) === "videos").slice(0, 18);
   const vsec = el("div", "tp-video");
