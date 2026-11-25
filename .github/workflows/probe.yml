@@ -24,4 +24,8 @@ jobs:
             grep -o '<item><title>[^<]*' /tmp/out | head -5 | sed 's/^/TITLE /'
             echo "ARTICLE-LINKS $(grep -o './read/[A-Za-z0-9_-]*\|./articles/[A-Za-z0-9_-]*' /tmp/out | sort -u | wc -l)"
             grep -o 'aria-label="[^"]\{20,140\}"' /tmp/out | head -6 | sed 's/^/LABEL /'
+            grep -io '<link[^>]*alternate[^>]*>' /tmp/out | head -6 | sed 's/^/ALT /'
+            grep -io 'href="[^"]*\(\.ics\|rss\|feed\|webcal\|calendar\)[^"]*"' /tmp/out | sort -u | head -10 | sed 's/^/LINK /'
+            echo "VEVENTS $(grep -c 'BEGIN:VEVENT' /tmp/out)"
+            grep -m3 '^SUMMARY' /tmp/out | sed 's/^/ICS /'
           done
