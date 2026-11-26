@@ -4727,12 +4727,27 @@ addEventListener("message", e => {
   if (!/^https:\/\/www\.youtube(-nocookie)?\.com$/.test(e.origin)) return;
   let d; try{ d = typeof e.data === "string" ? JSON.parse(e.data) : e.data; }catch{ return; }
   const st = d && (d.event === "onStateChange" ? d.info : d.info && d.info.playerState);
+  const src0 = [...document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed"]')].find(f => f.contentWindow === e.source);
+  if (typeof st === "number" && src0){ if (st === 1 || st === 3) vidPlaying.add(src0); else vidPlaying.delete(src0); syncAwake(); }   // 3 = buffering
   if (st !== 1) return;                                   // 1 = playing
   // A video started: pause the podcast and any other video
   if (pod.item && !pod.audio.paused) pod.audio.pause();
   const src = [...document.querySelectorAll('iframe[src*="youtube-nocookie.com/embed"]')].find(f => f.contentWindow === e.source);
   pauseAllVideos(src);
 });
+// Keep the screen on while a video plays (in the feed, on a topic page, on the video page or full screen).
+// Android's WebView only does this for the view the video started in, so after leaving and re-entering
+// full screen the phone dimmed mid-video (26 Nov 2026). Paused, finished or closed: the screen may dim again.
+const vidPlaying = new Set();
+let awakeNow = false;
+function syncAwake(){
+  for (const f of vidPlaying) if (!f.isConnected) vidPlaying.delete(f);   // a player that was closed or redrawn away
+  const on = vidPlaying.size > 0;
+  if (on === awakeNow) return; awakeNow = on;
+  try{ if (window.YFNative && window.YFNative.keepAwake) window.YFNative.keepAwake(on); }catch{}
+}
+// Players disappear without saying so (closed, redrawn): check now and then while one is meant to be playing
+setInterval(() => { if (vidPlaying.size) syncAwake(); }, 5000);
 // Videos in the feed pause once they're scrolled (mostly) out of view
 const vidSeen = new IntersectionObserver(entries => entries.forEach(en => {
   if (!en.isIntersecting || en.intersectionRatio < 0.25){ const f = en.target.querySelector("iframe"); if (f) ytCmd(f, "pauseVideo"); }

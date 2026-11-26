@@ -14,6 +14,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
 import android.webkit.RenderProcessGoneDetail;
 import android.webkit.WebView;
@@ -38,6 +39,13 @@ public class MainActivity extends BridgeActivity {
     private OnBackPressedCallback exitFull;
     // Set by the page before a video plays: short clips (mostly Shorts) stay upright in full screen
     private volatile boolean rotateFull = true;
+    // Screen stays on while a video plays (the page says so). Full screen counts too until the page has said
+    // anything (if its player never reports); a paused video lets the screen dim as usual.
+    private volatile boolean pagePlaying = false, pageReported = false;
+    private void applyAwake() {
+        if (pagePlaying || (fullView != null && !pageReported)) getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        else getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
     // Headphones unplugged or a Bluetooth headset gone: Android says audio is "becoming noisy", so pause
     private BroadcastReceiver noisy;
 
@@ -56,6 +64,11 @@ public class MainActivity extends BridgeActivity {
         bridge.getWebView().addJavascriptInterface(new Object() {
             @JavascriptInterface
             public void setRotateFull(boolean landscape) { rotateFull = landscape; }
+
+            // The page says a video is playing (or has stopped): keep the screen on meanwhile. The WebView only
+            // does this for the view the video started in, so after re-entering full screen the phone dimmed.
+            @JavascriptInterface
+            public void keepAwake(boolean on) { pagePlaying = on; pageReported = true; runOnUiThread(() -> applyAwake()); }
 
             // The page's background colour for Android's status and navigation bars, so they match the app
             @JavascriptInterface
@@ -116,6 +129,7 @@ public class MainActivity extends BridgeActivity {
                 bars.hide(WindowInsetsCompat.Type.systemBars());
                 if (rotateFull) setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
                 exitFull.setEnabled(true);
+                applyAwake();
             }
 
             @Override
@@ -193,6 +207,7 @@ public class MainActivity extends BridgeActivity {
         ViewGroup decor = (ViewGroup) getWindow().getDecorView();
         decor.removeView(fullView);
         fullView = null;
+        applyAwake();
         new WindowInsetsControllerCompat(getWindow(), decor).show(WindowInsetsCompat.Type.systemBars());
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED);
         if (exitFull != null) exitFull.setEnabled(false);
