@@ -111,3 +111,10 @@ Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data
 - `catalogue.js`: the search catalogue (871 sites), `window.YF_CATALOGUE`, loaded before the main script; `DIRECTORY = window.YF_CATALOGUE || []`. The Android build copies it into the app. `tests/check-directory.mjs` reads it.
 - Every push (`checks.yml`): code check (`node tools/lint.mjs`, ESLint core correctness rules on the app script and the service), start-up smoke test, service tests, browser tests (`tests/browser`, pytest + Playwright, the real app served from a test address with mocked feeds).
 - Article text is cleaned only by our own allowlist cleaner (`basicSanitize`); no outside library.
+
+## Topic labels (26 Nov 2026)
+- A word with a capital inside it ("Yooka-Laylee", "McLaren", "PlayStation") counts as a name anywhere, even first in a headline or in title case.
+- A pair from a title-case headline (most YouTube titles) is a name only when both words are names, or a first name + a name: "Man Utd Draw Against Sporting" and "Alisson Assists Isak For…" no longer make "Against Sporting" / "Assists Isak". Sentence-case headlines count as before.
+- A surname is labelled with its full name only when the first word is a real first name (`FIRST_NAMES`) or a name in its own right; any capitalised word in front still counts towards ambiguity (Kamala / Calvin Harris → dropped).
+- A topic is named after the subject that appears in most of its stories (ties: score order), which then also decides the topic page's stories.
+- Tests: `tests/browser/test_topics.py` (labels, people, whole-name matching, video through refresh).

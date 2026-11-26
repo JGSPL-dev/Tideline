@@ -3146,6 +3146,9 @@ function trendTopics(){
     const titleCase = long.length >= 3 && long.filter(isCap).length / long.length > 0.7;
     if (titleCase) tcase.add(it.id);
     if (!titleCase) w.forEach((x, i) => { if (i > 0 && isCap(x) && !TREND_STOP.has(trendNorm(x))) proper.add(trendNorm(x)); });
+    // A capital inside the word marks a name wherever it stands, even first or in title case ("Yooka-Laylee",
+    // "McLaren", "PlayStation": 26 Nov 2026, "Yooka-Laylee" always led its headlines so never counted)
+    w.forEach(x => { if (/^\p{Lu}\p{Ll}*[-’']?\p{Ll}*\p{Lu}\p{Ll}/u.test(x) && !TREND_STOP.has(trendNorm(x))) proper.add(trendNorm(x)); });
   });
   const terms = new Map();   // key → {key, shows: Map(display → n), ids: Set, pubs: Set, newest}
   const note = (key, display, it, pub) => {
@@ -3171,7 +3174,8 @@ function trendTopics(){
     });
     // Pairs: two capitalised words side by side make a name even when one is an everyday word on its own
     // ("Black Friday", "Premier League", "Storm Claudia"). Not two everyday words ("Best Deals"), and in
-    // title-case headlines only when one of the two is a name seen elsewhere.
+    // title-case headlines only when both are names seen elsewhere (or a first name + a name): capitals there prove
+    // nothing ("Man Utd Draw Against Sporting", "Alisson Assists Isak For Liverpool's…", 26 Nov 2026).
     const capw = w.map(x => { const k = trendNorm(x); return isCap(x) && k.length >= 3 && !EN_WORDS.has(k) && !/^\d+$/.test(k) ? k : null; });
     // Title-case headlines count too ("Best Black Friday Deals"), but a pair only trends if it is also written
     // capitalised inside an ordinary sentence-case headline somewhere (so "Best Deals" never does)
@@ -3180,7 +3184,7 @@ function trendTopics(){
     w.forEach((x, i) => {
       const k = ok[i];
       if (k && !own.includes(k) && !seen.has(k)){ seen.add(k); note(k, x.replace(/[’']s$/, ""), it, pub); }
-      if (pairAt(i)){ const kk = capw[i] + " " + capw[i + 1]; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, x + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); if (!tcase.has(it.id) || ok[i] || ok[i + 1]) terms.get(kk).named = true; } }
+      if (pairAt(i)){ const kk = capw[i] + " " + capw[i + 1]; if (!own.includes(kk) && !seen.has(kk)){ seen.add(kk); note(kk, x + " " + w[i + 1].replace(/[’']s$/, ""), it, pub); if (!tcase.has(it.id) || (ok[i] && ok[i + 1]) || (FIRST_NAMES.has(capw[i]) && ok[i + 1])) terms.get(kk).named = true; } }
     });
     // The publisher's own tags are names it chose itself: they count like headline names, and mark a headline
     // name as confirmed ("Rachel Reeves" tagged by the Guardian and found in a BBC headline)
@@ -3216,11 +3220,14 @@ function trendTopics(){
   list = list.filter(t => {
     if (t.key.includes(" ")) return true;
     if (FIRST_NAMES.has(t.key)) return false;
-    const full = [...terms.values()].filter(p => p.named && p.key.split(" ").length === 2 && p.key.endsWith(" " + t.key) && mentions(p) && !TREND_STOP.has(p.key.split(" ")[0]) && !EN_WORDS.has(p.key.split(" ")[0]));
+    // Different first names in front of it make a surname ambiguous ("Kamala Harris" / "Calvin Harris"); only a real
+    // first name (or a name in its own right) can become the label: "Assists Isak" isn't Isak's full name (26 Nov 2026)
+    const first = p => p.key.split(" ")[0];
+    const full = [...terms.values()].filter(p => p.named && p.key.split(" ").length === 2 && p.key.endsWith(" " + t.key) && mentions(p) && !TREND_STOP.has(first(p)) && !EN_WORDS.has(first(p)));
     if (!full.length) return true;
     const total = full.reduce((n, p) => n + mentions(p), 0), top = full.sort((a, b) => mentions(b) - mentions(a))[0];
     if (full.length > 1 && mentions(top) < total * 0.7) return false;
-    if (!pairs.includes(top) && top.shows.size){ t.label = [...top.shows].sort((a, b) => b[1] - a[1])[0][0]; t.fullName = top.key; }
+    if (!pairs.includes(top) && top.shows.size && (FIRST_NAMES.has(first(top)) || proper.has(first(top)))){ t.label = [...top.shows].sort((a, b) => b[1] - a[1])[0][0]; t.fullName = top.key; }
     return true;
   });
   list.forEach(t => {
@@ -3245,6 +3252,15 @@ function trendTopics(){
     const home = topics.find(tp => [...t.ids].filter(id => tp.ids.has(id)).length >= t.ids.size * 0.5);
     if (home){ home.terms.push(t); t.ids.forEach(id => home.ids.add(id)); t.pubs.forEach(p => home.pubs.add(p)); home.newest = Math.max(home.newest, t.newest); }
     else if (topics.length < 12) topics.push({key: t.key, label: t.label, terms: [t], ids: new Set(t.ids), pubs: new Set(t.pubs), newest: t.newest, score: t.score, spike: t.spike, usual: t.usual, cover});
+  });
+  // A topic is named after the subject that appears in most of its stories, not just the highest-scoring one
+  // ("Yooka-Laylee" over "Impossible Lair"); ties keep the score order. The chosen one leads (its phrase picks
+  // the topic page's stories below).
+  topics.forEach(tp => {
+    const cand = tp.terms.filter(t => !t.inside);
+    const inTopic = t => [...t.ids].filter(id => tp.ids.has(id)).length;
+    const best = cand.reduce((b, t) => (inTopic(t) > inTopic(b) ? t : b), cand[0] || tp.terms[0]);
+    if (best !== tp.terms[0]){ tp.terms = [best, ...tp.terms.filter(t => t !== best)]; tp.key = best.key; tp.label = best.label; }
   });
   // "Also:" leaves out pieces of the same name ("Race Blue" from "Wave Race Blue Storm"): a related subject that
   // shares a word with the topic or with one already listed

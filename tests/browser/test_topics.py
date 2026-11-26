@@ -60,3 +60,39 @@ def test_topic_video_keeps_playing_through_a_refresh(app):
     found = "brand new story" in p.text_content("#list").lower()
     assert found, ("new stories appear once the video is closed", [u for u in a.requests if "bbc.example" in u],
                    p.evaluate("JSON.parse(localStorage.getItem('tl.feeds')).filter(f => f.id === 'bbc')"), a.errors)
+
+LABELS = {
+    "ytfootball": ["Alisson Assists Isak For Liverpool's Opener", "Man Utd Draw Against Sporting In Lisbon", "Senne Lammens With A Gift For Sporting"],
+    "bbcsport": ["How Isak and Wirtz are becoming Liverpool's big-game players", "'All coming together' - Isak repaying Liverpool faith", "Lammens howler denies Man Utd victory against Sporting"],
+    "guardian": ["Isak scores twice as Liverpool beat Brugge", "Manchester United held by Sporting after Lammens error"],
+    "skysports": ["Isak double sends Liverpool through", "Sporting fight back to deny United"],
+    "vgc": ["Yooka-Laylee and the Impossible Lair is getting a Switch 2 Definitive Edition"],
+    "nintendolife": ["Yooka-Laylee and the Impossible Lair: Definitive Edition announced"],
+    "gamingbolt": ["Yooka-Laylee and the Impossible Lair Definitive Edition brings the platformer to Switch 2"],
+}
+
+def test_topic_labels_are_the_real_name(app):
+    a = app(feeds=feeds_from(LABELS)); p = a.page
+    p.locator(".tchip").first.wait_for(timeout=10000)
+    chips = [c.split("\n")[0].lower() for c in p.locator(".tchip").all_inner_texts()]
+    assert "isak" in chips and "assists isak" not in chips, chips
+    assert "against sporting" not in chips, chips
+    assert "yooka-laylee" in chips and "impossible lair" not in chips, chips
+    assert a.errors == []
+
+def test_people_surnames(app):
+    # "Reeves" mostly appears alone but belongs to one person → labelled Rachel Reeves.
+    # "Harris" comes with two different first names → too ambiguous to trend.
+    heads = {}
+    for i in range(1, 7):
+        h = [f"Budget row as Reeves faces revolt from her own MPs {i}"]
+        if i == 1: h.append("Rachel Reeves sets out her plan for growth")
+        if i <= 4: h.append(f"Big questions for Harris after the weekend {i}")
+        if i == 5: h.append("Kamala Harris speaks at the rally tonight")
+        if i == 6: h.append("Calvin Harris announces a new summer tour")
+        heads[f"paper{i}"] = h
+    a = app(feeds=feeds_from(heads)); p = a.page
+    p.locator(".tchip").first.wait_for(timeout=10000)
+    chips = [c.split("\n")[0].lower() for c in p.locator(".tchip").all_inner_texts()]
+    assert "rachel reeves" in chips, chips
+    assert not any("harris" in c for c in chips), chips
