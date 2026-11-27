@@ -3923,7 +3923,8 @@ function placeLook(){
     const atTop = () => top.classList.toggle("attop", scrollY < 40);
     addEventListener("scroll", atTop, {passive: true}); setTimeout(atTop, 0); top.setAttribute("aria-label", "Back to the top");
     top.innerHTML = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>';
-    top.onclick = scrollFeedTop;
+    // With "N NEW · TAP TO SEE" showing, going to the top shows them and clears the banner (27 Nov 2026)
+    top.onclick = () => { const n = $("#ogNew"); if (state.ogNew && n) n.click(); else scrollFeedTop(); };
     const tools = el("div", "og-tools"); tools.id = "ogTools";
     const slot = el("div", "og-brandslot");
     const home = el("button", "og-home"); home.type = "button"; home.setAttribute("aria-label", "YourFeed: show everything");

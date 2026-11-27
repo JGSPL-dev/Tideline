@@ -47,19 +47,31 @@ def test_catalogue_search(app):
     assert a.errors == []
 
 def test_feeds_panel_type_bar(app):
-    # The type bar above the categories narrows the list of feeds to one type
+    # The type bar narrows the list of feeds (not the stories); picking a type opens the categories that have one
     a = app(); p = a.page
     p.locator("article.card:not(.skel)").first.wait_for(timeout=10000)
     p.click("#filterBtn")
     bar = p.locator(".ogf-types"); bar.wait_for()
-    words = [w.split("\n")[0].strip().upper() for w in bar.locator(".ogf-chip").all_inner_texts()]
-    assert words[0] == "ALL" and "LISTEN" in words and "READ" in words, words
-    total = p.locator(".ogf-cathead").count()
-    bar.locator(".ogf-chip", has_text="Listen").click()
-    kinds = set(k.upper() for k in p.locator(".ogf-feed .ogf-kind").all_inner_texts())
-    assert kinds == {"LISTEN"}, kinds                       # only podcasts, categories opened
-    assert p.locator(".ogf-cathead").count() <= total
-    assert "OF" in p.locator(".ogf-types").locator("xpath=..").inner_text().upper()   # "YOUR FEEDS · 1 OF 5"
-    bar = p.locator(".ogf-types"); bar.locator(".ogf-chip", has_text="All").click()
-    assert p.locator(".ogf-feed").count() == 0              # back to folded categories
+    p.locator(".ogf-types button", has_text="Listen").click()
+    kinds = [k.strip().upper() for k in p.locator(".ogf-feed .ogf-kind").all_inner_texts()]
+    assert kinds and set(kinds) == {"LISTEN"}, kinds
+    p.locator(".ogf-types button", has_text="All").click()
+    assert p.locator(".ogf-feed").count() == 0, "back to folded categories"
+    assert a.errors == []
+
+def test_back_to_top_shows_waiting_stories(app):
+    # Reading further down when a check brings new stories shows "N NEW · TAP TO SEE";
+    # the rail's up arrow then shows them at the top and the banner goes (27 Nov 2026)
+    a = app(clock=True); p = a.page
+    p.locator("article.card:not(.skel)").first.wait_for(timeout=10000)
+    p.evaluate("window.scrollTo(0, 1500)"); p.wait_for_timeout(300)
+    fx.FEEDS["https://news.example/feed"] = fx.rss("news", [fx.item("Breaking: a brand new story", "https://news.example/new", 0)] +
+        [fx.item(f"News story {i}", f"https://news.example/{i}", i + 1) for i in range(12)])
+    p.clock.fast_forward(20 * 60 * 1000)
+    p.locator("#ogNew").wait_for(timeout=15000)
+    p.click("#ogTop")
+    p.wait_for_timeout(800)
+    assert p.locator("#ogNew").count() == 0, "banner gone"
+    assert p.evaluate("scrollY") < 100
+    assert "brand new story" in p.text_content("#list").lower()
     assert a.errors == []
