@@ -45,3 +45,21 @@ def test_catalogue_search(app):
     a.open_add(); p.fill("#addInput", "bbc sport"); p.click("#addBtn")
     p.wait_for_function("document.querySelector('#searchResults').innerText.toUpperCase().includes('BBC SPORT')", timeout=10000)
     assert a.errors == []
+
+def test_feeds_panel_type_bar(app):
+    # The type bar above the categories narrows the list of feeds to one type
+    a = app(); p = a.page
+    p.locator("article.card:not(.skel)").first.wait_for(timeout=10000)
+    p.click("#filterBtn")
+    bar = p.locator(".ogf-types"); bar.wait_for()
+    words = [w.split("\n")[0].strip().upper() for w in bar.locator(".ogf-chip").all_inner_texts()]
+    assert words[0] == "ALL" and "LISTEN" in words and "READ" in words, words
+    total = p.locator(".ogf-cathead").count()
+    bar.locator(".ogf-chip", has_text="Listen").click()
+    kinds = set(k.upper() for k in p.locator(".ogf-feed .ogf-kind").all_inner_texts())
+    assert kinds == {"LISTEN"}, kinds                       # only podcasts, categories opened
+    assert p.locator(".ogf-cathead").count() <= total
+    assert "OF" in p.locator(".ogf-types").locator("xpath=..").inner_text().upper()   # "YOUR FEEDS · 1 OF 5"
+    bar = p.locator(".ogf-types"); bar.locator(".ogf-chip", has_text="All").click()
+    assert p.locator(".ogf-feed").count() == 0              # back to folded categories
+    assert a.errors == []

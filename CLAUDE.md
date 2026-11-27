@@ -122,3 +122,6 @@ Plans and reviews: https://claude.ai/artifact/KFWjpUnf8CTK1y6PNBPHeU (cost, data
 
 ## Screen stays on during videos (26 Nov 2026)
 - Android's WebView keeps the screen on only for the view a video started in, so after leaving and re-entering full screen the phone dimmed mid-video. The page now tracks YouTube player states (`vidPlaying`, 1 playing / 3 buffering → on; paused, ended, closed → off; closed players pruned every 5 s) and calls `YFNative.keepAwake(on)` (`syncAwake`). MainActivity sets `FLAG_KEEP_SCREEN_ON` while the page says a video plays, and in full screen only until the page has reported a state (`pageReported`), so a paused video still lets the screen dim. Test: `tests/browser/test_video.py`.
+
+## FEEDS panel type bar (27 Nov 2026)
+- Under YOUR FEEDS, a row of chips ALL / READ / TOPICS / WATCH / LISTEN / TALK (only types you follow, with counts) narrows the list of feeds below (`state.ogFeedType`, kept while the app is open, not saved). It filters the list only, not the stories (that's WHAT KIND). With a type picked, every category holding one starts open (`state.ogShutCats` records ones folded by hand), the heading reads "YOUR FEEDS · 5 OF 87", "Show all of X" still counts the whole category, and own-category management is hidden. Test: `test_feeds_panel_type_bar`.

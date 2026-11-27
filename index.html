@@ -857,6 +857,8 @@ button.og-src{display:block;width:100%;text-align:left;background:none;border:0;
 .ogf-chips{display:flex;flex-wrap:wrap;gap:6px}
 .ogf-chip{min-height:40px;border:3px solid #000;background:none;color:#000;font:700 12px var(--og-mono);text-transform:uppercase;padding:0 10px;cursor:pointer;border-radius:0;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ogf-chip[aria-pressed="true"]{background:var(--og-hot)}
+.ogf-types{margin:2px 0 14px}.ogf-types .ogf-chip{display:inline-flex;align-items:center;gap:6px}.ogf-tn{font-weight:400;opacity:.75}
+.ogf-none{font:700 12px var(--og-mono);text-transform:uppercase;margin:6px 0 12px}
 .ogf-chip.more{border-style:dashed}
 .ogf-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 8px}
 .ogf-head .ogf-title{margin:0}
@@ -4357,21 +4359,40 @@ function renderOgFilter(first){
     const hs = el("button", "ogf-chip seen", "Hide seen"); hs.type = "button"; hs.setAttribute("aria-pressed", String(!!view.unread)); hs.onclick = () => ogFilterSet("unread", !view.unread);
     hc.append(hs); hb.append(hc);
     // YOUR FEEDS: categories folded, each opens to its feeds
-    const fsx = sec(`Your feeds · ${state.feeds.length}`);
+    // A type bar narrows the list of feeds below (only the list: what the feed shows is WHAT KIND above).
+    // Kept while the app is open (`state.ogFeedType`); picking a type opens every category that has one.
+    const ft = state.ogFeedType || "all", typeOf_ = f => sourceType(f) || "Articles";
+    const shown = ft === "all" ? state.feeds : state.feeds.filter(f => typeOf_(f) === ft);
+    const fsx = sec(ft === "all" ? `Your feeds · ${state.feeds.length}` : `Your feeds · ${shown.length} of ${state.feeds.length}`);
     if (!state.feeds.length){
       const e = el("button", "ogf-empty", "No feeds yet · + Add your first"); e.type = "button"; e.onclick = () => openMenu("add"); fsx.append(e);
+    } else {
+      const tb = el("div", "ogf-chips ogf-types"); tb.setAttribute("role", "group"); tb.setAttribute("aria-label", "Show feeds of one type");
+      const have = new Map(); state.feeds.forEach(f => have.set(typeOf_(f), (have.get(typeOf_(f)) || 0) + 1));
+      [["all", "All"], ...Object.entries(OG_KIND_WORD)].filter(([t]) => t === "all" || have.has(t)).forEach(([t, w]) => {
+        const b = el("button", "ogf-chip", w); b.type = "button"; b.setAttribute("aria-pressed", String(ft === t));
+        if (t !== "all") b.append(el("span", "ogf-tn", String(have.get(t))));
+        b.onclick = () => { state.ogFeedType = t; state.ogShutCats = new Set(); renderOgFilter(); };
+        tb.append(b);
+      });
+      fsx.append(tb);
+      if (!shown.length) fsx.append(el("p", "ogf-none", "No feeds of that type"));
     }
     const since = new Date().setHours(0, 0, 0, 0);
     const todayN = new Map(), newest = new Map();
     state.items.forEach(i => { newest.set(i.feedId, Math.max(newest.get(i.feedId) || 0, i.date || 0)); if ((i.date || 0) >= since && isNew(i)) todayN.set(i.feedId, (todayN.get(i.feedId) || 0) + 1); });
-    const groups = new Map(); state.feeds.forEach(f => { const g = folderOf(f); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(f); });
+    const groups = new Map(), folderN = new Map();
+    state.feeds.forEach(f => folderN.set(folderOf(f), (folderN.get(folderOf(f)) || 0) + 1));
+    shown.forEach(f => { const g = folderOf(f); if (!groups.has(g)) groups.set(g, []); groups.get(g).push(f); });
     const open = state.ogOpenCats || (state.ogOpenCats = new Set());
     const selFeed = view.source.startsWith("feed:") ? state.feeds.find(f => "feed:" + f.id === view.source) : null;
     if (selFeed && first) open.add(folderOf(selFeed));
     if (view.source.startsWith("folder:") && first) open.add(view.source.slice(7));
     [...groups.keys()].sort((a, b) => a === UNSORTED ? 1 : b === UNSORTED ? -1 : a.localeCompare(b)).forEach(g => {
       const fs = groups.get(g).sort((a, b) => (newest.get(b.id) || 0) - (newest.get(a.id) || 0));
-      const isOpen = open.has(g), fresh = fs.some(f => todayN.get(f.id)), bad = fs.some(isTroubled);
+      // Filtered by type: categories start open (tap to fold); otherwise as the person left them
+      const shut = state.ogShutCats || (state.ogShutCats = new Set());
+      const isOpen = ft === "all" ? open.has(g) : !shut.has(g), fresh = fs.some(f => todayN.get(f.id)), bad = fs.some(isTroubled);
       const cat = el("div", "ogf-cat");
       const h = el("button", "ogf-cathead"); h.type = "button"; h.setAttribute("aria-expanded", String(isOpen));
       const nm = el("span", "ogf-catname", g);
@@ -4379,12 +4400,12 @@ function renderOgFilter(first){
       if (bad){ const w = el("span", "ogf-dot bad", ""); w.setAttribute("aria-label", "a feed isn't working"); nm.append(w); }
       if (view.source === "folder:" + g || (selFeed && folderOf(selFeed) === g)) h.classList.add("on");
       h.append(nm, el("span", "ogf-n", String(fs.length)), el("span", "ogf-chev", isOpen ? "−" : "+"));
-      h.onclick = () => { isOpen ? open.delete(g) : open.add(g); renderOgFilter(); };
+      h.onclick = () => { if (ft !== "all") isOpen ? shut.add(g) : shut.delete(g); else isOpen ? open.delete(g) : open.add(g); renderOgFilter(); };
       cat.append(h);
       if (isOpen){
         const allOn = view.source === "folder:" + g;
         const all = el("button", "ogf-all"); all.type = "button"; all.setAttribute("aria-pressed", String(allOn));
-        all.textContent = allOn ? `Showing all of ${g}` : `Show all of ${g} · ${fs.length}`;
+        all.textContent = allOn ? `Showing all of ${g}` : `Show all of ${g} · ${folderN.get(g) || fs.length}`;
         all.onclick = () => ogFilterSet("source", allOn ? "all" : "folder:" + g);
         cat.append(all);
         fs.forEach(f => {
@@ -4410,7 +4431,7 @@ function renderOgFilter(first){
       fsx.append(cat);
     });
     const fixed = INTERESTS.map(([n]) => n), custom = state.folders.filter(n => !fixed.includes(n));
-    if (custom.length){ const used = new Map([...groups].map(([g, fs]) => [g, fs.length])); fsx.append(manageCategories(custom, used)); }
+    if (custom.length && ft === "all"){ const used = new Map([...groups].map(([g, fs]) => [g, fs.length])); fsx.append(manageCategories(custom, used)); }
   }
   // Footer
   const foot = el("div", "ogf-foot");
